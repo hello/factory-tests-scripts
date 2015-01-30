@@ -20,6 +20,10 @@
 SetFinalizeFunction("Cleanup"); 
 call Gb_BarcodeCheck();
 call Gb_Instrument_Init();
+
+//program here
+//call Gb08_Program_M4F();
+
 call BootCheck();// fast boot check with log level 40
 call Gb02_rssi();
 call BootTopBoard();
@@ -27,20 +31,21 @@ call BootTopBoard();
 call Gb15_dust_sensor();
 
 //sample play
-$return= SerialSendMilliseconds($Launchpad_Handle1, "p 60 48000  RINGTONE/tone.raw\r\n" , "", 100);  
+$return= SerialSendMilliseconds($Launchpad_Handle1, "p 60 48000  RINGTONE/tone.raw\r\n" , "", 1000);  
 
+SleepMilliseconds(1000);// wait for LED to off
 call Gb10_VER_Check();
-
-$MicHandler=CopyVariable($Launchpad_Handle);
-call Gb00_OCT();
 
 call Gb10_SD_Card_Read_Write();
 
+$MicHandler=CopyVariable($Launchpad_Handle);
+call Gb00_OCT();
+SleepMilliseconds(10000);// wait for LED to off
+call Gb20_OCTget();
 
 call Gb03_connect();
-
 call Gb08_LED_1stOFF();
-SleepMilliseconds(1500);// wait for LED to off
+SleepMilliseconds(2000);// wait for LED to off
 call Gb13_lightOFF();
 call Gb08_LED_ON();
 call Gb13_lightON();
@@ -48,10 +53,9 @@ call Gb08_LED_OFF();
 SleepMilliseconds(1000);
 call Gb13_lightOFF();
 
-call Gb20_OCTget();
 $return= SerialSendMilliseconds($Launchpad_Handle1, "s\r\n" , "", 100);  
 //uut play
-$return= SerialSendMilliseconds($Launchpad_Handle, "p 60 48000  RINGTONE/tone.raw\r\n" , "", 100);  
+$return= SerialSendMilliseconds($Launchpad_Handle, "p 60 48000  RINGTONE/tone.raw\r\n" , "", 1000);  
  
 $MicHandler=CopyVariable($Launchpad_Handle1);
 call Gb00_OCT();//speaker
@@ -60,7 +64,6 @@ call ZOGLAB_Measure();
 call Gb11_humid();
 call Gb12_temp();
 //call Gb15_dust_sensor();
-SleepMilliseconds(3000);
 call Gb03_Status();
 call Gb04_disconnect();
 call Gb03_DisconnectStatus();
@@ -88,14 +91,8 @@ $return= SerialSendMilliseconds($Launchpad_Handle, "gesture_count\r\n" , "", 100
 //SleepMilliseconds(2500);
 
 call Gb18_genkey();
+
 call Gb21_GestureCnt();// reset gesture count before run this test
-
-call Gb08_Program_M4F();
-
-call BootCheck();// fast boot check with log level 40
-call Gb10_ProdVER_Check();
-
-
 
 End ;
 ////////////////////////////////////////main Script///////////////////////////////////////////////////////
@@ -166,6 +163,13 @@ function BootCheck()
   $return= SerialSendMilliseconds($Launchpad_Handle, "", "", 100);  
   UpdateStatus($return);
   $Result = StringContains($return,"FreeRTOS");
+  
+//  $ProxError1=StringContains($return,"->1");
+//  $ProxError2=StringContains($return,"->0");
+//  if(($ProxError1)||($ProxError2))
+ //  {
+  // RecordMeasurementPassFail("Prox error found (->1,->0) found","Failed","Failed",true,false);
+  // }
   
    if($Result)
    {
@@ -292,7 +296,7 @@ Label RetryVera:
   $VER_Num = StringCut($VER_return,"ver: ",8);
   
   UpdateStatus($VER_Num);
-  $Exp_VER ="23d5d2ad";
+  $Exp_VER ="43d87d7c";
   $Result = StringComparison($VER_Num,$Exp_VER,"==");
   RecordMeasurementPassFail($TestName,$VER_Num,"Sting",true,$Result);
  
@@ -343,7 +347,7 @@ Label RetryVerb:
   $VER_Num = StringCut($VER_return,"ver: ",8);
   
   UpdateStatus($VER_Num);
-  $Exp_VER ="43d87d7c";
+  $Exp_VER ="23d5d2ad";
   $Result = StringComparison($VER_Num,$Exp_VER,"==");
   RecordMeasurementPassFail($TestName,$VER_Num,"Sting",true,$Result);
  
@@ -1119,94 +1123,13 @@ $LowerLimit=3000;
   UpdateStatus($TempStr); 
   SetTestName($TestName);
   
-  $Sound_return="";
-  $Max_Retry=50;
-  $Cont_Retry = 0;
-  $Result_Value=0;
-  $FrameFound=false;
-goto SkippedPlay;  
+    $TestName="getoct";
+  $SendCmd="getoct";
+  $CmdTimeOut=1000;
+  $Pattern = "(-?)\\d{3,5}";
+  $Max_Retry=5;
   
-Label EvalSound_Retry:
-//    $return= SerialSendMilliseconds($Launchpad_Handle1, "p 60 48000  RINGTONE/tone.raw\r\n" , "", 100);  
-//    UpdateStatus($return);
-//    $Sound_return= SerialSendMilliseconds($Launchpad_Handle, "oct\r\n", "", 100); 
-//    Sleep(10);
-Label SkippedPlay:
-  $Sound_return= SerialSendMilliseconds($MicHandler, "getoct\r\n", "", 100); 
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    UpdateStatus($Sound_return);
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-  while($Cont_Retry < $Max_Retry)
-  {
-	$Cont_Retry = $Cont_Retry + 1;
-    if ($Cont_Retry>1)
-	{
-     $Sound_return= SerialSendMilliseconds($MicHandler, "", "", 100); 
-	}
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    UpdateStatus($Sound_return);
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-		
-	$Pattern = "(-?)\\d{3,5}((.|\n|\r)*?)";
-	UpdateStatus($Sound_return);
-	($FrameFound,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($Sound_return,$Pattern);
-
-     UpdateStatus($FrameFound);
-     if($FrameFound)
-      {
-	    UpdateStatus("Frame found!");
-		break;
-      }
-     // SleepMilliseconds(100);      
-	  // sample unit to stop sound
-      //$return= SerialSendMilliseconds($Launchpad_Handle1, "s\r\n", "", 100);  
-    }
-//    //$return= SerialSendMilliseconds($Launchpad_Handle1, "s\r\n", "", 100);  
-//	
-	if($FrameFound)// frame found within the retry count
-    {
-		// frame shall be found until here.
-		// extract string
-		// 1. extract the patter1 with "symbol && 3-5 digit && symbol"
-		// 2. extract thepattern2 3-5 digit value with -?
-		
-//		$InputStr=$MatchedStr;
-//		UpdateStatus($MatchedStr);
-//		$Pattern1="[^A-Z,a-z,0-9]\\d{3,5}[^A-Z,a-z,0-9]";
-		$Pattern2="(-?)\\d{3,5}";
-//		($Success1,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($InputStr,$Pattern1);
-//		if ((!$Success1)&& ($Cont_Retry < $Max_Retry))
-//		{
-//			UpdateStatus("[^A-Z,a-z,0-9]\\d{3,5}[^A-Z,a-z,0-9], retry");
-//			goto EvalSound_Retry;	
-//		}
-		// successful of getting 1st pattern
-//		if ($Success1)
-//		{
-			UpdateStatus($MatchedStr);
-			($Success,$ErrMsg,$Result_Value)=cRE_GeneralSingle($MatchedStr,$Pattern2);    
-			if ((!$Success)&& ($Cont_Retry < $Max_Retry))
-			{
-				UpdateStatus("(-?)\\d{3,5} not found, retry");
-				goto EvalSound_Retry;
-			}	
-			if ($Success)
-			{
-				UpdateStatus($Result_Value);	
-				if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
-				{	      
-				UpdateStatus("not in spec, retry");
-				goto EvalSound_Retry;
-				}				
-			}
-//		}
-    }
-	if(!$FrameFound)// frame found within the retry count
-    {
-	  UpdateStatus("Frame not found");
-	}	
-	
-	RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true); 
+  call GeneralTest1();
   
   return ;
 }
@@ -1222,7 +1145,7 @@ function Gb18_genkey()
       $count0 =0;
       Label genkey_retry:
 	  
-      $Keyreturn= SerialSendMilliseconds($Launchpad_Handle, "genkey\r\n", "", 10000);  
+      $Keyreturn= SerialSendMilliseconds($Launchpad_Handle, "genkey\r\n", "", 6000);  
      
 	         
       

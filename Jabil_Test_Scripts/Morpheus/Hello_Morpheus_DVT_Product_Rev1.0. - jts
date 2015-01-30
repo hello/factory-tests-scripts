@@ -20,27 +20,29 @@
 SetFinalizeFunction("Cleanup"); 
 call Gb_BarcodeCheck();
 call Gb_Instrument_Init();
+
+//program here
+call Gb08_Program_M4F();
+
 call BootCheck();// fast boot check with log level 40
+
 call Gb02_rssi();
-call BootTopBoard();
 
 call Gb15_dust_sensor();
 
 //sample play
 $return= SerialSendMilliseconds($Launchpad_Handle1, "p 60 48000  RINGTONE/tone.raw\r\n" , "", 100);  
 
-call Gb10_VER_Check();
-
 $MicHandler=CopyVariable($Launchpad_Handle);
 call Gb00_OCT();
 
+call Gb10_VER_Check();
 call Gb10_SD_Card_Read_Write();
-
 
 call Gb03_connect();
 
 call Gb08_LED_1stOFF();
-SleepMilliseconds(1500);// wait for LED to off
+SleepMilliseconds(1000);// wait for LED to off
 call Gb13_lightOFF();
 call Gb08_LED_ON();
 call Gb13_lightON();
@@ -88,14 +90,8 @@ $return= SerialSendMilliseconds($Launchpad_Handle, "gesture_count\r\n" , "", 100
 //SleepMilliseconds(2500);
 
 call Gb18_genkey();
+
 call Gb21_GestureCnt();// reset gesture count before run this test
-
-call Gb08_Program_M4F();
-
-call BootCheck();// fast boot check with log level 40
-call Gb10_ProdVER_Check();
-
-
 
 End ;
 ////////////////////////////////////////main Script///////////////////////////////////////////////////////
@@ -167,6 +163,13 @@ function BootCheck()
   UpdateStatus($return);
   $Result = StringContains($return,"FreeRTOS");
   
+//  $ProxError1=StringContains($return,"->1");
+//  $ProxError2=StringContains($return,"->0");
+//  if(($ProxError1)||($ProxError2))
+ //  {
+  // RecordMeasurementPassFail("Prox error found (->1,->0) found","Failed","Failed",true,false);
+  // }
+  
    if($Result)
    {
      break;
@@ -179,7 +182,7 @@ function BootCheck()
    //sample board
    SerialSendMilliseconds($Launchpad_Handle1, "loglevel 40\r\n", "", 100); 
    SerialSendMilliseconds($Launchpad_Handle1, "led\r\n", "", 100);
-   SerialSendMilliseconds($Launchpad_Handle1, "led stop\r\n", "", 100); 
+   SerialSendMilliseconds($Launchpad_Handle1, "led stop\r\n", "", 1000); 
     
   
  RecordMeasurementPassFail("FreeRTOS found","passed","passed",true,true);
@@ -292,7 +295,7 @@ Label RetryVera:
   $VER_Num = StringCut($VER_return,"ver: ",8);
   
   UpdateStatus($VER_Num);
-  $Exp_VER ="23d5d2ad";
+  $Exp_VER ="4cc3ec0a";
   $Result = StringComparison($VER_Num,$Exp_VER,"==");
   RecordMeasurementPassFail($TestName,$VER_Num,"Sting",true,$Result);
  
@@ -1222,7 +1225,7 @@ function Gb18_genkey()
       $count0 =0;
       Label genkey_retry:
 	  
-      $Keyreturn= SerialSendMilliseconds($Launchpad_Handle, "genkey\r\n", "", 10000);  
+      $Keyreturn= SerialSendMilliseconds($Launchpad_Handle, "genkey\r\n", "", 6000);  
      
 	         
       
@@ -1458,11 +1461,33 @@ SleepMilliseconds(1000);
 $FileContents = FileReadAllText("D:\\factory_release_update-only\\log.txt");
 UpdateStatus($FileContents);
 //////////////////////////////////////////////////////////////////////////////////////////////
-$String4="Progress (/sys/mcuimg1.bin): 100%";
+
+$String1="Progress (SRAM): 100%";
+$String3="Progress (/sys/mcuimg1.bin): 100%";
+$String8="> Finish Executing operation: program";
+
+$Result1 = StringContains($FileContents,$String1);
+UpdateStatus($Result1);
+$Result2 = StringContains($FileContents,$String2);
+UpdateStatus($Result2);
+$Result3 = StringContains($FileContents,$String3);
+UpdateStatus($Result3);
 $Result4 = StringContains($FileContents,$String4);
-$Result=($Result4);
+UpdateStatus($Result4);
+$Result5 = StringContains($FileContents,$String5);
+UpdateStatus($Result5);
+$Result6 = StringContains($FileContents,$String6);
+UpdateStatus($Result6);
+$Result7 = StringContains($FileContents,$String7);
+UpdateStatus($Result7);
+$Result8 = StringContains($FileContents,$String7);
+UpdateStatus($Result8);
+$Result9 = StringContains($FileContents,"<End of command>");
+UpdateStatus($Result9);
+$Result=($Result1&&$Result3&&$Result8&&$Result9);
 UpdateStatus($Result);
 RecordMeasurementPassFail($TestName,"True","String",true,$Result);
+
 
   // set to normal pin
   $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50); //program pin
