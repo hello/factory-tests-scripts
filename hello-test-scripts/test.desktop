@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=TestStation
+Exec=/home/hello/provision.pl
+Icon=utilities-terminal
+Type=Application
+Comment=
+Path=
+Terminal=true
+StartupNotify=false
