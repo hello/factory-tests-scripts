@@ -8,7 +8,7 @@ use warnings;
 my $port = "/dev/ttyUSB0";
 my $line;
 
-`stty -brkint -icrnl ixoff -imaxbel -opost -onlcr -isig -icanon -echo -echoe -F /dev/ttyUSB0 115200`;
+`stty -brkint -icrnl ixoff -imaxbel -opost -onlcr -isig -icanon -F /dev/ttyUSB0 115200`;
 
 open (SERIALPORT, "+<", "$port") or die "can't open $port. ";
 usleep(100000);
@@ -62,7 +62,7 @@ print "
 ";
 
 while( $line = <SERIALPORT>)  {
-	print $line;
+	#print $line;
 	  if( $line =~ /FreeRTOS/ ) {
 `clear`;
 		  print "
@@ -80,10 +80,11 @@ while( $line = <SERIALPORT>)  {
 ";
 		  print SERIALPORT "disconnect\r\n";
 		  print SERIALPORT "boot\r\n";
-		  usleep(500_000);
+		  usleep(1_000_000);
 	  }
-	  if( $line =~ /SSID RSSI UNIQUE/ ) {
-		  print SERIALPORT "connect hello-prov myfunnypassword 2\r\n";
+	  if( $line =~ /PAIRING MODE/ ) {
+		usleep(1_000_000);		  
+		print SERIALPORT "connect hello-prov myfunnypassword 2\r\n";
 `clear`;
 		  print "
 
@@ -98,10 +99,11 @@ while( $line = <SERIALPORT>)  {
 
 
 ";
-		  usleep(500_000);
-          }
+
+		  ualarm(20_000_000);
+         }
 	  if( $line =~ /SL_NETAPP_IPV4_ACQUIRED/) {
-		  usleep(500_000);
+		  usleep(1_000_000);
 `clear`;
 		  print "
 
@@ -117,7 +119,7 @@ while( $line = <SERIALPORT>)  {
 
 ";
 		  print SERIALPORT "testkey\r\n";
-		  usleep(500_000);
+		  usleep(1_000_000);
 		  ualarm(20_000_000);
 	  }
 	  if( $line =~ /factory key: ([0-9A-Z]+)/ ) {
@@ -178,8 +180,9 @@ while( $line = <SERIALPORT>)  {
 
 
 ";
+			  usleep(1_000_000);
 			  print SERIALPORT "testkey\r\n";
-			  usleep(500_000);
+			  usleep(1_000_000);
 			  ualarm(20_000_000);
 		  } else {
 `clear`;
@@ -217,7 +220,7 @@ while( $line = <SERIALPORT>)  {
 
 ";
 		  print SERIALPORT "testkey\r\n";
-		  usleep(500_000);
+		  usleep(1_000_000);
 	  }
 	  if( $line =~ / test key success/ ) {
 	          ualarm(0);
@@ -279,28 +282,6 @@ ttG080ftLLLfffftt1i;;::;:::::;;i:;ifLGGGGGGGGG0GGCCCCCCCCGCCCCGCCCCCCCCCCLLCCLLC
 8888888088ffftfftt11iiiittttttf0GGGGGGGGCGGGGGGG0GGCGCGCGCCGCCCCCCLCLCCLCCCCLCCCCCCCCCCC0GLCGG
 88800880888800ftff11111ttL8888000GGGGGCCGCCCCGGGGGCCCCCCCCLCCCLCCCLCLCCCCCCCLCCLLCCCCCCCGCGGC
 ';
-usleep(2_000_000);
-print
-"
-   #    ####### #######    #     #####  #     #         #     # ####### #     #
-  # #      #       #      # #   #     # #     #         ##    # #       #  #  #
- #   #     #       #     #   #  #       #     #         # #   # #       #  #  #
-#     #    #       #    #     # #       #######         #  #  # #####   #  #  #
-#######    #       #    ####### #       #     #         #   # # #       #  #  #
-#     #    #       #    #     # #     # #     #         #    ## #       #  #  #
-#     #    #       #    #     #  #####  #     #         #     # #######  ## ##
-
-
-######  ####### #     #   ###    #####  #######
-#     # #       #     #    #    #     # #
-#     # #       #     #    #    #       #
-#     # #####   #     #    #    #       #####
-#     # #        #   #     #    #       #
-#     # #         # #      #    #     # #
-######  #######    #      ###    #####  #######
-
-
-";
 	  }
 	  if( $line =~ /test key not valid/ ) {
 	          ualarm(0);
@@ -328,8 +309,9 @@ print
 
 
 ";
+		  usleep(1_000_000);
 		  print SERIALPORT "genkey\r\n";
-		  usleep(500_000);
+		  usleep(1_000_000);
 	  }
 }
 
