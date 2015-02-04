@@ -1,37 +1,48 @@
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//File Name:			9398_Hello_Morpheus_DVT_Product_Test.jts
-//Customer: 			Hello
-//Project:   			9398_Hello_Morpheus DVT FVT tester
-//Creator:   			 Yueh_Li
-//Revision:			Debug
-//Released:			2014/12/011
-//Description:		The Script is used for 9398_Hello_Morpheus_DVT_Product_Test_esting Process
-//Revision History:		Revsion	Release date		Owner
-//				Debug		2014/12/011		
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//****************************************************************************************//
+//****************************************************************************************//
+//***                    Jabil GTS HuangPu Script File                                 ***//
+//***  Product name						: Hello_Morpheus_DVT_Product                   ***//
+//***  Script Revision					: V1.0                                         ***//
+//***  Script Revision Date				: 31 Jan 2015                                  ***//
+//***  Jabil Test Revision				: 7.19.01						  			   ***//
+//***  3rd Party Test Program(Version)	: NA										   ***//  
+//***  Custom J.Test Library(Version)	: NA						     			   ***//
+//***  Description						: This Script is developed for Hello Morpheus  ***//
+//***									  Assembly FVT1 Test Station.      			   ***//
+//***  Created by						: Yueh_Li                                      ***//
+//***  Modify by						: BK Ong/ Chris                                ***//
+//**************************************************************************************//
+//**************************************************************************************//
 
+//****************************************************************************************//
+//****************************************************************************************//
+//***                                      Release History                             ***//
+//***  ReV1.0    Formal Released                     29 Jan 15      BK / Chris         ***//
+//***  ReV1.1    Changed ringtone argument,          31 Jan 15      Chris              ***//
+//***            fix timing issue, changed OCTget Low limit                            ***//
+//***  Rev1.2    Changed Light off                    2 Feb 15      BK                 ***//1500
+// ***** Rev    Changed Oct get lower threshold to 1000 Ben
+//***            $Pattern = "(-?)\\d{1,5}";                                            ***//
+//***  Rev1.4    fixed the genkey by eliminate continue send cmd 2 Feb 15      BK                 ***//
+//****************************************************************************************//
+//****************************************************************************************//
 
-//////////////////////////////////////////////////////////////////////// Main Function ///////////////////////////////////////////////////
-
-
-    //~ End;
-
+//********************************Main Function******************************************//
 
 SetFinalizeFunction("Cleanup"); 
 call Gb_BarcodeCheck();
 call Gb_Instrument_Init();
 call BootCheck();// fast boot check with log level 40
 call Gb02_rssi();
-call BootTopBoard();
 
 call Gb15_dust_sensor();
 
 //sample play
-$return= SerialSendMilliseconds($Launchpad_Handle1, "p 60 48000  RINGTONE/tone.raw\r\n" , "", 100);  
+$return= SerialSendMilliseconds($Launchpad_Handle, "p 57 48000  RINGTONE/tone.raw\r\n" , "", 100);  
 
 call Gb10_VER_Check();
 
-$MicHandler=CopyVariable($Launchpad_Handle);
+$MicHandler=CopyVariable($Launchpad_Handle1);
 call Gb00_OCT();
 
 call Gb10_SD_Card_Read_Write();
@@ -39,9 +50,9 @@ call Gb10_SD_Card_Read_Write();
 
 call Gb03_connect();
 
-call Gb08_LED_1stOFF();
-SleepMilliseconds(1500);// wait for LED to off
+//call Gb08_LED_1stOFF();
 call Gb13_lightOFF();
+//SleepMilliseconds(3500);// wait for LED to off, 1.5 second modified by bk
 call Gb08_LED_ON();
 call Gb13_lightON();
 call Gb08_LED_OFF();
@@ -49,11 +60,11 @@ SleepMilliseconds(1000);
 call Gb13_lightOFF();
 
 call Gb20_OCTget();
-$return= SerialSendMilliseconds($Launchpad_Handle1, "s\r\n" , "", 100);  
+$return= SerialSendMilliseconds($Launchpad_Handle, "s\r\n" , "", 100);  
 //uut play
-$return= SerialSendMilliseconds($Launchpad_Handle, "p 60 48000  RINGTONE/tone.raw\r\n" , "", 100);  
+$return= SerialSendMilliseconds($Launchpad_Handle1, "p 57 48000  RINGTONE/tone.raw\r\n" , "", 100);  
  
-$MicHandler=CopyVariable($Launchpad_Handle1);
+$MicHandler=CopyVariable($Launchpad_Handle);
 call Gb00_OCT();//speaker
 
 call ZOGLAB_Measure();
@@ -66,7 +77,11 @@ call Gb04_disconnect();
 call Gb03_DisconnectStatus();
 
 call Gb20_OCTget();
-$return= SerialSendMilliseconds($Launchpad_Handle, "s\r\n" , "", 100);
+$return= SerialSendMilliseconds($Launchpad_Handle1, "s\r\n" , "", 100); //stop the sound
+
+call Gb18_genkey();
+
+call BootTopBoard();
 
 call Gb14_Prox();
 
@@ -87,13 +102,12 @@ $return= SerialSendMilliseconds($Launchpad_Handle, "gesture_count\r\n" , "", 100
 //call BootTopBoard();
 //SleepMilliseconds(2500);
 
-call Gb18_genkey();
 call Gb21_GestureCnt();// reset gesture count before run this test
 
-call Gb08_Program_M4F();
-
-call BootCheck();// fast boot check with log level 40
-call Gb10_ProdVER_Check();
+// Uncomment only on new FW ECO from hello, place the new FW in D:\factory_release_update-only\targets
+//call Gb08_Program_M4F();
+//all BootCheck();// fast boot check with log level 40
+//call Gb10_ProdVER_Check();
 
 
 
@@ -198,70 +212,26 @@ function BootTopBoard()
  RecordMeasurementPassFail("booting top board","passed","passed",true,true);
   return;
 }
-function Gb10_VER_Checka()
-{
-  $Result = false;
-  $TestName = "Check FW version";
-  SetTestName($TestName);
 
-  $cont =0;
-  while( $cont < 3)
-  {
-  
-  $VER_return = SerialSendMilliseconds($Launchpad_Handle, "ver\r\n", "", 100); 
-  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-  UpdateStatus($VER_return);
-  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-$VerCount=0;
-Label RetryVer:
-  UpdateStatus($VER_return);
-//  $SerRtn=$VER_return;
-//      call filterSymbol();
-//      $VER_return=$SerRtn;
-  $ExpectedStr = StringContains($VER_return,"ver:");
-  if ((!$ExpectedStr) && ($VerCount <= 30))
-  {
-    $VER_return = SerialSendMilliseconds($Launchpad_Handle, "", "", 100);
-	UpdateStatus("Retry...");
-	$VerCount=$VerCount+1;
-	goto RetryVer;
-  } 
-  
-  $VER_length = StringLength($VER_return);
-  if($VER_length > 0)
-  {
-    break;
-  }
-  
-  SleepMilliseconds(100);
-  $cont = $cont +1;
-  }
-
- 
-  //~ $VER_Num = StringCut($VER_return,"ver: ",1);
-  $VER_Num = StringCut($VER_return,"ver: ",1);
-  
-  UpdateStatus($VER_Num);
-  $Exp_VER ="1";
-  $Result = StringComparison($VER_Num,$Exp_VER,"==");
-  RecordMeasurementPassFail($TestName,$VER_Num,"Sting",true,$Result);
- 
-  return;
-}
 function Gb10_VER_Check()
 {
   $Result = false;
   $TestName = "Check FW version";
   SetTestName($TestName);
+  $VER_return="";
+$VER_return1 = SerialSendMilliseconds($Launchpad_Handle, "ver\r\n", "", 100); 
 
   $cont =0;
   while( $cont < 3)
   {
   
-  $VER_return = SerialSendMilliseconds($Launchpad_Handle, "ver\r\n", "", 100); 
+  $VER_return=$VER_return+$VER_return1;
   UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
   UpdateStatus($VER_return);
   UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  
+  
+  
 $VerCount=0;
 Label RetryVera:
   UpdateStatus($VER_return);
@@ -285,6 +255,7 @@ Label RetryVera:
   
   SleepMilliseconds(100);
   $cont = $cont +1;
+  $VER_return1 = SerialSendMilliseconds($Launchpad_Handle, "", "", 100); 
   }
 
  
@@ -374,13 +345,18 @@ function Gb01_TOPver_Check()
   $Cont_Retry=0;
   $Max_Retry=5;
   $Result=false;
+  $return="";
+  $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 100)
+  $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 100); 
+  
+  
   while ((!$Result)&& ($Cont_Retry < $Max_Retry))
   {
-    $return= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 100);  
+    $return = $return+ $return1;
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($return);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    
+	
     $Pattern = "0.5.3";	
     ($Success,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($return,$Pattern);
 	
@@ -394,6 +370,7 @@ function Gb01_TOPver_Check()
 	}
 	SleepMilliseconds(100);
     $Cont_Retry= $Cont_Retry + 1;
+	$return1= SerialSendMilliseconds($Launchpad_Handle, "", "", 100);  
   }
   RecordMeasurementPassFail("top board FW version",$Success,"bool",true,$Success);	
  //$return= SerialSendMilliseconds($Launchpad_Handle, "^ dtm\r\n", "", 1000);  
@@ -447,7 +424,7 @@ function Gb03_connect()
   $Max_Retry=10;
   $Result=false;
   
-   $return= SerialSendMilliseconds($Launchpad_Handle, "connect TP-LINK_A1A2AC key 0\r\n", "", 100);  
+   $return= SerialSendMilliseconds($Launchpad_Handle, "connect TP-LINK_A1A2AC key 0\r\n", "", 1000);  
     UpdateStatus($return);
 
   
@@ -463,10 +440,12 @@ function Gb03_Status()
   $Cont_Retry=0;
   $Max_Retry=10;
   $Result=false;
+  $return="";
+  $return1= SerialSendMilliseconds($Launchpad_Handle, "status\r\n", "", 500);  
   
   while ((!$Result)&& ($Cont_Retry < $Max_Retry))
   {
-    $return= SerialSendMilliseconds($Launchpad_Handle, "status\r\n", "", 100);  
+    $return= $return+$return1;
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($return);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
@@ -477,9 +456,14 @@ function Gb03_Status()
 	   {
 	     break;
 	   }	  
-
+  $return= SerialSendMilliseconds($Launchpad_Handle, "disconnect\r\n", "", 100); 
+	   Sleep(1);
+   $return= SerialSendMilliseconds($Launchpad_Handle, "connect TP-LINK_A1A2AC key 0\r\n", "", 3000);  
+    //~ UpdateStatus($return);
+    
 	SleepMilliseconds(100);
     $Cont_Retry= $Cont_Retry + 1;
+	$return1= SerialSendMilliseconds($Launchpad_Handle, "", "", 500);  
   }
   
     RecordMeasurementPassFail("Wifi_connect",$Result,"bool",true,$Result);	//TP-LINK_A1A2AC
@@ -494,10 +478,12 @@ function Gb03_DisconnectStatus()
   $Cont_Retry=0;
   $Max_Retry=10;
   $Result=false;
+   $return="";
+  $return1= SerialSendMilliseconds($Launchpad_Handle, "status\r\n", "", 500);  
   
   while ((!$Result)&& ($Cont_Retry < $Max_Retry))
   {
-    $return= SerialSendMilliseconds($Launchpad_Handle, "status\r\n", "", 100);  
+    $return= $return+$return1;
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($return);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
@@ -511,6 +497,7 @@ function Gb03_DisconnectStatus()
 
 	SleepMilliseconds(100);
     $Cont_Retry= $Cont_Retry + 1;
+	$return1= SerialSendMilliseconds($Launchpad_Handle, "", "", 500); 
   }
   
     RecordMeasurementPassFail("Wifi_connect",$Result,"bool",true,$Result);	//TP-LINK_A1A2AC
@@ -549,8 +536,12 @@ function Gb08_LED_OFF()
   UpdateStatus("****************************Gb08_LED_OFF*********************************"); 
 
   // $return= SerialSendMilliseconds($Launchpad_Handle, "led 254 254 254 1 1 1 0\r\n", "", 100);  
-  $return= SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 100);  
+  $return= SerialSendMilliseconds($Launchpad_Handle1, "led stop\r\n", "", 500);  // request from ben to ensure sample is off
    UpdateStatus($return);
+  SleepMilliseconds(500);
+  $return= SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 500);  
+   UpdateStatus($return);
+   
    
 
   RecordMeasurementPassFail("LED OFF",$Result,"bool",true,true);	//TP-LINK_A1A2AC
@@ -562,7 +553,8 @@ function Gb08_LED_1stOFF()
   UpdateStatus("****************************Gb08_LED_OFF*********************************"); 
 
   // $return= SerialSendMilliseconds($Launchpad_Handle, "led 254 254 254 1 1 1 0\r\n", "", 100);  
-  $return= SerialSendMilliseconds($Launchpad_Handle, "animate stop\r\n", "", 100);  
+   
+  $return= SerialSendMilliseconds($Launchpad_Handle, "animate stop\r\n", "", 500);  
    UpdateStatus($return);
    
 
@@ -582,7 +574,7 @@ function Gb10_SD_Card_Read_Write()
     UpdateStatus($return2);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
 	
-	 $return1= SerialSendMilliseconds($Launchpad_Handle, "ls\r\n", "", 1000);  //   
+	 $return1= SerialSendMilliseconds($Launchpad_Handle, "ls\r\n", "", 1500);  //   
  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($return1);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
@@ -597,7 +589,7 @@ function Gb10_SD_Card_Read_Write()
     UpdateStatus($return1);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
 	$return=$return+$return1;
-  $Result = StringContains($return,"tone.raw");
+  $Result = StringContains($return,"ORG005.raw");
       
    if($Result )
       {
@@ -606,7 +598,7 @@ function Gb10_SD_Card_Read_Write()
       $count=$count+1;
     }
   
-  $Result1 = StringContains($return,"ORG005.raw");
+  $Result1 = StringContains($return,"tone.raw");
   $Result=$Result1 && $Result;
   $Result1 = StringContains($return,"STAR005.raw");
   $Result=$Result1 && $Result;
@@ -690,7 +682,7 @@ function Gb13_lightON()
   $SendCmd="light";
   $CmdTimeOut=100;
   $UpperLimit=70000;
-  $LowerLimit=10000;
+  $LowerLimit=5000;
   $Pattern = "(-?)\\d{3,5}";
   $Max_Retry=5;
   call GeneralTest1();
@@ -705,8 +697,8 @@ function Gb13_lightOFF()
   $CmdTimeOut=100;
   $UpperLimit=2000;
   $LowerLimit=0;
-  $Pattern = "(-?)\\d{3,5}";
-  $Max_Retry=5;
+  $Pattern = "(-?)\\d{1,5}";
+  $Max_Retry=10;
   call GeneralTest1();
 
   return;
@@ -716,7 +708,7 @@ function Gb21_GestureCnt()
   $TestName="Gesture_count_Test";
   $SendCmd="gesture_count";
   $CmdTimeOut=100;
-  $UpperLimit=0;
+  $UpperLimit=1;
   $LowerLimit=0;
   $Pattern = "\\d{1}";
   $Max_Retry=1;
@@ -744,14 +736,19 @@ function GeneralTest1()
   $Cont_Retry = 0;
   $Result_Value=0;
   $FrameFound=false;
+  $TempStr=$SendCmd + "\r\n";
+  
 Label General1_Retry:
 
+    $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
+$CmdRtn="";
   while($Cont_Retry < $Max_Retry)
   {
 	$Cont_Retry = $Cont_Retry + 1;
-	$TempStr=$SendCmd + "\r\n";
-    $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr , "", $CmdTimeOut); 
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+//	$TempStr=$SendCmd + "\r\n";
+//    $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
+    $CmdRtn=$CmdRtn+$CmdRtn1;
+	UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($CmdRtn);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
 		
@@ -766,11 +763,12 @@ Label General1_Retry:
     }
       SleepMilliseconds(100);      
    }
-	
+	  //~ OperatorPrompt("Programming Completed","OK");
 	UpdateStatus($Result_Value);	
 				if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
 				{	      
 				  UpdateStatus("not in spec, retry");
+				  $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
 				  goto General1_Retry;
 				}		
 	
@@ -782,93 +780,6 @@ Label General1_Retry:
 return;
 }
 
-//$TestName="light_Test";
-//$SendCmd="dust"
-//$TrimStr="temp is "
-//$CmdTimeOut=3000
-//$UpperLimit=
-//$LowerLimit=
-function GeneralTest()
-{
-  $TempStr="****************************" & $TestName & "*********************************";
-  UpdateStatus($TempStr); 
-  SetTestName($TestName);
-  
-  $Max_Retry=5;
-  $Cont_Retry = 0;
-  $Result_Value=0;
-  $FrameFound=false;
-Label General_Retry:
-
-  while($Cont_Retry < $Max_Retry)
-  {
-	$Cont_Retry = $Cont_Retry + 1;
-	$TempStr=$SendCmd + "\r\n";
-    $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr , "", $CmdTimeOut); 
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    UpdateStatus($CmdRtn);
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-		
-	$Pattern = $SendCmd ;//+ "((.|\n|\r)*?)Command";
-	UpdateStatus($Pattern);
-	($FrameFound,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($CmdRtn,$Pattern);
-    UpdateStatus($FrameFound);
-    if($FrameFound)
-    {
-	  UpdateStatus("Frame found!");
-	  break;
-    }
-      SleepMilliseconds(100);      
-   }
-	
-	if($FrameFound)// frame found within the retry count
-    {
-		// frame shall be found until here.
-		// extract string
-		// 1. extract the patter1 with "symbol && 3-5 digit && symbol"
-		// 2. extract thepattern2 3-5 digit value with -?
-		
-		$InputStr=$MatchedStr;
-		UpdateStatus($MatchedStr);
-		$Pattern1="[^A-Z,a-z]\\d{3,5}";
-		$Pattern2="(-?)\\d{3,6}";
-		//$Pattern2="\\d{3,5}";
-		($Success1,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($InputStr,$Pattern1);
-		if ((!$Success1)&& ($Cont_Retry < $Max_Retry))
-		{
-			UpdateStatus("[^A-Z,a-z]\\d{3,5} , retry");
-			goto General_Retry;	
-		}
-		// successful of getting 1st pattern
-		if ($Success1)
-		{
-			UpdateStatus($MatchedStr);
-			($Success,$ErrMsg,$Result_Value)=cRE_GeneralSingle($MatchedStr,$Pattern2);    
-			if ((!$Success)&& ($Cont_Retry < $Max_Retry))
-			{
-				UpdateStatus("[-?]\\d{3,5} not found, retry");
-				goto General_Retry;
-			}	
-			if ($Success)
-			{
-				UpdateStatus($Result_Value);	
-				if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
-				{	      
-				  UpdateStatus("not in spec, retry");
-				  goto General_Retry;
-				}				
-			}
-		}
-    }
-	if(!$FrameFound)// frame found within the retry count
-    {
-	  UpdateStatus("Frame not found");
-	}	
-	
-	RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
-
-return;
-}
 
 
 function Gb14_Prox()
@@ -882,7 +793,8 @@ function Gb14_Prox()
  
   $GestureWin = OperatorPicturePromptNonBlockingWithButtons("Wave you hand on top of UUT","D:\\9398 hello tester_script\\ProxTest.jpg", "CENTER", 500,500,"Failed","Abort");
    
-  $Pattern = "Gesture:((.|\n|\r)*?)WAVE";
+//  $Pattern = "Gesture:((.|\n|\r)*?)WAVE";
+    $Pattern = "WAVE";
   $FailClick = false;
   $AbortClick = false;
   $GestFound = false;
@@ -929,20 +841,28 @@ $TempStr="****************************" & $TestName & "*************************
   $Cont_Retry = 0;
   $Result_Value=0;
   $FrameFound=false;
+  $TempStr=$SendCmd + "\r\n";
+  
 Label dust_Retry:
 
+  $CmdRtnA= SerialSendMilliseconds($Launchpad_Handle,$TempStr , "", $CmdTimeOut); 
+  $CmdRtnB= SerialSendMilliseconds($Launchpad_Handle1,$TempStr , "", $CmdTimeOut);
+  $CmdRtn="";
+  $CmdRtn1="";
   while($Cont_Retry < $Max_Retry)
   {
 	$Cont_Retry = $Cont_Retry + 1;
-	$TempStr=$SendCmd + "\r\n";
-    $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr , "", $CmdTimeOut); 
+//	$TempStr=$SendCmd + "\r\n";
+//    $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr , "", $CmdTimeOut); 
+    $CmdRtn=$CmdRtn+$CmdRtnA;
     UpdateStatus("^^^^^^^^^UUT^^^^^^^^^^^");
     UpdateStatus($CmdRtn);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
 	
 	// sample
-	$CmdRtn1= SerialSendMilliseconds($Launchpad_Handle1,$TempStr , "", $CmdTimeOut); 
-    UpdateStatus("^^^^^^Sample^^^^^^^^^^^^^");
+//	$CmdRtn1= SerialSendMilliseconds($Launchpad_Handle1,$TempStr , "", $CmdTimeOut); 
+    $CmdRtn1=$CmdRtn1+$CmdRtnB;
+	UpdateStatus("^^^^^^Sample^^^^^^^^^^^^^");
     UpdateStatus($CmdRtn1);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
 	
@@ -957,10 +877,15 @@ Label dust_Retry:
 	  UpdateStatus("Frame found!");
 	  break;
     }
-      SleepMilliseconds(100);      
+      SleepMilliseconds(100); 
+	$CmdRtnA= SerialSendMilliseconds($Launchpad_Handle,"" , "", $CmdTimeOut);
+	$CmdRtnB= SerialSendMilliseconds($Launchpad_Handle1,"" , "", $CmdTimeOut);
+	  
    }
+   
+   
    UpdateStatus($UUT_Value);
-	UpdateStatus($Sample_Value);
+   UpdateStatus($Sample_Value);
    
    $DiffValue=$UUT_Value-$Sample_Value;
 	$DiffValue= Abs($DiffValue);
@@ -981,7 +906,7 @@ Label dust_Retry:
 				
 				if($UUT_Value < 50 )
 				{	      
-				   RecordMeasurementPassFail($TestName,$UUT_Value,"failed",true,false);
+				   RecordMeasurementPassFail($TestName,$UUT_Value,"UUT value less than 50",true,false);
 				}
 	
 	RecordMeasurementWithLimits($TestName,$DiffValue,"",true,$LowerLimit,$UpperLimit,true);  
@@ -990,123 +915,9 @@ Label dust_Retry:
   
   return ;
 }
-//Launchpad_Handle1
-function Gb16_DAC()
-{
-    $TestName="Gb16_DAC";
-	$SpeakerHandler = CopyVariable($Launchpad_Handle1);
-	$MicHandler = CopyVariable($Launchpad_Handle);
-//	$SpeakerHandler=$Launchpad_Handle1;
-//	$MicHandler=$Launchpad_Handle;
-	$UpperLimit=15500;
-	$LowerLimit=3000;
-    call GeneralSoundTest();
-   
-  return ;
-}
-function Gb17_Speaker()
-{
-	$TestName="Gb17_Speaker";
-	$SpeakerHandler=CopyVariable($Launchpad_Handle);
-	$MicHandler=CopyVariable($Launchpad_Handle1);
-	$UpperLimit=15500;
-	$LowerLimit=3000;
-    call GeneralSoundTest();
 
-  return ;
-}
 
-//$TestName
-//$SpeakerHandler=$Launchpad_Handle1
-//$MicHandler=$Launchpad_Handle
-//$UpperLimit=15500;
-//$LowerLimit=3000;
-function GeneralSoundTest()
-{
-  $TempStr="****************************" & $TestName & "*********************************";
-  UpdateStatus($TempStr); 
-  SetTestName($TestName);
-  
-  $Max_Retry=5;
-  $Cont_Retry = 0;
-  $Result_Value=0;
-  $FrameFound=false;
-Label Sound_Retry:
 
-  while($Cont_Retry < $Max_Retry)
-  {
-	$Cont_Retry = $Cont_Retry + 1;
-    $return= SerialSendMilliseconds($SpeakerHandler, "p 60 48000  RINGTONE/tone.raw\r\n" , "", 500);  
-    UpdateStatus($return);
-    Sleep(3);
-    $Sound_return= SerialSendMilliseconds($MicHandler, "oct\r\n", "", 10000);  
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    UpdateStatus($Sound_return);
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-		
-	$Pattern = "octogram((.|\n|\r)*?)Command";
-	UpdateStatus($Sound_return);
-	($FrameFound,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($Sound_return,$Pattern);
-
-     UpdateStatus($FrameFound);
-     if($FrameFound)
-      {
-	    UpdateStatus("Frame found!");
-		break;
-      }
-      SleepMilliseconds(500);      
-	  // sample unit to stop sound
-      $return= SerialSendMilliseconds($SpeakerHandler, "s\r\n", "", 1000);  
-    }
-    $return= SerialSendMilliseconds($SpeakerHandler, "s\r\n", "", 1000);  
-	
-	if($FrameFound)// frame found within the retry count
-    {
-		// frame shall be found until here.
-		// extract string
-		// 1. extract the patter1 with "symbol && 3-5 digit && symbol"
-		// 2. extract thepattern2 3-5 digit value with -?
-		
-		$InputStr=$MatchedStr;
-		UpdateStatus($MatchedStr);
-		$Pattern1="[^A-Z,a-z,0-9]\\d{3,5}[^A-Z,a-z,0-9]";
-		$Pattern2="(-?)\\d{3,5}";
-		($Success1,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($InputStr,$Pattern1);
-		if ((!$Success1)&& ($Cont_Retry < $Max_Retry))
-		{
-			UpdateStatus("[^A-Z,a-z,0-9]\\d{3,5}[^A-Z,a-z,0-9], retry");
-			goto Sound_Retry;	
-		}
-		// successful of getting 1st pattern
-		if ($Success1)
-		{
-			UpdateStatus($MatchedStr);
-			($Success,$ErrMsg,$Result_Value)=cRE_GeneralSingle($MatchedStr,$Pattern2);    
-			if ((!$Success)&& ($Cont_Retry < $Max_Retry))
-			{
-				UpdateStatus("(-?)\\d{3,5} not found, retry");
-				goto Sound_Retry;
-			}	
-			if ($Success)
-			{
-				UpdateStatus($Result_Value);	
-				if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
-				{	      
-				UpdateStatus("not in spec, retry");
-				goto Sound_Retry;
-				}				
-			}
-		}
-    }
-	if(!$FrameFound)// frame found within the retry count
-    {
-	  UpdateStatus("Frame not found");
-	}	
-	
-	RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true); 
-   
-  return ;
-}
 
 
 //$MicHandler=$Launchpad_Handle
@@ -1114,7 +925,7 @@ function Gb20_OCTget()
 {
   $TestName="OCT Get";
   $UpperLimit=15500;
-$LowerLimit=3000;
+$LowerLimit=1000;
   $TempStr="****************************" & $TestName & "*********************************";
   UpdateStatus($TempStr); 
   SetTestName($TestName);
@@ -1132,7 +943,8 @@ Label EvalSound_Retry:
 //    $Sound_return= SerialSendMilliseconds($Launchpad_Handle, "oct\r\n", "", 100); 
 //    Sleep(10);
 Label SkippedPlay:
-  $Sound_return= SerialSendMilliseconds($MicHandler, "getoct\r\n", "", 100); 
+  Sleep(3);
+  $Sound_return= SerialSendMilliseconds($MicHandler, "getoct\r\n", "", 300); 
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($Sound_return);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
@@ -1218,23 +1030,43 @@ function Gb18_genkey()
       $TestName="Gb18_genkey";
      
       SetTestName($TestName);
-      $Result = false;
-      $count0 =0;
-      Label genkey_retry:
-	  
-      $Keyreturn= SerialSendMilliseconds($Launchpad_Handle, "genkey\r\n", "", 10000);  
-     
-	         
-      
+      $Result1 = false;
+	      
+	  $Max_Retry=120;
+      $Cont_Retry = 0;
+      $KeyLength=0;
+	  $Keyreturn="";
+  $KeyreturnA= SerialSendMilliseconds($Launchpad_Handle, "genkey\r\n", "", 100);  
+     while($Cont_Retry < $Max_Retry)
+     {
+	  $Keyreturn = $Keyreturn + $KeyreturnA;// accum 
 	  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-  UpdateStatus($Keyreturn);
-  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-      $Result = StringContains($Keyreturn,"factory key:");
-      
-	  
+      UpdateStatus($Keyreturn);
+      UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+	 	 
+	 $KeyLength = StringLength($Keyreturn);
+	 
+	   if ($KeyLength>=140)
+       {
+	     UpdateStatus("Key found!");
+	     break;
+       }	 
+	 $Cont_Retry = $Cont_Retry + 1;
+	 $KeyreturnA= SerialSendMilliseconds($Launchpad_Handle, "", "", 100); 
+
+     }
+          
+	
+    $Result = StringContains($Keyreturn,"factory key:");
+    if (($KeyLength>=140) && ($Result==true))
+       {
+	     $Result1=true;
+       }
+	
+	
       
       $SNPath="D:\\genkey\\"+$SerialNumber+".txt";
-      RecordMeasurementPassFail($TestName,$Result,"String",true,$Result);
+      RecordMeasurementPassFail($TestName,$Result,"String",true,$Result1);
       $FileWriteObject = FileWriteOpen($SNPath,"NEW");//D:
       FileWrite($FileWriteObject,$Keyreturn);
       FileWriteClose($FileWriteObject);
