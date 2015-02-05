@@ -24,6 +24,8 @@
 // ***** Rev    Changed Oct get lower threshold to 1000 Ben
 //***            $Pattern = "(-?)\\d{1,5}";                                            ***//
 //***  Rev1.4    fixed the genkey by eliminate continue send cmd 2 Feb 15      BK                 ***//
+//***  Rev1.5    changed SD card sequence, before ver check 5 Feb 15      BK                 ***//
+
 //****************************************************************************************//
 //****************************************************************************************//
 
@@ -34,6 +36,7 @@ call Gb_BarcodeCheck();
 call Gb_Instrument_Init();
 call BootCheck();// fast boot check with log level 40
 call Gb02_rssi();
+call Gb10_SD_Card_Read_Write();
 
 call Gb15_dust_sensor();
 
@@ -45,7 +48,7 @@ call Gb10_VER_Check();
 $MicHandler=CopyVariable($Launchpad_Handle1);
 call Gb00_OCT();
 
-call Gb10_SD_Card_Read_Write();
+
 
 
 call Gb03_connect();
@@ -79,8 +82,6 @@ call Gb03_DisconnectStatus();
 call Gb20_OCTget();
 $return= SerialSendMilliseconds($Launchpad_Handle1, "s\r\n" , "", 100); //stop the sound
 
-call Gb18_genkey();
-
 call BootTopBoard();
 
 call Gb14_Prox();
@@ -101,7 +102,7 @@ $return= SerialSendMilliseconds($Launchpad_Handle, "gesture_count\r\n" , "", 100
 //SerialSendMilliseconds($Launchpad_Handle, "loglevel 40\r\n", "", 100); 
 //call BootTopBoard();
 //SleepMilliseconds(2500);
-
+call Gb18_genkey();
 call Gb21_GestureCnt();// reset gesture count before run this test
 
 // Uncomment only on new FW ECO from hello, place the new FW in D:\factory_release_update-only\targets
@@ -347,8 +348,12 @@ function Gb01_TOPver_Check()
   $Result=false;
   $return="";
   $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 100)
+    $return = $return+ $return1;
   $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 100); 
-  
+    $return = $return+ $return1;
+  $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 100); 
+    $return = $return+ $return1;
+  $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 100); 
   
   while ((!$Result)&& ($Cont_Retry < $Max_Retry))
   {
@@ -573,8 +578,8 @@ function Gb10_SD_Card_Read_Write()
    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($return2);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-	
-	 $return1= SerialSendMilliseconds($Launchpad_Handle, "ls\r\n", "", 1500);  //   
+	SerialPurge($Launchpad_Handle);
+	 $return1= SerialSendMilliseconds($Launchpad_Handle, "ls\r\n", "", 100);  //   
  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($return1);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
@@ -1037,6 +1042,9 @@ function Gb18_genkey()
       $KeyLength=0;
 	  $Keyreturn="";
   $KeyreturnA= SerialSendMilliseconds($Launchpad_Handle, "genkey\r\n", "", 100);  
+ UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+      UpdateStatus($KeyreturnA);
+      UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
      while($Cont_Retry < $Max_Retry)
      {
 	  $Keyreturn = $Keyreturn + $KeyreturnA;// accum 
