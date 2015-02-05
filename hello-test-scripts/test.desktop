@@ -1,7 +1,7 @@
 [Desktop Entry]
 Encoding=UTF-8
 Name=TestStation
-Exec=xfce4-terminal  -T "Hello PCH Morpheus Key Test" -x /home/hello/provision.pl
+Exec=xfce4-terminal  --maximize --hide-menubar --hide-borders  -T "Hello PCH Morpheus Key Test" -x /home/hello/provision.pl
 Icon=utilities-terminal
 Type=Application
 Comment=
