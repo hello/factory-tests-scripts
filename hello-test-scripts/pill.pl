@@ -5,13 +5,7 @@ use IO::Socket::SSL;
 use strict;
 use warnings;
 
-my $port = "/dev/ttyUSB0";
 my $line;
-
-`stty -brkint -icrnl ixoff -imaxbel -opost -onlcr -isig -icanon -F /dev/ttyUSB0 115200`;
-
-open (SERIALPORT, "+<", "$port") or die "can't open $port. ";
-usleep(100000);
 
 $SIG{ALRM} = sub {
 `clear`;
@@ -25,14 +19,6 @@ print "
    #       #    #     # #       #     # #     #    #
    #       #    #     # #       #     # #     #    #
    #      ###   #     # ####### #######  #####     #
-
-######  #######    #    ####### #######    #     #####  #     #
-#     # #         # #      #       #      # #   #     # #     #
-#     # #        #   #     #       #     #   #  #       #     #
-######  #####   #     #    #       #    #     # #       #######
-#   #   #       #######    #       #    ####### #       #     #
-#    #  #       #     #    #       #    #     # #     # #     #
-#     # ####### #     #    #       #    #     #  #####  #     #
 
 
 ";
@@ -61,70 +47,8 @@ print "
 
 ";
 
-while( $line = <SERIALPORT>)  {
-	#print $line;
-	  if( $line =~ /FreeRTOS/ ) {
-`clear`;
-		  print "
-
-
-####### #######  #####  #######         ######  #######  #####    ###   #     #
-   #    #       #     #    #            #     # #       #     #    #    ##    #
-   #    #       #          #            #     # #       #          #    # #   #
-   #    #####    #####     #            ######  #####   #  ####    #    #  #  #
-   #    #             #    #            #     # #       #     #    #    #   # #
-   #    #       #     #    #            #     # #       #     #    #    #    ##
-   #    #######  #####     #            ######  #######  #####    ###   #     #
-
-
-";
-		  print SERIALPORT "disconnect\r\n";
-		  print SERIALPORT "boot\r\n";
-		  usleep(1_000_000);
-	  }
-	  if( $line =~ /PAIRING MODE/ ) {
-		usleep(1_000_000);		  
-		print SERIALPORT "connect hello-prov myfunnypassword 2\r\n";
-`clear`;
-		  print "
-
-
- #####  ####### #     # #     # #######  #####  #######   ###   #     #  #####
-#     # #     # ##    # ##    # #       #     #    #       #    ##    # #     #
-#       #     # # #   # # #   # #       #          #       #    # #   # #
-#       #     # #  #  # #  #  # #####   #          #       #    #  #  # #  ####
-#       #     # #   # # #   # # #       #          #       #    #   # # #     #
-#     # #     # #    ## #    ## #       #     #    #       #    #    ## #     #
- #####  ####### #     # #     # #######  #####     #      ###   #     #  #####
-
-
-";
-
-		  ualarm(20_000_000);
-         }
-	  if( $line =~ /SL_NETAPP_IPV4_ACQUIRED/) {
-		  usleep(1_000_000);
-`clear`;
-		  print "
-
-
-####### #######  #####  #######   ###   #     #  #####
-   #    #       #     #    #       #    ##    # #     #
-   #    #       #          #       #    # #   # #
-   #    #####    #####     #       #    #  #  # #  ####
-   #    #             #    #       #    #   # # #     #
-   #    #       #     #    #       #    #    ## #     #
-   #    #######  #####     #      ###   #     #  #####
-
-
-";
-		  print SERIALPORT "testkey\r\n";
-		  usleep(1_000_000);
-		  ualarm(20_000_000);
-	  }
-	  if( $line =~ /factory key: ([0-9A-Z]+)/ ) {
-		  my $key = $1;
-`clear`;
+while( 1) {
+		  
 		  print "
 
 
@@ -150,84 +74,22 @@ while( $line = <SERIALPORT>)  {
 		  chomp($serial);
 		  print "Got serial ".$serial.".\r\n";
 		  
-		  my $post = "POST /v1/provision/".$serial." HTTP/1.0\r\n".
+		  my $post = "POST /v1/check/".$serial." HTTP/1.0\r\n".
 		  "Host: provision.hello.is\r\n".
 		  "Content-type: text/plain\r\n".
-		  "Content-length: ".length($key)."\r\n".
-		  "\r\n".
-		  $key;
-		  #print $post;
+		  "Content-length: 0\r\n".
+		  "\r\n";
 
 		  my $cl = IO::Socket::SSL->new('provision.hello.is:443');
 		  print $cl $post;
+    
+          ualarm(20_000_000);
 
 		  my $response = <$cl>;
 		  #print "Reply:\r\n".$response;
 		  
 		  if( $response =~ /200 OK/ ) {
-			  # Allocate MAC?
-`clear`;
-		  print "
-
-
-####### #######  #####  #######   ###   #     #  #####
-   #    #       #     #    #       #    ##    # #     #
-   #    #       #          #       #    # #   # #
-   #    #####    #####     #       #    #  #  # #  ####
-   #    #             #    #       #    #   # # #     #
-   #    #       #     #    #       #    #    ## #     #
-   #    #######  #####     #      ###   #     #  #####
-
-
-";
-			  usleep(1_000_000);
-			  print SERIALPORT "testkey\r\n";
-			  usleep(1_000_000);
-			  ualarm(20_000_000);
-		  } else {
-`clear`;
-
-			  print "
-
-
-#######    #      ###   #
-#         # #      #    #
-#        #   #     #    #
-#####   #     #    #    #
-#       #######    #    #
-#       #     #    #    #
-#       #     #   ###   #######
-
-
-";
-		  }
-		  close($cl);
-	  }
-	  if( $line =~ /Test key failed: network error/ ) {
-`clear`;
-
-		  print "
-
-
-####### #######  #####  #######   ###   #     #  #####
-   #    #       #     #    #       #    ##    # #     #
-   #    #       #          #       #    # #   # #
-   #    #####    #####     #       #    #  #  # #  ####
-   #    #             #    #       #    #   # # #     #
-   #    #       #     #    #       #    #    ## #     #
-   #    #######  #####     #      ###   #     #  #####
-
-
-";
-		  print SERIALPORT "testkey\r\n";
-		  usleep(1_000_000);
-	  }
-	  if( $line =~ / test key success/ ) {
-	          ualarm(0);
-		  print SERIALPORT "loglevel 40\r\ndisconnect\r\n";
-`clear`;
-
-print '
+              print '
 @@@@8888888888888888888888888888880CG0G888@88888888800GL0CGG00CCGLG0G0C88888@@@@@@@@@@@@@@@@@@
 @@@@88888888888888888888888880000G0088888888000GG0GLGLCfCCCLftfLfGCLCCGGC880@@@@@@@@@@@@@@@@@@
 @@@888888888888888888888888888088088888800GCLftfGtf1fiiit;,:;i111tt1t1ffGG008@@@@@@@@@@@@@@@@@
@@ -282,36 +144,22 @@ ttG080ftLLLfffftt1i;;::;:::::;;i:;ifLGGGGGGGGG0GGCCCCCCCCGCCCCGCCCCCCCCCCLLCCLLC
 8888888088ffftfftt11iiiittttttf0GGGGGGGGCGGGGGGG0GGCGCGCGCCGCCCCCCLCLCCLCCCCLCCCCCCCCCCC0GLCGG
 88800880888800ftff11111ttL8888000GGGGGCCGCCCCGGGGGCCCCCCCCLCCCLCCCLCLCCCCCCCLCCLLCCCCCCCGCGGC
 ';
-	  }
-	  if( $line =~ /test key not valid/ ) {
-	          ualarm(0);
+		  } else {
 `clear`;
 
-		  print "
+			  print "
 
 
- #####  ####### #     # ####### ######     #    #######   ###   #     #  #####
-#     # #       ##    # #       #     #   # #      #       #    ##    # #     #
-#       #       # #   # #       #     #  #   #     #       #    # #   # #
-#  #### #####   #  #  # #####   ######  #     #    #       #    #  #  # #  ####
-#     # #       #   # # #       #   #   #######    #       #    #   # # #     #
-#     # #       #    ## #       #    #  #     #    #       #    #    ## #     #
- #####  ####### #     # ####### #     # #     #    #      ###   #     #  #####
-
-
-#    #  ####### #     #
-#   #   #        #   #
-#  #    #         # #
-###     #####      #
-#  #    #          #
-#   #   #          #
-#    #  #######    #
+#######    #      ###   #
+#         # #      #    #
+#        #   #     #    #
+#####   #     #    #    #
+#       #######    #    #
+#       #     #    #    #
+#       #     #   ###   #######
 
 
 ";
-		  usleep(1_000_000);
-		  print SERIALPORT "genkey\r\n";
-		  usleep(1_000_000);
+		  }
+		  close($cl);
 	  }
-}
-
