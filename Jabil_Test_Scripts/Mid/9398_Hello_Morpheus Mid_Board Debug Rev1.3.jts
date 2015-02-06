@@ -15,8 +15,8 @@
 
 
     //~ End;
-
-SetFinalizeFunction("GlobalCleanup"); 
+// add "connect TP-LINK_A1A2AC key 0\r\n" again 
+SetFinalizeFunction("Cleanup"); 
 UpdateProgressBar(0);
 call Gb01_BarcodeCheck();
 UpdateProgressBar(5);
@@ -27,7 +27,6 @@ UpdateProgressBar(15);
 call Gb04_Lock_fixture();
 UpdateProgressBar(20);
 call Gb05_Power_ON();
-
 UpdateProgressBar(25);
 call Gb06_IT6322B_CURR_MES();
 call Gb08_Peogram_M4Fa();
@@ -46,10 +45,8 @@ UpdateProgressBar(80);
 call Gb12_SD_Card_Read_Write();
 UpdateProgressBar(90);
 call Gb16_status();
-
 //~ call Gb14_ping();
 //~ call Gb15_time();
-
 call Gb17_disconnect();
 UpdateProgressBar(95);
 call Gb16_DisconnectStatus();
@@ -83,7 +80,7 @@ function Gb01_BarcodeCheck()
   
   if ($value == 21)
   {
-     $bit = StringStartsWith($SerialNumber,"9050000404","TRUE");
+     $bit = StringStartsWith($SerialNumber,"9050000405","TRUE");
       if ($bit)
       {
 	goto labBarcodeOver;
@@ -92,6 +89,14 @@ function Gb01_BarcodeCheck()
    if ($value == 14)
   {
      $bit = StringStartsWith($SerialNumber,"M","TRUE");
+      if ($bit)
+      {
+	goto labBarcodeOver;
+      }
+  }
+  if ($value == 20)
+  {
+     $bit = StringStartsWith($SerialNumber,"90500004A","TRUE");
       if ($bit)
       {
 	goto labBarcodeOver;
@@ -664,9 +669,9 @@ function Gb11_dust_sensor()
    //$dust = StringReplace($dust,"\n","");
   //  $dust = StringReplace($dust,"\r","");
     UpdateStatus($dust);
-  $Result10 = StringContains($dust,"dust");
- UpdateStatus($Result10);
-    if($Result10)
+  //~ $Result10 = StringContains($dust,"dust");
+ //~ UpdateStatus($Result10);
+    if($dust<356)
     {
       break ;
     }
@@ -687,15 +692,83 @@ function Gb12_SD_Card_Read_Write()
 {
   SetTestName("SD Test")
   UpdateStatus("****************************SD_Card_Read_Write*********************************"); 
-   $return= SerialSendMilliseconds($Mid_board_Handle, "ls\r\n", "bytes free", 1000);  
-   UpdateStatus($return);
-  $Result1 = StringContains($return,"");
-  UpdateStatus($Result1);
-  $Result2 = StringContains($return,"3 File(s),");
-  $Result3 = StringContains($return,"6 Dir(s),");
-  $Result=($Result1&&$Result2&&$Result3);
-UpdateStatus($Result);
-  RecordMeasurementPassFail("SD Card Detection","True","bool",true,$Result1);	//TP-LINK_A1A2AC
+   
+  $return2= SerialSendMilliseconds($Mid_board_Handle, "cd RINGTONE\r\n" , "", 1000);  //
+   UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    UpdateStatus($return2);
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+	SerialPurge($Mid_board_Handle);
+	 $return1= SerialSendMilliseconds($Mid_board_Handle, "ls\r\n", "", 100);  //   
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    UpdateStatus($return1);
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+	$return=$return1;
+//OperatorPrompt("OK","OK");	
+  $count=0;
+  while($count < 50)
+    {
+   $return1= SerialSendMilliseconds($Mid_board_Handle, "", "", 300);  //
+  
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    UpdateStatus($return1);
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+	$return=$return+$return1;
+  $Result = StringContains($return,"ORG005.raw");
+      
+   if($Result )
+      {
+	break;
+      }
+      $count=$count+1;
+    }
+  
+  $Result1 = StringContains($return,"tone.raw");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"STAR005.raw");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"STAR004.raw");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"STAR003.raw");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"STAR002.raw");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"STAR001.raw");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"pink.raw");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"ORG004.raw");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"ORG003.raw");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"ORG002.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"ORG001.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW006.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW005.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW004.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW003.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW002.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW001.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"DIG005.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"DIG004.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"DIG003.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"DIG002.raw");  
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"DIG001.raw");  
+  $Result=$Result1 && $Result;
+  
+ 
+ RecordMeasurementPassFail("RINGTONE",$Result,"bool",true,$Result);	//TP-LINK_A1A2AC
   return;
 }
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -719,6 +792,7 @@ function Gb13_Wifi_connect()
   Label connect_wifi:
 $connect= SerialSendMilliseconds($Mid_board_Handle, "connect TP-LINK_A1A2AC key 0\r\n", "", 1000);  //connect TP-LINK_A1A2AC key 0<CR><LF>
 UpdateStatus($connect);
+
 //~ $Result1 = StringContains($connect,"SL_WLAN_CONNECT_EVENT");
 //~ $Result2 = StringContains($connect,"SL_NETAPP_IPV4_ACQUIRED");
 //~ $Result = ($Result1&&$Result2);
@@ -731,7 +805,7 @@ UpdateStatus($connect);
 //Wifi current test
 $Test_Current="Wifi_connected_Current";
 $MEAS_curr=0;
-while($MEAS_curr<2)
+while($MEAS_curr<3)
 {
 SerialSendMilliseconds($IT6322_Handle, "INST SECO\n", "", 50);  
   $CH2_return = SerialSendMilliseconds($IT6322_Handle,"MEAS:CURR?\n", "", 500); 
@@ -788,6 +862,15 @@ function Gb16_status()
    $return= SerialSendMilliseconds($Mid_board_Handle, "status\r\n", "", 100);  
    UpdateStatus($return);
  $Result = StringContains($return,"IP=192.168.1.");
+
+if(!$Result)
+{
+$connect= SerialSendMilliseconds($Mid_board_Handle, "connect TP-LINK_A1A2AC key 0\r\n", "", 3000);  //connect TP-LINK_A1A2AC key 0<CR><LF>
+UpdateStatus($connect);
+$return= SerialSendMilliseconds($Mid_board_Handle, "status\r\n", "", 100);  
+UpdateStatus($return);
+ $Result = StringContains($return,"IP=192.168.1.");
+}
   RecordMeasurementPassFail("status",$Result,"bool",true,$Result);
   return ;
 }
@@ -858,20 +941,69 @@ $Result = ($Result1&&$Result2);
   return ;
 }
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function Initialize()
+{
+  UpdateStatus("****************************Initialize*********************************");  
+   
+  $Interface_Serial = 4;                                                                     //Set Serial port which control Power Unit Box
+  $RelayBoard_Serial = 5; 
+  $IT6322_Port = 3;   //The serial Port comminucate with IT6322B
+  $AG34410_address = "USB0::0x0957::0x0607::MY53009665::0::INSTR"; //The GPIB address with USB0::0x0957::0x0607::MY53009665::0::INSTR
+  //~ // create instance to all instrument
+  $Interface_Handle = SerialOpen($Interface_Serial,19200,8,"N",1);   
+  $RelayBoard_Handle = SerialOpen($RelayBoard_Serial,19200,8,"N",1); 
+  $IT6322_Handle = SerialOpen($IT6322_Port ,19200,8,"N",1);
+  $AG34410_Handle = NIVISA_Open($AG34410_address); // 
+  SerialSendMilliseconds($Interface_Handle, "#RKA$\n", "", 50);
+  
+  SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);       //IT6322B Initialize
+  SerialSendMilliseconds($IT6322_Handle, "OUTP 0\n");
+  SerialSendMilliseconds($IT6322_Handle, "INST FIR\n", "", 50);  
+  SerialSendMilliseconds($IT6322_Handle, "VOLT 5.0V\n", "", 50);
+  SerialSendMilliseconds($IT6322_Handle, "CURR 0.1A\n", "", 50);  
+  SerialSendMilliseconds($IT6322_Handle, "VOLT:PROT 10V\n", "", 50);   
+  SerialSendMilliseconds($IT6322_Handle, "INST SECO\n", "", 50);  
+  SerialSendMilliseconds($IT6322_Handle, "VOLT 3.3V\n", "", 50);
+  SerialSendMilliseconds($IT6322_Handle, "CURR 0.5A\n", "", 50);  
+  SerialSendMilliseconds($IT6322_Handle, "VOLT:PROT 10V\n", "", 50);    
+  //~ SerialSendMilliseconds($IT6322_Handle, "INST THI\n", "", 50);  
+  //~ SerialSendMilliseconds($IT6322_Handle, "VOLT 1.8V\n", "", 50);
+  //~ SerialSendMilliseconds($IT6322_Handle, "CURR 0.1A\n", "", 50);  
+  //~ SerialSendMilliseconds($IT6322_Handle, "VOLT:PROT 5V\n", "", 50);   
+
+  End;
+}
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function Cleanup()
+{
+  UpdateStatus("****************************Cleanup*********************************"); 
+  SerialSendMilliseconds($RelayBoard_Handle, "#REST$\n", "", 50);//#REST$
+  //~ SerialClose($RelayBoard_Handle); 
+  //~ NIVISA_Close($AG34410_Handle); 
+  SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
+  SerialSendMilliseconds($IT6322_Handle, "OUTP 0\n", "", 50);  
+  //~ SerialClose($IT6322_Handle);
+  //~ SerialClose($Interface_Handle);
+  //~ SerialClose($RelayBoard_Handle);
+  SerialClose($Mid_board_Handle);
+  End ;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 function GlobalCleanup()
 {
 UpdateStatus("****************************GlobalCleanup*********************************"); 
   SerialSendMilliseconds($RelayBoard_Handle, "#REST$\n", "", 50);//#REST$
-  //~ SerialClose($RelayBoard_Handle);
-  //~ NIVISA_Close($AG34410_Handle); 
-  SerialClose($Mid_board_Handle);
+  //~ SerialClose($Mid_board_Handle);
+  NIVISA_Close($AG34410_Handle); 
+  //~ SerialClose($Mid_board_Handle);
+    SerialClose($RelayBoard_Handle);
   SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
   SerialSendMilliseconds($IT6322_Handle, "OUTP 0\n", "", 50);
-  //~ SerialClose($IT6322_Handle);
+  SerialClose($IT6322_Handle);
   SerialSendMilliseconds($Interface_Handle, "#RK1$\n","OK" , 50);
   SerialSendMilliseconds($Interface_Handle, "#RK5$\n", "OK", 50);
   SerialSendMilliseconds($Interface_Handle, "#RK2$\n", "OK", 50);
-   //~ SerialClose($Interface_Handle);
+   SerialClose($Interface_Handle);
   End ;
 }
 
