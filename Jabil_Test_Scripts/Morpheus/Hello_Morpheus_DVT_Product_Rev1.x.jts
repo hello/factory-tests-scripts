@@ -35,7 +35,12 @@ SetFinalizeFunction("Cleanup");
 call Gb_BarcodeCheck();
 call Gb_Instrument_Init();
 call BootCheck();// fast boot check with log level 40
+
+$return= SerialSendMilliseconds($Launchpad_Handle, "antsel 1\r\n", "", 100);
 call Gb02_rssi();
+$return= SerialSendMilliseconds($Launchpad_Handle, "antsel 2\r\n", "", 100);
+call Gb02_rssi();
+
 call Gb10_SD_Card_Read_Write();
 
 call Gb15_dust_sensor();
@@ -347,13 +352,9 @@ function Gb01_TOPver_Check()
   $Max_Retry=5;
   $Result=false;
   $return="";
-  $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 100)
-    $return = $return+ $return1;
-  $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 100); 
-    $return = $return+ $return1;
-  $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 100); 
-    $return = $return+ $return1;
-  $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 100); 
+  $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 500);
+  $return = $return+ $return1;
+  $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 500);
   
   while ((!$Result)&& ($Cont_Retry < $Max_Retry))
   {
@@ -390,16 +391,13 @@ function Gb02_rssi()
   UpdateStatus("****************************Gb02_rssi*********************************"); 
   
   $Cont_Retry=0;
-  $Max_Retry=5;
+  $Max_Retry=3;
   $Result=false;
-  $return= SerialSendMilliseconds($Launchpad_Handle, "antsel 1\r\n", "", 100);  
   UpdateStatus($return);
-  
-  $return= SerialSendMilliseconds($Launchpad_Handle, "rssi\r\n", "", 100); 
   
   while ((!$Result)&& ($Cont_Retry < $Max_Retry))
   {
-    $return= SerialSendMilliseconds($Launchpad_Handle, "", "", 1000);  
+    $return= SerialSendMilliseconds($Launchpad_Handle, "rssi", "", 1000);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($return);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
@@ -412,9 +410,10 @@ function Gb02_rssi()
 	{
        break;	  
 	}
-	SleepMilliseconds(500);
+	SleepMilliseconds(2000);
     $Cont_Retry= $Cont_Retry + 1;
   }
+
   RecordMeasurementPassFail("Gb02_rssi",$Success,"bool",true,$Success);	//TP-LINK_A1A2AC
   
   return;
