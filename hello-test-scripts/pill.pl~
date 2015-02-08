@@ -61,13 +61,13 @@ while( 1) {
 
 		  my $cl = IO::Socket::SSL->new('provision.hello.is:443');
 		  
-		  #print $post;
+		  print $post;
 		  print $cl $post;
     
       ualarm(10_000_000);
 
 		  my $response = <$cl>;
-		  #print "Reply:\r\n".$response;
+		  print "Reply:\r\n".$response;
 		  
 		  if( $response =~ /200 OK/ ) {
               print '
