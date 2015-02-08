@@ -312,10 +312,76 @@ while( $line = <SERIALPORT>)  {
           ";
           }
         }
-
           
-`clear`;
+          #check the pill
+          my $good_pill = 0;
+          
+          while( !$good_pill) {
+              print "
+              
+ #####
+#     #   ####     ##    #    #
+#        #    #   #  #   ##   #
+ #####   #       #    #  # #  #
+      #  #       ######  #  # #
+#     #  #    #  #    #  #   ##
+ #####    ####   #    #  #    #
 
+######
+#     #     #    #       #
+#     #     #    #       #
+######      #    #       #
+#           #    #       #
+#           #    #       #
+#           #    ######  ######
+              
+              ";
+            my $serial = <>;
+            chomp($serial);
+            print "Got serial ".$serial.".\r\n";
+
+            $serial = "abc"; #todo remove, just for training
+
+            my $post = "GET /v1/provision/check/p/".$serial." HTTP/1.1\r\n".
+            "Host: provision.hello.is\r\n".
+            "Content-type: text/plain\r\n".
+            "Accept: */*\r\n".
+            "\r\n";
+
+            my $cl = IO::Socket::SSL->new('provision.hello.is:443');
+
+            #print $post;
+            print $cl $post;
+
+
+            my $response = <$cl>;
+            #print "Reply:\r\n".$response;
+
+            if( $response =~ /200 OK/ ) {
+                $good_pill = 1;
+            } else {
+                print "
+                
+                #######
+                #          ##       #    #
+                #         #  #      #    #
+                #####    #    #     #    #
+                #        ######     #    #
+                #        #    #     #    #
+                #        #    #     #    ######
+                
+                ######
+                #     #     #    #       #
+                #     #     #    #       #
+                ######      #    #       #
+                #           #    #       #
+                #           #    #       #
+                #           #    ######  ######
+                
+                ";
+            }
+          }
+          
 print '
 @@@@8888888888888888888888888888880CG0G888@88888888800GL0CGG00CCGLG0G0C88888@@@@@@@@@@@@@@@@@@
 @@@@88888888888888888888888880000G0088888888000GG0GLGLCfCCCLftfLfGCLCCGGC880@@@@@@@@@@@@@@@@@@
