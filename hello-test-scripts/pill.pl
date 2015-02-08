@@ -23,32 +23,7 @@ print "
 
 ";
 };
-`clear`;
-print "
 
-
-   #    ####### #######    #     #####  #     #         #     # ####### #     #
-  # #      #       #      # #   #     # #     #         ##    # #       #  #  #
- #   #     #       #     #   #  #       #     #         # #   # #       #  #  #
-#     #    #       #    #     # #       #######         #  #  # #####   #  #  #
-#######    #       #    ####### #       #     #         #   # # #       #  #  #
-#     #    #       #    #     # #     # #     #         #    ## #       #  #  #
-#     #    #       #    #     #  #####  #     #         #     # #######  ## ##
-
-
-######  ####### #     #   ###    #####  #######
-#     # #       #     #    #    #     # #
-#     # #       #     #    #    #       #
-#     # #####   #     #    #    #       #####
-#     # #        #   #     #    #       #
-#     # #         # #      #    #     # #
-######  #######    #      ###    #####  #######
-
-
-";
-
-while( 1) {
-		  
 		  print "
 
 
@@ -70,23 +45,29 @@ while( 1) {
 
 
 ";
+#901000009240115100000.
+
+while( 1) {
+		  
 		  my $serial = <>;
 		  chomp($serial);
 		  print "Got serial ".$serial.".\r\n";
 		  
-		  my $post = "POST /v1/check/".$serial." HTTP/1.0\r\n".
+		  my $post = "GET /v1/provision/check/p/".$serial." HTTP/1.1\r\n".
 		  "Host: provision.hello.is\r\n".
 		  "Content-type: text/plain\r\n".
-		  "Content-length: 0\r\n".
+		  "Accept: */*\r\n".
 		  "\r\n";
 
 		  my $cl = IO::Socket::SSL->new('provision.hello.is:443');
+		  
+		  print $post;
 		  print $cl $post;
     
-          ualarm(20_000_000);
+      ualarm(10_000_000);
 
 		  my $response = <$cl>;
-		  #print "Reply:\r\n".$response;
+		  print "Reply:\r\n".$response;
 		  
 		  if( $response =~ /200 OK/ ) {
               print '
@@ -162,4 +143,5 @@ ttG080ftLLLfffftt1i;;::;:::::;;i:;ifLGGGGGGGGG0GGCCCCCCCCGCCCCGCCCCCCCCCCLLCCLLC
 ";
 		  }
 		  close($cl);
+		  ualarm(0);
 	  }

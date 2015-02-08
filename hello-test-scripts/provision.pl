@@ -247,7 +247,8 @@ while( $line = <SERIALPORT>)  {
 
           my $got_region = 0;
           
-          while( !$got_region ) {
+          # while( !$got_region ) { #disable but still show prompts
+
           
           print "
 
@@ -269,6 +270,9 @@ while( $line = <SERIALPORT>)  {
              \\m___m__|_|   \\m_m_|  \\mm_|
           
           ";
+          
+          if (0) { #disable but still show prompts
+              
           my $upc = <>;
           chomp($upc);
           print "Got UPC ".$upc.".\r\n";
@@ -276,6 +280,7 @@ while( $line = <SERIALPORT>)  {
           if( exists $region_map{$upc}  ) {
               print "Setting country code ",region_map{$upc},"\n";
               print SERIALPORT "country ",region_map{$upc},"\n";
+              $got_region = 1;
           } else {
               print "
               
@@ -305,7 +310,6 @@ while( $line = <SERIALPORT>)  {
 
 
           ";
-              $got_region = 1;
           }
         }
 
