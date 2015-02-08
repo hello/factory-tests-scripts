@@ -270,12 +270,13 @@ while( $line = <SERIALPORT>)  {
              \\m___m__|_|   \\m_m_|  \\mm_|
           
           ";
-          
-          if (0) { #disable but still show prompts
-              
+
           my $upc = <>;
           chomp($upc);
           print "Got UPC ".$upc.".\r\n";
+          
+          if (0) { # todo remove -  disable but still show prompts
+
           
           if( exists $region_map{$upc}  ) {
               print "Setting country code ",region_map{$upc},"\n";
