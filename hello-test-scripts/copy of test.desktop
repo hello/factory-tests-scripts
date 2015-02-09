@@ -1,0 +1,10 @@
+[Desktop Entry]
+Encoding=UTF-8
+Name=PILL TEST ONLY
+Exec=xfce4-terminal --hide-borders --hide-toolbar --hide-menubar --maximize -T "Hello PCH morpheus key test" -x /home/hello/pill.pl
+Icon=utilities-terminal
+Type=Application
+Comment=
+Path=
+Terminal=true
+StartupNotify=false

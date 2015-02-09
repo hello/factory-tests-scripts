@@ -1,10 +1,11 @@
 [Desktop Entry]
 Encoding=UTF-8
 Name=TestStation
-Exec=xfce4-terminal  --maximize --hide-menubar --hide-borders  -T "Hello PCH Morpheus Key Test" -x /home/hello/provision.pl
+Exec=xfce4-terminal --hide-borders --hide-toolbar --hide-menubar --maximize -T "Hello PCH morpheus key test" -x /home/hello/provision.pl
 Icon=utilities-terminal
 Type=Application
 Comment=
 Path=
 Terminal=true
 StartupNotify=false
+Name[en_US]=Sense TestStation

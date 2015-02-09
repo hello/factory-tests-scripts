@@ -52,6 +52,8 @@ while( 1) {
 		  my $serial = <>;
 		  chomp($serial);
 		  print "Got serial ".$serial.".\r\n";
+
+$serial = "abc"; #TODO REMOVE
 		  
 		  my $post = "GET /v1/provision/check/p/".$serial." HTTP/1.1\r\n".
 		  "Host: provision.hello.is\r\n".
