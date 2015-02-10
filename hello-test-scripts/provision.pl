@@ -5,6 +5,8 @@ use IO::Socket::SSL;
 use strict;
 use warnings;
 
+use read_serial;
+
 my $port = "/dev/ttyUSB0";
 my $line;
 
@@ -163,7 +165,7 @@ while( $line = <SERIALPORT>)  {
 
 
 ";
-		  my $serial = <>;
+		  my $serial = read_serial();
 		  chomp($serial);
 		  print "Got serial ".$serial.".\r\n";
 		  
@@ -245,8 +247,7 @@ while( $line = <SERIALPORT>)  {
 
           my $got_region = 0;
           
-          # while( !$got_region ) { #disable but still show prompts
-
+          while( !$got_region ) { #disable for demo
           
           print "
 
@@ -265,16 +266,15 @@ while( $line = <SERIALPORT>)  {
              I /_____   |      /|/|
             J|/^ ^ ^ \  |    /00  |    _//|
              |^ ^ ^ ^ |W|   |/^^\ |   /oo |
-             \\m___m__|_|   \\m_m_|  \\mm_|
-          
-          ";
+             \\m___m__|_|    \\m_m_|   \\mm_|
+
+";
 
           my $upc = <>;
           chomp($upc);
           print "Got UPC ".$upc.".\r\n";
           
-          if (0) { # todo remove -  disable but still show prompts
-
+          # if (0) { # enable for demo
           
           if( exists $region_map{$upc}  ) {
               print "Setting country code ",region_map{$upc},"\n";
@@ -335,11 +335,9 @@ while( $line = <SERIALPORT>)  {
 #           #    ######  ######
               
               ";
-            my $serial = <>;
+            my $serial = read_serial();
             chomp($serial);
             print "Got serial ".$serial.".\r\n";
-
-            $serial = "abc"; #todo remove, just for training
 
             my $post = "GET /v1/provision/check/p/".$serial." HTTP/1.1\r\n".
             "Host: provision.hello.is\r\n".

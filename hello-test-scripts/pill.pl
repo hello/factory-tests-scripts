@@ -5,6 +5,8 @@ use IO::Socket::SSL;
 use strict;
 use warnings;
 
+use read_serial; #my part number reading module
+
 my $line;
 
 $SIG{ALRM} = sub {
@@ -45,15 +47,10 @@ print "
 
 
 ";
-#901000009240115100000.
 
 while( 1) {
 		  
-		  my $serial = <>;
-		  chomp($serial);
-		  print "Got serial ".$serial.".\r\n";
-
-$serial = "abc"; #TODO REMOVE
+		  my $serial = read_serial();
 		  
 		  my $post = "GET /v1/provision/check/p/".$serial." HTTP/1.1\r\n".
 		  "Host: provision.hello.is\r\n".
