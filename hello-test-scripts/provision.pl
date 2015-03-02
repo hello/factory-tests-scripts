@@ -277,8 +277,8 @@ while( $line = <SERIALPORT>)  {
           # if (0) { # enable for demo
           
           if( exists $region_map{$upc}  ) {
-              print "Setting country code ",region_map{$upc},"\n";
-              print SERIALPORT "country ",region_map{$upc},"\n";
+              print "Setting country code ",$region_map{$upc},"\n";
+              print SERIALPORT "country ",$region_map{$upc},"\n";
               $got_region = 1;
           } else {
               print "
