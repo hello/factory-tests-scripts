@@ -101,6 +101,7 @@ while( $line = <SERIALPORT>)  {
 ", RESET;
           slow_type("\r\nboot\r\n");
           slow_type("\r\ndisconnect\r\n");
+          slow_type("\r\n^ pause\r\n");
 	  }
 	  if( $line =~ /PAIRING MODE/ ) {
           ualarm(0);
