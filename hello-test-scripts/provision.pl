@@ -313,7 +313,7 @@ while( $line = <SERIALPORT>)  {
         }
           
           #check the pill
-          my $good_pill = 0;
+          my $good_pill = 1;
           
           while( !$good_pill) {
               print "
