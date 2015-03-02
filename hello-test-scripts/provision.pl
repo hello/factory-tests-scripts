@@ -417,6 +417,7 @@ print GREEN, '
 
 ";
           slow_type("\r\ngenkey\r\n");
+          ualarm(20_000_000);
 	  }
 }
 
