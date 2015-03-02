@@ -99,13 +99,10 @@ while( $line = <SERIALPORT>)  {
 
 
 ", RESET;
-		  #print SERIALPORT "\r\ndisconnect\r\n";
-		  #print SERIALPORT "\r\nboot\r\n";
           slow_type("\r\nboot\r\n");
           slow_type("\r\ndisconnect\r\n");
 	  }
 	  if( $line =~ /PAIRING MODE/ ) {
-		#print SERIALPORT "\r\nconnect hello-prov myfunnypassword 2\r\n";
         slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
 `clear`;
 		  print "
@@ -139,7 +136,6 @@ while( $line = <SERIALPORT>)  {
 
 
 ";
-		  #print SERIALPORT "\r\ntestkey\r\n";
           slow_type("\r\ntestkey\r\n");
 		  ualarm(20_000_000);
 	  }
@@ -245,12 +241,10 @@ while( $line = <SERIALPORT>)  {
 
 
 ";
-		  #print SERIALPORT "\r\ntestkey\r\n";
           slow_type("\r\ntestkey\r\n");
 	  }
 	  if( $line =~ / test key success/ ) {
 	          ualarm(0);
-		  print SERIALPORT "\r\nloglevel 40\r\ndisconnect\r\n";
           slow_type("\r\nloglevel 40\r\ndisconnect\r\n");
           my $got_region = 0;
           
@@ -285,7 +279,6 @@ while( $line = <SERIALPORT>)  {
           
           if( exists $region_map{$upc}  ) {
               print "Setting country code ",$region_map{$upc},"\n";
-              #print SERIALPORT "\r\ncountry ",$region_map{$upc},"\r\n";
               slow_type("\r\ncountry ",$region_map{$upc},"\r\n");
               $got_region = 1;
           } else {
