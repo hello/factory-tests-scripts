@@ -103,10 +103,8 @@ while( $line = <SERIALPORT>)  {
 		  #print SERIALPORT "\r\nboot\r\n";
           slow_type("\r\nboot\r\n");
           slow_type("\r\ndisconnect\r\n");
-		  usleep(1_000_000);
 	  }
 	  if( $line =~ /PAIRING MODE/ ) {
-		usleep(1_000_000);		  
 		#print SERIALPORT "\r\nconnect hello-prov myfunnypassword 2\r\n";
         slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
 `clear`;
@@ -127,7 +125,6 @@ while( $line = <SERIALPORT>)  {
 		  ualarm(20_000_000);
          }
 	  if( $line =~ /SL_NETAPP_IPV4_ACQUIRED/) {
-		  usleep(1_000_000);
 `clear`;
 		  print "
 
@@ -144,7 +141,6 @@ while( $line = <SERIALPORT>)  {
 ";
 		  #print SERIALPORT "\r\ntestkey\r\n";
           slow_type("\r\ntestkey\r\n");
-		  usleep(1_000_000);
 		  ualarm(20_000_000);
 	  }
 	  if( $line =~ /factory key: ([0-9A-Z]+)/ ) {
@@ -211,10 +207,8 @@ while( $line = <SERIALPORT>)  {
 
 
 ";
-			  usleep(1_000_000);
-			  #print SERIALPORT "\r\ntestkey\r\n";
+			  usleep(4_000_000);
               slow_type("\r\ntestkey\r\n");
-			  usleep(1_000_000);
 			  ualarm(20_000_000);
 		  } else {
 `clear`;
@@ -253,7 +247,6 @@ while( $line = <SERIALPORT>)  {
 ";
 		  #print SERIALPORT "\r\ntestkey\r\n";
           slow_type("\r\ntestkey\r\n");
-		  usleep(1_000_000);
 	  }
 	  if( $line =~ / test key success/ ) {
 	          ualarm(0);
@@ -430,9 +423,7 @@ print GREEN, '
 
 
 ";
-		  usleep(1_000_000);
           slow_type("\r\ngenkey\r\n");
-		  usleep(1_000_000);
 	  }
 }
 
