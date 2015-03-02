@@ -140,6 +140,7 @@ while( $line = <SERIALPORT>)  {
 		  ualarm(20_000_000);
 	  }
 	  if( $line =~ /factory key: ([0-9A-Z]+)/ ) {
+          ualarm(0);
 		  my $key = $1;
 `clear`;
 		  print "
@@ -226,7 +227,7 @@ while( $line = <SERIALPORT>)  {
 		  close($cl);
 	  }
 	  if( $line =~ / test key success/ ) {
-	          ualarm(0);
+          ualarm(0);
           slow_type("\r\nloglevel 40\r\ndisconnect\r\n");
           my $got_region = 0;
           
