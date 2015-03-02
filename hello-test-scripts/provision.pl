@@ -103,6 +103,7 @@ while( $line = <SERIALPORT>)  {
           slow_type("\r\ndisconnect\r\n");
 	  }
 	  if( $line =~ /PAIRING MODE/ ) {
+          ualarm(0);
         slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
 `clear`;
 		  print "
@@ -122,6 +123,7 @@ while( $line = <SERIALPORT>)  {
 		  ualarm(10_000_000);
          }
 	  if( $line =~ /SL_NETAPP_IPV4_ACQUIRED/) {
+		  ualarm(0);
 `clear`;
 		  print "
 
@@ -136,7 +138,7 @@ while( $line = <SERIALPORT>)  {
 
 
 ";
-          usleep(2_000_000);
+          usleep(4_000_000);
           slow_type("\r\ntestkey\r\n");
 		  ualarm(10_000_000);
 	  }
