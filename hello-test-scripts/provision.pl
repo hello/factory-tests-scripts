@@ -225,24 +225,6 @@ while( $line = <SERIALPORT>)  {
 		  }
 		  close($cl);
 	  }
-	  if( $line =~ /Test key failed: network error/ ) {
-`clear`;
-
-		  print "
-
-
-####### #######  #####  #######   ###   #     #  #####
-   #    #       #     #    #       #    ##    # #     #
-   #    #       #          #       #    # #   # #
-   #    #####    #####     #       #    #  #  # #  ####
-   #    #             #    #       #    #   # # #     #
-   #    #       #     #    #       #    #    ## #     #
-   #    #######  #####     #      ###   #     #  #####
-
-
-";
-          slow_type("\r\ntestkey\r\n");
-	  }
 	  if( $line =~ / test key success/ ) {
 	          ualarm(0);
           slow_type("\r\nloglevel 40\r\ndisconnect\r\n");
