@@ -148,7 +148,7 @@ while( $line = <SERIALPORT>)  {
           ualarm(0);
 		  my $key = $1;
 `clear`;
-		  print "
+		  print BLUE,"
  ##### 
 #     #   ####     ##    #    #
 #        #    #   #  #   ##   #
@@ -174,7 +174,7 @@ while( $line = <SERIALPORT>)  {
  #####   ######  #    #     #    #    #  ######
 
 
-";
+", RESET;
 		  my $serial = read_serial();
 		  chomp($serial);
 		  print "Got serial ".$serial.".\r\n";
@@ -238,7 +238,7 @@ while( $line = <SERIALPORT>)  {
           
           while( !$got_region ) { #disable for demo
           
-          print "
+          print BLUE,"
 
  #####                                  #     # ######   #####
 #     #   ####     ##    #    #         #     # #     # #     #
@@ -257,7 +257,7 @@ while( $line = <SERIALPORT>)  {
              |^ ^ ^ ^ |W|   |/^^\ |   /oo |
              \\m___m__|_|    \\m_m_|   \\mm_|
 
-";
+", RESET;
 
           my $upc = <>;
           chomp($upc);
