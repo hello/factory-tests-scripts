@@ -140,7 +140,7 @@ while( $line = <SERIALPORT>)  {
 ";
           usleep(4_000_000);
           slow_type("\r\ntestkey\r\n");
-		  ualarm(20_000_000);
+		  ualarm(70_000_000);
 	  }
 	  if( $line =~ /factory key: ([0-9A-Z]+)/ ) {
           ualarm(0);
