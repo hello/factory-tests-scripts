@@ -29,7 +29,7 @@ usleep(100000);
 
 $SIG{ALRM} = sub {
 `clear`;
-print "
+print RED, "
 
 
 #######   ###   #     # ####### ####### #     # #######
@@ -49,7 +49,7 @@ print "
 #     # ####### #     #    #       #    #     #  #####  #     #
 
 
-";
+", RESET;
 };
 `clear`;
 print "
