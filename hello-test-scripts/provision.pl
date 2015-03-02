@@ -120,7 +120,7 @@ while( $line = <SERIALPORT>)  {
 
 ";
 
-		  ualarm(10_000_000);
+		  ualarm(20_000_000);
          }
 	  if( $line =~ /SL_NETAPP_IPV4_ACQUIRED/) {
 		  ualarm(0);
@@ -140,7 +140,7 @@ while( $line = <SERIALPORT>)  {
 ";
           usleep(4_000_000);
           slow_type("\r\ntestkey\r\n");
-		  ualarm(10_000_000);
+		  ualarm(20_000_000);
 	  }
 	  if( $line =~ /factory key: ([0-9A-Z]+)/ ) {
           ualarm(0);
@@ -209,7 +209,7 @@ while( $line = <SERIALPORT>)  {
 ";
 			  usleep(4_000_000);
               slow_type("\r\ntestkey\r\n");
-			  ualarm(10_000_000);
+			  ualarm(20_000_000);
 		  } else {
 `clear`;
 
