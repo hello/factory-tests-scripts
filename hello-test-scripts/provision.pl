@@ -27,6 +27,13 @@ my %region_map = (
 open (SERIALPORT, "+<", "$port") or die "can't open $port. ";
 usleep(100000);
 
+sub slow_type{
+    my ($str) = @_;
+    for my $char (split //, $str){
+        print SERIALPORT $char;
+        usleep(1_000);
+    }
+}
 $SIG{ALRM} = sub {
 `clear`;
 print RED, "
@@ -92,13 +99,16 @@ while( $line = <SERIALPORT>)  {
 
 
 ", RESET;
-		  print SERIALPORT "\r\ndisconnect\r\n";
-		  print SERIALPORT "\r\nboot\r\n";
+		  #print SERIALPORT "\r\ndisconnect\r\n";
+		  #print SERIALPORT "\r\nboot\r\n";
+          slow_type("\r\nboot\r\n");
+          slow_type("\r\ndisconnect\r\n");
 		  usleep(1_000_000);
 	  }
 	  if( $line =~ /PAIRING MODE/ ) {
 		usleep(1_000_000);		  
-		print SERIALPORT "\r\nconnect hello-prov myfunnypassword 2\r\n";
+		#print SERIALPORT "\r\nconnect hello-prov myfunnypassword 2\r\n";
+        slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
 `clear`;
 		  print "
 
@@ -132,7 +142,8 @@ while( $line = <SERIALPORT>)  {
 
 
 ";
-		  print SERIALPORT "\r\ntestkey\r\n";
+		  #print SERIALPORT "\r\ntestkey\r\n";
+          slow_type("\r\ntestkey\r\n");
 		  usleep(1_000_000);
 		  ualarm(20_000_000);
 	  }
@@ -201,7 +212,8 @@ while( $line = <SERIALPORT>)  {
 
 ";
 			  usleep(1_000_000);
-			  print SERIALPORT "\r\ntestkey\r\n";
+			  #print SERIALPORT "\r\ntestkey\r\n";
+              slow_type("\r\ntestkey\r\n");
 			  usleep(1_000_000);
 			  ualarm(20_000_000);
 		  } else {
@@ -239,13 +251,14 @@ while( $line = <SERIALPORT>)  {
 
 
 ";
-		  print SERIALPORT "\r\ntestkey\r\n";
+		  #print SERIALPORT "\r\ntestkey\r\n";
+          slow_type("\r\ntestkey\r\n");
 		  usleep(1_000_000);
 	  }
 	  if( $line =~ / test key success/ ) {
 	          ualarm(0);
 		  print SERIALPORT "\r\nloglevel 40\r\ndisconnect\r\n";
-
+          slow_type("\r\nloglevel 40\r\ndisconnect\r\n");
           my $got_region = 0;
           
           while( !$got_region ) { #disable for demo
@@ -279,7 +292,8 @@ while( $line = <SERIALPORT>)  {
           
           if( exists $region_map{$upc}  ) {
               print "Setting country code ",$region_map{$upc},"\n";
-              print SERIALPORT "\r\ncountry ",$region_map{$upc},"\r\n";
+              #print SERIALPORT "\r\ncountry ",$region_map{$upc},"\r\n";
+              slow_type("\r\ncountry ",$region_map{$upc},"\r\n");
               $got_region = 1;
           } else {
               print "
@@ -417,7 +431,7 @@ print GREEN, '
 
 ";
 		  usleep(1_000_000);
-		  print SERIALPORT "\r\ngenkey\r\n";
+          slow_type("\r\ngenkey\r\n");
 		  usleep(1_000_000);
 	  }
 }
