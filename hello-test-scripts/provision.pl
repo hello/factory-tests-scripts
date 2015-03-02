@@ -136,6 +136,7 @@ while( $line = <SERIALPORT>)  {
 
 
 ";
+          usleep(2_000_000);
           slow_type("\r\ntestkey\r\n");
 		  ualarm(10_000_000);
 	  }
