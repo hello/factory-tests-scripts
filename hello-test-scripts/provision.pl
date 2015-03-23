@@ -116,12 +116,7 @@ while( $line = <SERIALPORT>)  {
           #noop
           next;
       }
-      if( $line =~ /Status line: HTTP\/1.1 204 No Content/ ){
-          print $line "ERROR: 204";
-          $killswitch = 1;
-      }
-
-	  if( $line =~ /PAIRING MODE/ ) {
+      if( $line =~ /PAIRING MODE/ ) {
           ualarm(0);
         slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
 `clear`;
@@ -158,6 +153,7 @@ while( $line = <SERIALPORT>)  {
 
 ";
           usleep(4_000_000);
+	  $has200 = 0;
           slow_type("\r\ntestkey\r\n");
 		  ualarm(70_000_000);
 	  }
@@ -227,6 +223,7 @@ while( $line = <SERIALPORT>)  {
 
 ";
 			  usleep(4_000_000);
+			$has200 = 0;
               slow_type("\r\ntestkey\r\n");
 			  ualarm(20_000_000);
 		  } else {
@@ -248,6 +245,9 @@ while( $line = <SERIALPORT>)  {
 		  }
 		  close($cl);
 	  }
+	if($line =~ /200 OK/){
+		$has200 = 1;
+	}
       if( $line =~ /test key validated/ || ($line =~ / test key success/ && $has200 == 1)){
           ualarm(0);
           slow_type("\r\nloglevel 40\r\ndisconnect\r\n");
