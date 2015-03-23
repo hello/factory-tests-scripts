@@ -91,7 +91,7 @@ print "
 while( $line = <SERIALPORT>)  {
 	#print $line;
 	  if( $line =~ /FreeRTOS/ ) {
-          $has200 = 1;
+          $has200 = 0;
           $killswitch = 0;
 `clear`;
 		  print YELLOW, "
