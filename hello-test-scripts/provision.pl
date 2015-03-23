@@ -113,6 +113,11 @@ while( $line = <SERIALPORT>)  {
           #noop
           next;
       }
+      if( $line =~ /Status line: HTTP\/1.1 204 No Content/ ){
+          print $line "ERROR: 204"
+          $killswitch = 1;
+      }
+
 	  if( $line =~ /PAIRING MODE/ ) {
           ualarm(0);
         slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
