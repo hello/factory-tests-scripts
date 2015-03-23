@@ -10,8 +10,8 @@ use read_serial;
 
 my $port = "/dev/ttyUSB0";
 my $line;
-my $killswitch;
-my $has200;
+my $killswitch = 0;
+my $has200 = 0;
 
 
 my %region_map = (
