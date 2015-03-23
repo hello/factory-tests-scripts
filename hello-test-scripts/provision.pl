@@ -9,6 +9,7 @@ use warnings;
 use read_serial;
 
 my $port = "/dev/ttyUSB0";
+my $logfile = "station.log";
 my $line;
 my $killswitch = 0;
 my $has200 = 0;
@@ -28,6 +29,7 @@ my %region_map = (
 `stty -brkint -icrnl ixoff -imaxbel -opost -onlcr -isig -icanon -F /dev/ttyUSB0 115200`;
 
 open (SERIALPORT, "+<", "$port") or die "can't open $port. ";
+open (LOG, ">>", $logfile) or die "can't open $logfile. ";
 usleep(100000);
 
 sub slow_type{
@@ -89,7 +91,7 @@ print "
 ";
 
 while( $line = <SERIALPORT>)  {
-	#print $line;
+	print LOG $line;
 	  if( $line =~ /FreeRTOS/ ) {
           $has200 = 0;
           $killswitch = 0;
