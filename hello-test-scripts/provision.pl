@@ -109,6 +109,10 @@ while( $line = <SERIALPORT>)  {
           slow_type("\r\n^ pause\r\n");
           slow_type("\r\nprovision\r\n");
 	  }
+      if($killswitch == 1){
+          #noop
+          next;
+      }
 	  if( $line =~ /PAIRING MODE/ ) {
           ualarm(0);
         slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
