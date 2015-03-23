@@ -11,6 +11,8 @@ use read_serial;
 my $port = "/dev/ttyUSB0";
 my $line;
 my $killswitch;
+my $has200;
+
 
 my %region_map = (
 "040232206634" => "US",
@@ -38,7 +40,7 @@ sub slow_type{
     }
 }
 $SIG{ALRM} = sub {
-$killswitch = 1
+$killswitch = 1;
 `clear`;
 print RED, "
 
@@ -89,6 +91,7 @@ print "
 while( $line = <SERIALPORT>)  {
 	#print $line;
 	  if( $line =~ /FreeRTOS/ ) {
+          $has200 = 1;
           $killswitch = 0;
 `clear`;
 		  print YELLOW, "
@@ -114,7 +117,7 @@ while( $line = <SERIALPORT>)  {
           next;
       }
       if( $line =~ /Status line: HTTP\/1.1 204 No Content/ ){
-          print $line "ERROR: 204"
+          print $line "ERROR: 204";
           $killswitch = 1;
       }
 
@@ -245,7 +248,7 @@ while( $line = <SERIALPORT>)  {
 		  }
 		  close($cl);
 	  }
-	  if( $line =~ / test key success/ ) {
+      if( $line =~ /test key validated/ || ($line =~ / test key success/ && $has200 == 1)){
           ualarm(0);
           slow_type("\r\nloglevel 40\r\ndisconnect\r\n");
           my $got_region = 0;
