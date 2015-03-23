@@ -10,6 +10,7 @@ use read_serial;
 
 my $port = "/dev/ttyUSB0";
 my $line;
+my $killswitch;
 
 my %region_map = (
 "040232206634" => "US",
@@ -29,12 +30,15 @@ usleep(100000);
 
 sub slow_type{
     my ($str) = @_;
-    for my $char (split //, $str){
-        print SERIALPORT $char;
-        usleep(1_000);
+    if ($killswitch == 0){
+        for my $char (split //, $str){
+            print SERIALPORT $char;
+            usleep(1_000);
+        }
     }
 }
 $SIG{ALRM} = sub {
+$killswitch = 1
 `clear`;
 print RED, "
 
@@ -85,6 +89,7 @@ print "
 while( $line = <SERIALPORT>)  {
 	#print $line;
 	  if( $line =~ /FreeRTOS/ ) {
+          $killswitch = 0;
 `clear`;
 		  print YELLOW, "
 
@@ -367,16 +372,16 @@ while( $line = <SERIALPORT>)  {
                 ";
             }
           }
-          
-print GREEN, '
- ######     #     #####   #####  ####### ######
- #     #   # #   #     # #     # #       #     #
- #     #  #   #  #       #       #       #     #
- ######  #     #  #####   #####  #####   #     #
- #       #######       #       # #       #     #
- #       #     # #     # #     # #       #     #
- #       #     #  #####   #####  ####### ######
-', RESET;
+          print GREEN, '
+######     #     #####   #####  ####### ######
+#     #   # #   #     # #     # #       #     #
+#     #  #   #  #       #       #       #     #
+######  #     #  #####   #####  #####   #     #
+#       #######       #       # #       #     #
+#       #     # #     # #     # #       #     #
+#       #     #  #####   #####  ####### ######
+          ', RESET;
+                  
 	  }
 	  if( $line =~ /test key not valid/ ) {
 	          ualarm(0);
