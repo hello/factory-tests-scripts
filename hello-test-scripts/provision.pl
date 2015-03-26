@@ -2,6 +2,7 @@
 
 use Time::HiRes qw(usleep ualarm);
 use IO::Socket::SSL;
+use Term::ANSIColor qw(:constants);
 use strict;
 use warnings;
 
@@ -78,7 +79,7 @@ while( $line = <SERIALPORT>)  {
 	#print $line;
 	  if( $line =~ /FreeRTOS/ ) {
 `clear`;
-		  print "
+		  print YELLOW, "
 
 
 ####### #######  #####  #######         ######  #######  #####    ###   #     #
@@ -90,7 +91,7 @@ while( $line = <SERIALPORT>)  {
    #    #######  #####     #            ######  #######  #####    ###   #     #
 
 
-";
+", RESET;
 		  print SERIALPORT "disconnect\r\n";
 		  print SERIALPORT "boot\r\n";
 		  usleep(1_000_000);
@@ -206,7 +207,7 @@ while( $line = <SERIALPORT>)  {
 		  } else {
 `clear`;
 
-			  print "
+			  print RED, "
 
 
 #######    #      ###   #
@@ -218,7 +219,7 @@ while( $line = <SERIALPORT>)  {
 #       #     #   ###   #######
 
 
-";
+", RESET;
 		  }
 		  close($cl);
 	  }
@@ -378,8 +379,7 @@ while( $line = <SERIALPORT>)  {
                 ";
             }
           }
-          
-print '
+print GREEN, '
 @@@@8888888888888888888888888888880CG0G888@88888888800GL0CGG00CCGLG0G0C88888@@@@@@@@@@@@@@@@@@
 @@@@88888888888888888888888880000G0088888888000GG0GLGLCfCCCLftfLfGCLCCGGC880@@@@@@@@@@@@@@@@@@
 @@@888888888888888888888888888088088888800GCLftfGtf1fiiit;,:;i111tt1t1ffGG008@@@@@@@@@@@@@@@@@
@@ -433,8 +433,8 @@ ttG080ftLLLfffftt1i;;::;:::::;;i:;ifLGGGGGGGGG0GGCCCCCCCCGCCCCGCCCCCCCCCCLLCCLLC
 88888080LLLffffft1ii:,::;ii111i1tfCGGGGGGGGGG0GGGGGGCCCGCCCCCCGCCCCCCCCLCLLLLCCCCCCCCCCCGG0GLG
 8888888088ffftfftt11iiiittttttf0GGGGGGGGCGGGGGGG0GGCGCGCGCCGCCCCCCLCLCCLCCCCLCCCCCCCCCCC0GLCGG
 88800880888800ftff11111ttL8888000GGGGGCCGCCCCGGGGGCCCCCCCCLCCCLCCCLCLCCCCCCCLCCLLCCCCCCCGCGGC
-';
-	  }
+', RESET;
+      }
 	  if( $line =~ /test key not valid/ ) {
 	          ualarm(0);
 `clear`;
