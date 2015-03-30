@@ -343,10 +343,9 @@ print GREEN, '
 ', RESET;
       }
 	  if( $line =~ /test key not valid/ ) {
-	          ualarm(0);
-`clear`;
-
-print_generating_key();
+          ualarm(0);
+          `clear`;
+          print_generating_key();
           ualarm(20_000_000);
 	  }
 }
