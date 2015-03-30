@@ -41,6 +41,17 @@ sub slow_type{
         }
     }
 }
+sub print_fail{
+    print RED, "
+#######    #      ###   #
+#         # #      #    #
+#        #   #     #    #
+#####   #     #    #    #
+#       #######    #    #
+#       #     #    #    #
+#       #     #   ###   #######
+", RESET;
+}
 $SIG{ALRM} = sub {
 $killswitch = 1;
 `clear`;
@@ -214,15 +225,7 @@ while( $line = <SERIALPORT>)  {
 			  `clear`;
 		  } else {
 			  `clear`;
-			  print RED, "
-#######    #      ###   #
-#         # #      #    #
-#        #   #     #    #
-#####   #     #    #    #
-#       #######    #    #
-#       #     #    #    #
-#       #     #   ###   #######
-", RESET;
+              print_fail();
 		  }
 		  close($cl);
 	  }
