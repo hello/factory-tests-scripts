@@ -10,6 +10,7 @@ use read_serial;
 
 my $port = "/dev/ttyUSB0";
 my $logfile = "station.log";
+my $version = "v2";
 my $line;
 my $killswitch = 0;
 my $has200 = 0;
@@ -253,7 +254,8 @@ print "
 ";
 
 while( $line = <SERIALPORT>)  {
-    print LOG $line;
+    my $time = time();
+    print LOG "[$time, $version] $line";
     if( $line =~ /FreeRTOS/ ) {
         ualarm(0);
         $has200 = 0;
