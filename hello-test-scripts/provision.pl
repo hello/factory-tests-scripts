@@ -200,8 +200,8 @@ while( $line = <SERIALPORT>)  {
 	  if( $line =~ /FreeRTOS/ ) {
           $has200 = 0;
           $killswitch = 0;
-`clear`;
-print_test_begin();
+          `clear`;
+          print_test_begin();
           slow_type("\r\nboot\r\n");
           slow_type("\r\ndisconnect\r\n");
           slow_type("\r\n^ pause\r\n");
@@ -260,9 +260,9 @@ print_test_begin();
 		  }
 		  close($cl);
 	  }
-	if($line =~ /200 OK/){
-		$has200 = 1;
-	}
+      if($line =~ /200 OK/){
+          $has200 = 1;
+      }
       if( $line =~ /test key validated/ || ($line =~ / test key success/ && $has200 == 1)){
           ualarm(0);
           slow_type("\r\nloglevel 40\r\ndisconnect\r\n");
