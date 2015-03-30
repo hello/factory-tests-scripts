@@ -119,8 +119,9 @@ while( $line = <SERIALPORT>)  {
           next;
       }
       if( $line =~ /PAIRING MODE/ ) {
+          slow_type("\r\ngenkey\r\n");
           ualarm(0);
-`clear`;
+          `clear`;
 		  print "
 
 
@@ -333,7 +334,6 @@ print GREEN, '
 
 
 ";
-          slow_type("\r\ngenkey\r\n");
           ualarm(20_000_000);
 	  }
 }
