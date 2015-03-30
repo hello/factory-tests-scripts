@@ -120,7 +120,6 @@ while( $line = <SERIALPORT>)  {
       }
       if( $line =~ /PAIRING MODE/ ) {
           ualarm(0);
-        slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
 `clear`;
 		  print "
 
@@ -210,30 +209,11 @@ while( $line = <SERIALPORT>)  {
 		  
 		  if( $response =~ /200 OK/ ) {
 			  # Allocate MAC?
-`clear`;
-		  print "
-
-
-####### #######  #####  #######   ###   #     #  #####
-   #    #       #     #    #       #    ##    # #     #
-   #    #       #          #       #    # #   # #
-   #    #####    #####     #       #    #  #  # #  ####
-   #    #             #    #       #    #   # # #     #
-   #    #       #     #    #       #    #    ## #     #
-   #    #######  #####     #      ###   #     #  #####
-
-
-";
-			  usleep(4_000_000);
-			$has200 = 0;
-              slow_type("\r\ntestkey\r\n");
-			  ualarm(20_000_000);
+			  slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
+			  `clear`;
 		  } else {
-`clear`;
-
+			  `clear`;
 			  print RED, "
-
-
 #######    #      ###   #
 #         # #      #    #
 #        #   #     #    #
@@ -241,8 +221,6 @@ while( $line = <SERIALPORT>)  {
 #       #######    #    #
 #       #     #    #    #
 #       #     #   ###   #######
-
-
 ", RESET;
 		  }
 		  close($cl);
