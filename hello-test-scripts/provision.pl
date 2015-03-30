@@ -272,7 +272,7 @@ while( $line = <SERIALPORT>)  {
         slow_type("\r\ngenkey\r\n");
         ualarm(0);
         `clear`;
-        print_connecting();
+        print_generating_key();
 
         ualarm(20_000_000);
     }
@@ -311,6 +311,7 @@ while( $line = <SERIALPORT>)  {
             # Allocate MAC?
             slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
             `clear`;
+            print_connecting();
         } else {
             `clear`;
             print_fail();
@@ -348,7 +349,6 @@ while( $line = <SERIALPORT>)  {
     if( $line =~ /test key not valid/ ) {
         ualarm(0);
         `clear`;
-        print_generating_key();
         ualarm(20_000_000);
     }
 }
