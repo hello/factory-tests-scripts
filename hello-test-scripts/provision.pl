@@ -41,6 +41,17 @@ sub slow_type{
         }
     }
 }
+sub print_testing{
+		  print "
+####### #######  #####  #######   ###   #     #  #####
+   #    #       #     #    #       #    ##    # #     #
+   #    #       #          #       #    # #   # #
+   #    #####    #####     #       #    #  #  # #  ####
+   #    #             #    #       #    #   # # #     #
+   #    #       #     #    #       #    #    ## #     #
+   #    #######  #####     #      ###   #     #  #####
+";
+}
 sub print_connecting{
 		  print "
  #####  ####### #     # #     # #######  #####  #######   ###   #     #  #####
@@ -208,19 +219,10 @@ while( $line = <SERIALPORT>)  {
 	  if( $line =~ /SL_NETAPP_IPV4_ACQUIRED/) {
 		  ualarm(0);
 `clear`;
-		  print "
-####### #######  #####  #######   ###   #     #  #####
-   #    #       #     #    #       #    ##    # #     #
-   #    #       #          #       #    # #   # #
-   #    #####    #####     #       #    #  #  # #  ####
-   #    #             #    #       #    #   # # #     #
-   #    #       #     #    #       #    #    ## #     #
-   #    #######  #####     #      ###   #     #  #####
-";
-	  $has200 = 0;
-	  usleep(4_000_000);
-          slow_type("\r\ntestkey\r\n");
-		  ualarm(70_000_000);
+print_testing();
+    $has200 = 0;
+    slow_type("\r\ntestkey\r\n");
+    ualarm(70_000_000);
 	  }
 	  if( $line =~ /factory key: ([0-9A-Z]+)/ ) {
           ualarm(0);
