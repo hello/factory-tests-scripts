@@ -149,6 +149,17 @@ sub print_scan_sense_serial{
 
 ", RESET;
 }
+print_pass{
+print GREEN, '
+ ######     #     #####   #####  ####### ######
+ #     #   # #   #     # #     # #       #     #
+ #     #  #   #  #       #       #       #     #
+ ######  #     #  #####   #####  #####   #     #
+ #       #######       #       # #       #     #
+ #       #     # #     # #     # #       #     #
+ #       #     #  #####   #####  ####### ######
+', RESET;
+}
 sub print_test_begin{
 		  print YELLOW, "
 
@@ -332,15 +343,7 @@ while( $line = <SERIALPORT>)  {
               print_unknown_upc();
           }
         }
-print GREEN, '
- ######     #     #####   #####  ####### ######
- #     #   # #   #     # #     # #       #     #
- #     #  #   #  #       #       #       #     #
- ######  #     #  #####   #####  #####   #     #
- #       #######       #       # #       #     #
- #       #     # #     # #     # #       #     #
- #       #     #  #####   #####  ####### ######
-', RESET;
+        print_pass();
       }
 	  if( $line =~ /test key not valid/ ) {
           ualarm(0);
