@@ -255,6 +255,7 @@ print "
 while( $line = <SERIALPORT>)  {
     print LOG $line;
     if( $line =~ /FreeRTOS/ ) {
+        ualarm(0);
         $has200 = 0;
         $killswitch = 0;
         `clear`;
@@ -263,17 +264,17 @@ while( $line = <SERIALPORT>)  {
         slow_type("\r\ndisconnect\r\n");
         slow_type("\r\n^ pause\r\n");
         slow_type("\r\nprovision\r\n");
+        ualarm(10_000_000);
     }
     if($killswitch == 1){
         #noop
         next;
     }
     if( $line =~ /PAIRING MODE/ ) {
-        slow_type("\r\ngenkey\r\n");
         ualarm(0);
+        slow_type("\r\ngenkey\r\n");
         `clear`;
         print_generating_key();
-
         ualarm(20_000_000);
     }
     if( $line =~ /SL_NETAPP_IPV4_ACQUIRED/) {
@@ -312,6 +313,7 @@ while( $line = <SERIALPORT>)  {
             slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
             `clear`;
             print_connecting();
+            ualarm(10_000_000);
         } else {
             `clear`;
             print_fail();
@@ -325,17 +327,13 @@ while( $line = <SERIALPORT>)  {
         ualarm(0);
         slow_type("\r\nloglevel 40\r\ndisconnect\r\n");
         my $got_region = 0;
-
         while( !$got_region ) { #disable for demo
-
+            `clear`;
             print_scan_upc();
-
             my $upc = <>;
             chomp($upc);
             print "Got UPC ".$upc.".\r\n";
-
             # if (0) { # enable for demo
-
             if( exists $region_map{$upc}  ) {
                 print "Setting country code ",$region_map{$upc},"\n";
                 slow_type("\r\ncountry ",$region_map{$upc},"\r\n");
@@ -349,7 +347,7 @@ while( $line = <SERIALPORT>)  {
     if( $line =~ /test key not valid/ ) {
         ualarm(0);
         `clear`;
-        ualarm(20_000_000);
+        print_fail();
     }
 }
 
