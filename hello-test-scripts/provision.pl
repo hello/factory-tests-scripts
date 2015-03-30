@@ -263,7 +263,13 @@ while( $line = <SERIALPORT>)  {
         slow_type("\r\nboot\r\n");
         slow_type("\r\ndisconnect\r\n");
         slow_type("\r\n^ pause\r\n");
-        slow_type("\r\nprovision\r\n");
+        slow_type("\r\nrm logs/0\r\n");
+        slow_type("\r\nrm logs/1\r\n");
+        slow_type("\r\nrm logs/2\r\n");
+        slow_type("\r\nrm logs/3\r\n");
+        slow_type("\r\nrm logs/4\r\n");
+        slow_type("\r\nrm logs/5\r\n");
+        slow_type("\r\nrm logs/6\r\n");
         ualarm(10_000_000);
     }
     if($killswitch == 1){
