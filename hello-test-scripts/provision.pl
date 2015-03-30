@@ -291,7 +291,7 @@ while( $line = <SERIALPORT>)  {
         print_testing();
         $has200 = 0;
         slow_type("\r\ntestkey\r\n");
-        ualarm(70_000_000);
+        ualarm(45_000_000);
     }
     if( $line =~ /factory key: ([0-9A-Z]+)/ ) {
         ualarm(0);
