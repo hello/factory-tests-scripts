@@ -149,7 +149,7 @@ sub print_scan_sense_serial{
 
 ", RESET;
 }
-print_pass{
+sub print_pass{
 print GREEN, '
  ######     #     #####   #####  ####### ######
  #     #   # #   #     # #     # #       #     #
