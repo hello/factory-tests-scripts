@@ -10,7 +10,7 @@ use read_serial;
 
 my $port = "/dev/ttyUSB0";
 my $logfile = "station.log";
-my $version = "v2";
+my $version = "v3";
 my $line;
 my $killswitch = 0;
 my $has200 = 0;
