@@ -278,7 +278,7 @@ while( $line = <SERIALPORT>)  {
         #noop
         next;
     }
-    if( $line =~ /PAIRING MODE/ ) {
+    if( $line =~ /got id from top/ ) {
         ualarm(0);
         slow_type("\r\ngenkey\r\n");
         `clear`;
