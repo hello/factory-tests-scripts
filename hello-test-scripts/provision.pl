@@ -278,7 +278,7 @@ while( $line = <SERIALPORT>)  {
         #noop
         next;
     }
-    if( $line =~ /got id from top/ ) {
+    if( $line =~ /Boot completed/ ) {
         ualarm(0);
         slow_type("\r\ngenkey\r\n");
         `clear`;
