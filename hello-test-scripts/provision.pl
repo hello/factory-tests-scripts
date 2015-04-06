@@ -301,7 +301,7 @@ while( $line = <SERIALPORT>)  {
         my $serial = read_serial();
         chomp($serial);
         print "Got serial ".$serial.".\r\n";
-        print LOG, "Got serial ".$serial.".\r\n";
+        print LOG "Got serial ".$serial.".\r\n";
 
         my $post = "POST /v1/provision/".$serial." HTTP/1.0\r\n".
         "Host: provision.hello.is\r\n".
@@ -342,7 +342,7 @@ while( $line = <SERIALPORT>)  {
             my $upc = <>;
             chomp($upc);
             print "Got UPC ".$upc.".\r\n";
-            print LOG, "Got UPC ".$upc.".\r\n";
+            print LOG "Got UPC ".$upc.".\r\n";
             # if (0) { # enable for demo
             if( exists $region_map{$upc}  ) {
                 print "Setting country code ",$region_map{$upc},"\n";
