@@ -15,9 +15,17 @@ sub read_serial {
     while(1) {
         #910000082B01145000123
         if( <> =~ /^[A-Z0-9]{21}$/ ) {
-            print "Got serial ",$&,"\n";
-            chomp($&);
-            return $&;
+            chomp( $& );
+            my $serial = $&;
+            
+            if( $serial =~ /.*([WB].*)/) {
+                $serial = $1;
+                print "Got serial ",$serial,"\n";
+                return $serial;
+            } else {
+                print "INVALID serial ",$&,"\n";
+            }
+            
         } else {
             print "INVALID serial ",$&,"\n";
         }

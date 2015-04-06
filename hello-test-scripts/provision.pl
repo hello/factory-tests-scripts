@@ -279,9 +279,12 @@ while( $line = <SERIALPORT>)  {
         print "Got serial ".$serial.".\r\n";
         print LOG "\r\nserial:".$serial.".\r\n";
         
+        $serial = unpack( "H*",$serial );
+        $serial =~ s/.{2}/$& /g;
+        
         slow_type("\r\nfswr /pch/serial ".$serial."\r\n");
         sleep(1);
-        slow_type("\r\nfswr /pch/prov provision\r\n");
+        slow_type("\r\nfswr /pch/prov 70 72 6f 76 69 73 69 6f 6e\r\n");
         sleep(1);
         my $got_region = 0;
         while( !$got_region ) { #disable for demo
