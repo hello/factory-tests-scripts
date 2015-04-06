@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 
-use Time::HiRes qw(usleep ualarm);
+use Time::HiRes qw(sleep usleep ualarm);
 use IO::Socket::SSL;
 use Term::ANSIColor qw(:constants);
 use strict;
@@ -272,68 +272,16 @@ while( $line = <SERIALPORT>)  {
         slow_type("\r\nrm logs/4\r\n");
         slow_type("\r\nrm logs/5\r\n");
         slow_type("\r\nrm logs/6\r\n");
-        ualarm(10_000_000);
-    }
-    if($killswitch == 1){
-        #noop
-        next;
-    }
-    if( $line =~ /PAIRING MODE/ ) {
-        ualarm(0);
-        slow_type("\r\ngenkey\r\n");
-        `clear`;
-        print_generating_key();
-        ualarm(20_000_000);
-    }
-    if( $line =~ /SL_NETAPP_IPV4_ACQUIRED/) {
-        ualarm(0);
-        `clear`;
-        print_testing();
-        $has200 = 0;
-        slow_type("\r\ntestkey\r\n");
-        ualarm(45_000_000);
-    }
-    if( $line =~ /factory key: ([0-9A-Z]+)/ ) {
-        ualarm(0);
-        my $key = $1;
-        `clear`;
+        
         print_scan_sense_serial();
         my $serial = read_serial();
         chomp($serial);
         print "Got serial ".$serial.".\r\n";
-
-        my $post = "POST /v1/provision/".$serial." HTTP/1.0\r\n".
-        "Host: provision.hello.is\r\n".
-        "Content-type: text/plain\r\n".
-        "Content-length: ".length($key)."\r\n".
-        "\r\n".
-        $key;
-        #print $post;
-
-        my $cl = IO::Socket::SSL->new('provision.hello.is:443');
-        print $cl $post;
-
-        my $response = <$cl>;
-        #print "Reply:\r\n".$response;
-
-        if( $response =~ /200 OK/ ) {
-            # Allocate MAC?
-            slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
-            `clear`;
-            print_connecting();
-            ualarm(10_000_000);
-        } else {
-            `clear`;
-            print_fail();
-        }
-        close($cl);
-    }
-    if($line =~ /200 OK/){
-        $has200 = 1;
-    }
-    if( $line =~ /test key validated/ || ($line =~ / test key success/ && $has200 == 1)){
-        ualarm(0);
-        slow_type("\r\nloglevel 40\r\ndisconnect\r\n");
+        
+        slow_type("\r\nfswr /pch/serial ".$serial."\r\n");
+        sleep(1);
+        slow_type("\r\nfswr /pch/prov provision\r\n");
+        sleep(1);
         my $got_region = 0;
         while( !$got_region ) { #disable for demo
             `clear`;
@@ -350,12 +298,15 @@ while( $line = <SERIALPORT>)  {
                 print_unknown_upc();
             }
         }
-        print_pass();
+        slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
+        `clear`;
+        print_connecting();
+        ualarm(10_000_000);
     }
-    if( $line =~ /test key not valid/ ) {
+    if( $line =~ /SL_NETAPP_IPV4_ACQUIRED/) {
         ualarm(0);
         `clear`;
-        print_fail();
+        print_pass();
     }
 }
 
