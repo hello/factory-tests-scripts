@@ -280,6 +280,7 @@ while( $line = <SERIALPORT>)  {
     }
     if( $line =~ /Boot completed/ ) {
         ualarm(0);
+        usleep(4_000_000);
         slow_type("\r\ngenkey\r\n");
         `clear`;
         print_generating_key();
