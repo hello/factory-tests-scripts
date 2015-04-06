@@ -277,6 +277,7 @@ while( $line = <SERIALPORT>)  {
         my $serial = read_serial();
         chomp($serial);
         print "Got serial ".$serial.".\r\n";
+        print LOG "\r\nserial:".$serial.".\r\n";
         
         slow_type("\r\nfswr /pch/serial ".$serial."\r\n");
         sleep(1);
