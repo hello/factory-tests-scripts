@@ -282,7 +282,12 @@ while( $line = <SERIALPORT>)  {
         $serial = unpack( "H*",$serial );
         $serial =~ s/.{2}/$& /g;
         
-        slow_type("\r\nfswr /pch/serial ".$serial."\r\n");
+        slow_type("\r\nfsdl /pch/serial\r\n");
+        sleep(.1);
+        slow_type("\r\nfsdl /pch/prov\r\n");
+        sleep(.1);
+       
+        slow_type("\r\nfswr /pch/serial ".$serial)."\r\n");
         sleep(1);
         slow_type("\r\nfswr /pch/prov 70 72 6f 76 69 73 69 6f 6e\r\n");
         sleep(1);
