@@ -253,6 +253,17 @@ print "
 
 ";
 
+sub waitfor{
+    my $exp = shift(@_);
+    while( $line = <SERIALPORT>)  {
+        print LOG "[$time, $version] $line";
+        print LOG "waiting for $exp\n";
+        if( $line =~ /$exp/ ) {
+            return;
+        }
+    }
+}
+
 while( $line = <SERIALPORT>)  {
     my $time = time();
     print LOG "[$time, $version] $line";
@@ -262,6 +273,24 @@ while( $line = <SERIALPORT>)  {
         $killswitch = 0;
         `clear`;
         print_test_begin();
+        print_scan_sense_serial();
+        my $serial = read_serial();
+        chomp($serial);
+        print "Got serial ".$serial.".\r\n";
+        print LOG "\r\nserial:".$serial.".\r\n";
+        
+        $serial = unpack( "H*",$serial );
+        $serial =~ s/.{2}/$& /g;
+        
+        slow_type("\r\nfsdl /pch/serial\r\n");
+        waitfor( "Command returned" );
+        slow_type("\r\nfsdl /pch/prov\r\n");
+        waitfor( "Command returned" );
+        slow_type("\r\nfswr /pch/serial ".$serial)."\r\n");
+        waitfor( "Command returned" );
+        slow_type("\r\nfswr /pch/prov 70 72 6f 76 69 73 69 6f 6e\r\n");
+        waitfor( "Command returned" );
+        
         slow_type("\r\nboot\r\n");
         slow_type("\r\ndisconnect\r\n");
         slow_type("\r\n^ pause\r\n");
@@ -273,24 +302,6 @@ while( $line = <SERIALPORT>)  {
         slow_type("\r\nrm logs/5\r\n");
         slow_type("\r\nrm logs/6\r\n");
         
-        print_scan_sense_serial();
-        my $serial = read_serial();
-        chomp($serial);
-        print "Got serial ".$serial.".\r\n";
-        print LOG "\r\nserial:".$serial.".\r\n";
-        
-        $serial = unpack( "H*",$serial );
-        $serial =~ s/.{2}/$& /g;
-        
-        slow_type("\r\nfsdl /pch/serial\r\n");
-        sleep(.1);
-        slow_type("\r\nfsdl /pch/prov\r\n");
-        sleep(.1);
-       
-        slow_type("\r\nfswr /pch/serial ".$serial)."\r\n");
-        sleep(1);
-        slow_type("\r\nfswr /pch/prov 70 72 6f 76 69 73 69 6f 6e\r\n");
-        sleep(1);
         my $got_region = 0;
         while( !$got_region ) { #disable for demo
             `clear`;
