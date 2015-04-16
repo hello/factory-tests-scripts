@@ -255,6 +255,7 @@ print "
 
 sub waitfor{
     my $exp = shift(@_);
+    my $time = time();
     while( $line = <SERIALPORT>)  {
         print LOG "[$time, $version] $line";
         print LOG "waiting for $exp\n";
@@ -286,7 +287,7 @@ while( $line = <SERIALPORT>)  {
         waitfor( "Command returned" );
         slow_type("\r\nfsdl /pch/prov\r\n");
         waitfor( "Command returned" );
-        slow_type("\r\nfswr /pch/serial ".$serial)."\r\n");
+        slow_type("\r\nfswr /pch/serial ".$serial."\r\n");
         waitfor( "Command returned" );
         slow_type("\r\nfswr /pch/prov 70 72 6f 76 69 73 69 6f 6e\r\n");
         waitfor( "Command returned" );
