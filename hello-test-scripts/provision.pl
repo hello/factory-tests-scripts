@@ -258,7 +258,6 @@ while( $line = <SERIALPORT>)  {
     print LOG "[$time, $version] $line";
     if( $line =~ /FreeRTOS/ ) {
         ualarm(0);
-        $has200 = 0;
         $killswitch = 0;
         `clear`;
         print_test_begin();
@@ -278,62 +277,8 @@ while( $line = <SERIALPORT>)  {
         #noop
         next;
     }
-    if( $line =~ /got id from top/ ) {
+    if( $line =~ /Boot complete/ ) {
         ualarm(0);
-        slow_type("\r\ngenkey\r\n");
-        `clear`;
-        print_generating_key();
-        ualarm(20_000_000);
-    }
-    if( $line =~ /SL_NETAPP_IPV4_ACQUIRED/) {
-        ualarm(0);
-        `clear`;
-        print_testing();
-        $has200 = 0;
-        slow_type("\r\ntestkey\r\n");
-        ualarm(45_000_000);
-    }
-    if( $line =~ /factory key: ([0-9A-Z]+)/ ) {
-        ualarm(0);
-        my $key = $1;
-        `clear`;
-        print_scan_sense_serial();
-        my $serial = read_serial();
-        chomp($serial);
-        print "Got serial ".$serial.".\r\n";
-
-        my $post = "POST /v1/provision/".$serial." HTTP/1.0\r\n".
-        "Host: provision.hello.is\r\n".
-        "Content-type: text/plain\r\n".
-        "Content-length: ".length($key)."\r\n".
-        "\r\n".
-        $key;
-        #print $post;
-
-        my $cl = IO::Socket::SSL->new('provision.hello.is:443');
-        print $cl $post;
-
-        my $response = <$cl>;
-        #print "Reply:\r\n".$response;
-
-        if( $response =~ /200 OK/ ) {
-            # Allocate MAC?
-            slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
-            `clear`;
-            print_connecting();
-            ualarm(10_000_000);
-        } else {
-            `clear`;
-            print_fail();
-        }
-        close($cl);
-    }
-    if($line =~ /200 OK/){
-        $has200 = 1;
-    }
-    if( $line =~ /test key validated/ || ($line =~ / test key success/ && $has200 == 1)){
-        ualarm(0);
-        slow_type("\r\nloglevel 40\r\ndisconnect\r\n");
         my $got_region = 0;
         while( !$got_region ) { #disable for demo
             `clear`;
@@ -341,7 +286,7 @@ while( $line = <SERIALPORT>)  {
             my $upc = <>;
             chomp($upc);
             print "Got UPC ".$upc.".\r\n";
-            # if (0) { # enable for demo
+
             if( exists $region_map{$upc}  ) {
                 print "Setting country code ",$region_map{$upc},"\n";
                 slow_type("\r\ncountry ",$region_map{$upc},"\r\n");
@@ -350,12 +295,27 @@ while( $line = <SERIALPORT>)  {
                 print_unknown_upc();
             }
         }
-        print_pass();
-    }
-    if( $line =~ /test key not valid/ ) {
-        ualarm(0);
+        
         `clear`;
-        print_fail();
+        print_scan_sense_serial();
+        my $serial = read_serial();
+        chomp($serial);
+        print "Got serial ".$serial.".\r\n";
+        
+        print LOG "\r\nserial ".$serial.".\r\n";
+        
+        slow_type("\r\nloglevel 40\r\n");
+        
+        slow_type("\r\ngenkey\r\n");
+        `clear`;
+        print_generating_key();
+        ualarm(20_000_000);
+    }
+    if( $line =~ /factory key: ([0-9A-Z]{32})/ ) {
+        ualarm(0);
+        my $key = $1;
+        print LOG "\r\nkey $key\r\n"
+        print_pass();
     }
 }
 
