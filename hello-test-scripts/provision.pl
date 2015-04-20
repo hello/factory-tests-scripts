@@ -38,11 +38,9 @@ sub close_and_upload{
 }
 sub slow_type{
     my ($str) = @_;
-    if ($killswitch == 0){
-        for my $char (split //, $str){
-            print SERIALPORT $char;
-            usleep(1_000);
-        }
+    for my $char (split //, $str){
+        print SERIALPORT $char;
+        usleep(1_000);
     }
 }
 sub print_generating_key{
