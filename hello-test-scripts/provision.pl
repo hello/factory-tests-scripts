@@ -12,7 +12,6 @@ my $port = "/dev/ttyUSB0";
 my $logfile = "station.log";
 my $version = "v7";
 my $line;
-my $killswitch = 0;
 
 
 my %region_map = (
@@ -238,12 +237,12 @@ while( 1 ) {
                 print_unknown_upc();
             }
         }
-        $killswitch = 0;
+        my $entered_genkey = 0;
         print_attach_new_device();
         while( $line = <SERIALPORT>)  {
             my $time = time();
             print $SESSION "[$time, $version] $line";
-            if( $killswitch == 0 && $line =~ /FreeRTOS/ ) {
+            if( $entered_genkey == 0 && $line =~ /FreeRTOS/ ) {
                 ualarm(0);
                 slow_type($SESSION, "\r\ncountry ".$region_map{$upc}."\r\n");
                 slow_type($SESSION, "\r\nboot\r\n");
@@ -260,14 +259,14 @@ while( 1 ) {
                 sleep(1.0);
                 slow_type($SESSION, "\r\nled stop\r\n");
             }
-            if( $killswitch == 0 && $line =~ "Boot completed" ){
+            if( $entered_genkey == 0 && $line =~ "Boot completed" ){
                 ualarm(0);
                 slow_type($SESSION, "\r\ngenkey\r\n");
-                $killswitch = 1;
+                $entered_genkey = 1;
                 print_generating_key();
                 ualarm(20_000_000);
             }
-            if( $line =~ /factory key: ([0-9A-Z]{256})/ ) {
+            if( $entered_genkey == 1 && $line =~ /factory key: ([0-9A-Z]{256})/ ) {
                 `clear`;
                 ualarm(0);
                 my $key = $1;
