@@ -255,9 +255,11 @@ while( 1 ) {
             }
             if( $killswitch == 0 && $line =~ "Boot completed" ){
                 ualarm(0);
+                slow_type("\r\nloglevel 40\r\n");
+                print $SESSION "command: loglevel 40\n";
                 slow_type("\r\ngenkey\r\n");
-                $killswitch = 1;
                 print $SESSION "command: genkey\n";
+                $killswitch = 1;
                 print_generating_key();
                 ualarm(20_000_000);
             }
