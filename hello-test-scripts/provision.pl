@@ -214,7 +214,6 @@ while( 1 ) {
         my $session_logfile = "session/$uut_sn"."_".time().".log";
         open (my $SESSION, ">>", $session_logfile) or die "can't open $session_logfile. ";
         $SIG{ALRM} = sub {
-            $killswitch = 1;
             print_timeout();
             print_fail();
             print $SESSION "Failed Test Timed Out\n";
