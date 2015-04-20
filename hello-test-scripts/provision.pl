@@ -245,18 +245,21 @@ while( 1 ) {
             print "$line";
             if( $killswitch == 0 && $line =~ /FreeRTOS/ ) {
                 ualarm(0);
-                print $SESSION "Command: country code ",$region_map{$upc},"\n";
                 slow_type("\r\ncountry ",$region_map{$upc},"\r\n");
+                print $SESSION "command: country code\n",$region_map{$upc},"\n";
                 slow_type("\r\nboot\r\n");
+                PRINT $SESSION "command: boot\n";
                 slow_type("\r\ndisconnect\r\n");
+                PRINT $SESSION "command: disconnect\n";
                 slow_type("\r\n^ pause\r\n");
+                PRINT $SESSION "command: pause top\n";
                 ualarm(5_000_000);
             }
             if( $killswitch == 0 && $line =~ "Boot completed" ){
                 ualarm(0);
                 slow_type("\r\ngenkey\r\n");
                 $killswitch = 1;
-                print $SESSION "Command: genkey\n";
+                print $SESSION "command: genkey\n";
                 print_generating_key();
                 ualarm(20_000_000);
             }
