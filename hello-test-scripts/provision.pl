@@ -255,7 +255,9 @@ while( 1 ) {
                 #this unblocks genkey for 0.3.6.9
                 #TODO remove once fw update to later version
                 slow_type($SESSION, "\r\nloglevel 40\r\n");
-                sleep(2.0);
+                sleep(1.0);
+                slow_type($SESSION, "\r\nled stop\r\n");
+                sleep(1.0);
                 slow_type($SESSION, "\r\nled stop\r\n");
             }
             if( $killswitch == 0 && $line =~ "Boot completed" ){
