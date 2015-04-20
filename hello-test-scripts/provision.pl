@@ -240,7 +240,6 @@ while( 1 ) {
         while( $line = <SERIALPORT>)  {
             my $time = time();
             print $SESSION "[$time, $version] $line";
-            print "$line";
             if( $killswitch == 0 && $line =~ /FreeRTOS/ ) {
                 ualarm(0);
                 slow_type("\r\ncountry ",$region_map{$upc},"\r\n");
