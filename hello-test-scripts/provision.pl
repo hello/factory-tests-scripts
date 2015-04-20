@@ -273,13 +273,13 @@ while( 1 ) {
                 "Content-length: ".length($key)."\r\n".
                 "\r\n".
                 $key;
-                print $SESSION "Post: $post\n";
+                print $SESSION "post: $post\n";
 
                 my $cl = IO::Socket::SSL->new('provision.hello.is:443');
                 print $cl $post;
 
                 my $response = <$cl>;
-                print $SESSION "Response: $response\n";
+                print $SESSION "response: $response\n";
 
                 if( $response =~ /200 OK/ ) {
                     print $SESSION "Passed Provisioning\n";
@@ -290,6 +290,8 @@ while( 1 ) {
                 }
                 close($cl);
                 close_and_upload($SESSION, $session_logfile);
+                usleep(1_500_000);
+                goto RESTART;
             }
         }
     };
