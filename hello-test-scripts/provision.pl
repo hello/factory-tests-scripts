@@ -33,12 +33,15 @@ open (LOG, ">>", $logfile) or die "can't open $logfile. ";
 usleep(100000);
 
 sub close_and_upload{
-    my ($session, $filename) = @_;
+    my ($session, $filename, $result) = @_;
+    print $session $result;
+    print LOG "[$version]$result\n";
     close $session;
     `./cleanup.sh $filename &`;
 }
 sub slow_type{
-    my ($str) = @_;
+    my ($handle, $str) = @_;
+    print $handle "Command: $str";
     for my $char (split //, $str){
         print SERIALPORT $char;
         usleep(1_000);
@@ -210,18 +213,19 @@ while( 1 ) {
     eval{
         #print_scan_sense_serial();
         my $uut_sn = read_serial();
-        my $session_logfile = "session/$uut_sn"."_".time().".log";
+        my $uut_time = time();
+        my $upc;
+        my $session_logfile = "session/$uut_sn"."_"."$uut_time".".log";
         open (my $SESSION, ">>", $session_logfile) or die "can't open $session_logfile. ";
         $SIG{ALRM} = sub {
             print_timeout();
             print_fail();
-            print $SESSION "Failed: Test Timed Out\n";
-            close_and_upload($SESSION, $session_logfile);
+            my $uut_reason = "Timeout";
+            close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason");
             die;
         };
         #region
         my $got_region = 0;
-        my $upc;
         while( !$got_region ) { #disable for demo
             `clear`;
             print_scan_upc();
@@ -241,29 +245,22 @@ while( 1 ) {
             print $SESSION "[$time, $version] $line";
             if( $killswitch == 0 && $line =~ /FreeRTOS/ ) {
                 ualarm(0);
-                slow_type("\r\ncountry ",$region_map{$upc},"\r\n");
-                print $SESSION "Command: country code\n",$region_map{$upc},"\n";
-                slow_type("\r\nboot\r\n");
-                print $SESSION "Command: boot\n";
-                slow_type("\r\ndisconnect\r\n");
-                print $SESSION "Command: disconnect\n";
-                slow_type("\r\n^ pause\r\n");
-                print $SESSION "Command: pause top\n";
+                slow_type($SESSION, "\r\ncountry ",$region_map{$upc},"\r\n");
+                slow_type($SESSION, "\r\nboot\r\n");
+                slow_type($SESSION, "\r\ndisconnect\r\n");
+                slow_type($SESSION, "\r\n^ pause\r\n");
                 ualarm(5_000_000);
             }
             if($line =~ "PAIRING MODE" ){
                 #this unblocks genkey for 0.3.6.9
                 #TODO remove once fw update to later version
-                slow_type("\r\nloglevel 40\r\n");
-                print $SESSION "Command: loglevel 40\n";
+                slow_type($SESSION, "\r\nloglevel 40\r\n");
                 sleep(1.0);
-                slow_type("\r\nled stop\r\n");
-                print $SESSION "Command: led stop\n";
+                slow_type($SESSION, "\r\nled stop\r\n");
             }
             if( $killswitch == 0 && $line =~ "Boot completed" ){
                 ualarm(0);
-                slow_type("\r\ngenkey\r\n");
-                print $SESSION "Command: genkey\n";
+                slow_type($SESSION, "\r\ngenkey\r\n");
                 $killswitch = 1;
                 print_generating_key();
                 ualarm(20_000_000);
@@ -286,22 +283,23 @@ while( 1 ) {
                 my $response = <$cl>;
                 print $SESSION "response: $response\n";
 
+                my $uut_reason = "";
                 if( $response =~ /200 OK/ ) {
-                    print $SESSION "Passed: Provisioning\n";
+                    $uut_reason = "Passed";
                     print_pass();
                 } else {
-                    print $SESSION "Failed: Provisioning\n";
+                    $uut_reason = "Failed";
                     print_fail();
                 }
                 close($cl);
-                close_and_upload($SESSION, $session_logfile);
+                close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason");
                 goto RESTART;
             }
         }
         #shoud not get here: serial died
         `clear`;
-        print $SESSION "Failed: Lost UART Connection\n";
-        close_and_upload($SESSION, $session_logfile);
+        my $uut_reason = "UART";
+        close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason");
         exit(1);
     };
     if($@) {
