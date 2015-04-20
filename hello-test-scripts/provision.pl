@@ -301,7 +301,7 @@ while( 1 ) {
                 slow_type("\r\ngenkey\r\n");
                 print $SESSION "Command: genkey\n";
                 print_generating_key();
-                ualarm(3_000_000);
+                ualarm(20_000_000);
             }
             if( $line =~ /factory key: ([0-9A-Z]{256})/ ) {
                 `clear`;
