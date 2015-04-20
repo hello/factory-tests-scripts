@@ -209,7 +209,7 @@ sub print_unknown_upc{
 while( 1 ) {
     RESTART:
     eval{
-        print_scan_sense_serial();
+        #print_scan_sense_serial();
         my $uut_sn = read_serial();
         my $session_logfile = "session/$uut_sn"."_".time().".log";
         open (my $SESSION, ">>", $session_logfile) or die "can't open $session_logfile. ";
@@ -219,7 +219,6 @@ while( 1 ) {
             print_fail();
             print $SESSION "Failed Test Timed Out\n";
             close_and_upload($SESSION, $session_logfile);
-            usleep(1_500_000);
             die;
         };
         #region
