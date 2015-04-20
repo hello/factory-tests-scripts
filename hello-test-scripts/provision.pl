@@ -29,6 +29,7 @@ my %region_map = (
 `stty -brkint -icrnl ixoff -imaxbel -opost -onlcr -isig -icanon -F /dev/ttyUSB0 115200`;
 
 open (SERIALPORT, "+<", "$port") or die "can't open $port. ";
+open (LOG, ">>", $logfile) or die "can't open $logfile. ";
 usleep(100000);
 
 sub close_and_upload{
