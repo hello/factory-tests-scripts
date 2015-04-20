@@ -248,11 +248,11 @@ while( 1 ) {
                 slow_type("\r\ncountry ",$region_map{$upc},"\r\n");
                 print $SESSION "command: country code\n",$region_map{$upc},"\n";
                 slow_type("\r\nboot\r\n");
-                PRINT $SESSION "command: boot\n";
+                print $SESSION "command: boot\n";
                 slow_type("\r\ndisconnect\r\n");
-                PRINT $SESSION "command: disconnect\n";
+                print $SESSION "command: disconnect\n";
                 slow_type("\r\n^ pause\r\n");
-                PRINT $SESSION "command: pause top\n";
+                print $SESSION "command: pause top\n";
                 ualarm(5_000_000);
             }
             if( $killswitch == 0 && $line =~ "Boot completed" ){
