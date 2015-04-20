@@ -293,4 +293,7 @@ while( 1 ) {
             }
         }
     };
+    if($@) {
+        goto RESTART;
+    }
 }
