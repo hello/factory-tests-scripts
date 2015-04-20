@@ -35,7 +35,7 @@ usleep(100000);
 sub close_and_upload{
     my ($session, $filename) = @_;
     close $session;
-    `./sanders pch $filename &`
+    `./cleanup.sh $filename &`
 }
 sub slow_type{
     my ($str) = @_;
