@@ -288,7 +288,6 @@ while( 1 ) {
                 }
                 close($cl);
                 close_and_upload($SESSION, $session_logfile);
-                usleep(1_500_000);
                 goto RESTART;
             }
         }
