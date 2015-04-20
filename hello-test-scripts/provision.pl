@@ -265,6 +265,7 @@ while( 1 ) {
             print_timeout();
             print $SESSION "Failed Test Timed Out\n";
             close_and_upload($SESSION, $session_logfile);
+            usleep(1_500_000);
             die;
         };
         #region
@@ -283,6 +284,7 @@ while( 1 ) {
             }
         }
         $killswitch = 0;
+        print_attach_new_device();
         while( $line = <SERIALPORT>)  {
             my $time = time();
             print $SESSION "[$time, $version] $line";
