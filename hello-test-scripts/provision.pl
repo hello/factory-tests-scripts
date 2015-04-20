@@ -206,6 +206,7 @@ sub print_unknown_upc{
           ";
 }
 while( 1 ) {
+    print_scan_sense_serial();
     RESTART:
     eval{
         #print_scan_sense_serial();
