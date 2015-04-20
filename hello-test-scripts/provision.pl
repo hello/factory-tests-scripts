@@ -35,7 +35,7 @@ usleep(100000);
 sub close_and_upload{
     my ($session, $filename, $result) = @_;
     print $session $result;
-    print LOG "[$version]$result\n";
+    print LOG "$version,$result\n";
     close $session;
     `./cleanup.sh $filename &`;
 }
