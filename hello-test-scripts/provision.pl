@@ -13,7 +13,6 @@ my $logfile = "station.log";
 my $version = "v7";
 my $line;
 my $killswitch = 0;
-my $has200 = 0;
 
 
 my %region_map = (
