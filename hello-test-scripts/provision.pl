@@ -250,10 +250,17 @@ while( 1 ) {
                 print $SESSION "command: pause top\n";
                 ualarm(5_000_000);
             }
-            if( $killswitch == 0 && $line =~ "Boot completed" ){
-                ualarm(0);
+            if($line =~ "PAIRING MODE" ){
+                #this unblocks genkey for 0.3.6.9
+                #TODO remove once fw update to later version
                 slow_type("\r\nloglevel 40\r\n");
                 print $SESSION "command: loglevel 40\n";
+                sleep(1.0);
+                slow_type("\r\nled stop\r\n");
+                print $SESSION "command: led stop\n";
+            }
+            if( $killswitch == 0 && $line =~ "Boot completed" ){
+                ualarm(0);
                 slow_type("\r\ngenkey\r\n");
                 print $SESSION "command: genkey\n";
                 $killswitch = 1;
