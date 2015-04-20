@@ -216,6 +216,7 @@ while( 1 ) {
         $SIG{ALRM} = sub {
             $killswitch = 1;
             print_timeout();
+            print_fail();
             print $SESSION "Failed Test Timed Out\n";
             close_and_upload($SESSION, $session_logfile);
             usleep(1_500_000);
