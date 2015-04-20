@@ -300,8 +300,8 @@ while( 1 ) {
             }
             if( $killswitch == 0 && $line =~ "Boot completed" ){
                 ualarm(0);
-                $killswitch = 1;
                 slow_type("\r\ngenkey\r\n");
+                $killswitch = 1;
                 print $SESSION "Command: genkey\n";
                 print_generating_key();
                 ualarm(20_000_000);
