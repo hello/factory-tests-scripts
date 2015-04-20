@@ -214,7 +214,7 @@ while( 1 ) {
         $SIG{ALRM} = sub {
             print_timeout();
             print_fail();
-            print $SESSION "Failed Test Timed Out\n";
+            print $SESSION "Failed: Test Timed Out\n";
             close_and_upload($SESSION, $session_logfile);
             die;
         };
@@ -241,28 +241,28 @@ while( 1 ) {
             if( $killswitch == 0 && $line =~ /FreeRTOS/ ) {
                 ualarm(0);
                 slow_type("\r\ncountry ",$region_map{$upc},"\r\n");
-                print $SESSION "command: country code\n",$region_map{$upc},"\n";
+                print $SESSION "Command: country code\n",$region_map{$upc},"\n";
                 slow_type("\r\nboot\r\n");
-                print $SESSION "command: boot\n";
+                print $SESSION "Command: boot\n";
                 slow_type("\r\ndisconnect\r\n");
-                print $SESSION "command: disconnect\n";
+                print $SESSION "Command: disconnect\n";
                 slow_type("\r\n^ pause\r\n");
-                print $SESSION "command: pause top\n";
+                print $SESSION "Command: pause top\n";
                 ualarm(5_000_000);
             }
             if($line =~ "PAIRING MODE" ){
                 #this unblocks genkey for 0.3.6.9
                 #TODO remove once fw update to later version
                 slow_type("\r\nloglevel 40\r\n");
-                print $SESSION "command: loglevel 40\n";
+                print $SESSION "Command: loglevel 40\n";
                 sleep(1.0);
                 slow_type("\r\nled stop\r\n");
-                print $SESSION "command: led stop\n";
+                print $SESSION "Command: led stop\n";
             }
             if( $killswitch == 0 && $line =~ "Boot completed" ){
                 ualarm(0);
                 slow_type("\r\ngenkey\r\n");
-                print $SESSION "command: genkey\n";
+                print $SESSION "Command: genkey\n";
                 $killswitch = 1;
                 print_generating_key();
                 ualarm(20_000_000);
@@ -286,10 +286,10 @@ while( 1 ) {
                 print $SESSION "response: $response\n";
 
                 if( $response =~ /200 OK/ ) {
-                    print $SESSION "Passed Provisioning\n";
+                    print $SESSION "Passed: Provisioning\n";
                     print_pass();
                 } else {
-                    print $SESSION "Failed Provisioning\n";
+                    print $SESSION "Failed: Provisioning\n";
                     print_fail();
                 }
                 close($cl);
@@ -297,6 +297,11 @@ while( 1 ) {
                 goto RESTART;
             }
         }
+        #shoud not get here: serial died
+        `clear`;
+        print $SESSION "Failed: Lost UART Connection\n";
+        close_and_upload($SESSION, $session_logfile);
+        exit(1);
     };
     if($@) {
         goto RESTART;
