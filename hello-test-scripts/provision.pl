@@ -260,7 +260,7 @@ while( 1 ) {
                 print_generating_key();
                 ualarm(20_000_000);
             }
-            if( $line =~ /factory key: ([0-9A-Z]{256})/ ) {
+            if( $killswitch == 0 && $line =~ /factory key: ([0-9A-Z]{256})/ ) {
                 `clear`;
                 ualarm(0);
                 my $key = $1;
