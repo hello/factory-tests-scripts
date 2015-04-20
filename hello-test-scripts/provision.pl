@@ -10,7 +10,7 @@ use read_serial;
 
 my $port = "/dev/ttyUSB0";
 my $logfile = "station.log";
-my $version = "v3";
+my $version = "v4";
 my $line;
 my $killswitch = 0;
 my $has200 = 0;
@@ -278,8 +278,9 @@ while( $line = <SERIALPORT>)  {
         #noop
         next;
     }
-    if( $line =~ /got id from top/ ) {
+    if( $line =~ /Boot completed/ ) {
         ualarm(0);
+        usleep(4_000_000);
         slow_type("\r\ngenkey\r\n");
         `clear`;
         print_generating_key();
@@ -301,6 +302,7 @@ while( $line = <SERIALPORT>)  {
         my $serial = read_serial();
         chomp($serial);
         print "Got serial ".$serial.".\r\n";
+        print LOG "Got serial ".$serial.".\r\n";
 
         my $post = "POST /v1/provision/".$serial." HTTP/1.0\r\n".
         "Host: provision.hello.is\r\n".
@@ -341,6 +343,7 @@ while( $line = <SERIALPORT>)  {
             my $upc = <>;
             chomp($upc);
             print "Got UPC ".$upc.".\r\n";
+            print LOG "Got UPC ".$upc.".\r\n";
             # if (0) { # enable for demo
             if( exists $region_map{$upc}  ) {
                 print "Setting country code ",$region_map{$upc},"\n";
