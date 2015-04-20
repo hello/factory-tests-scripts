@@ -262,8 +262,8 @@ while( 1 ) {
         $SIG{ALRM} = sub {
             $killswitch = 1;
             print_timeout();
-            my $session_logfilename = $session_logfile; 
             print $SESSION "Failed Test Timed Out\n";
+            close_and_upload($SESSION, $session_logfile);
             die;
         };
         #region
