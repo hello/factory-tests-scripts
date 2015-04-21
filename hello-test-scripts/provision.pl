@@ -36,7 +36,7 @@ sub close_and_upload{
     print $session $result;
     print LOG "$version,$result\n";
     close $session;
-    `./cleanup.sh $filename &`;
+    #`~/sanders_linux_386 pch $filename &`;
 }
 sub slow_type{
     my ($handle, $str) = @_;
