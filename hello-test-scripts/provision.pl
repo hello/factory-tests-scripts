@@ -269,6 +269,7 @@ while( 1 ) {
             if( $entered_genkey == 1 && $line =~ /factory key: ([0-9A-Z]{256})/ ) {
                 `clear`;
                 ualarm(0);
+                ualarm(20_000_000);
                 my $key = $1;
                 my $post = "POST /v1/provision/".$uut_sn." HTTP/1.0\r\n".
                 "Host: provision.hello.is\r\n".
@@ -285,6 +286,7 @@ while( 1 ) {
                 print $SESSION "response: $response\n";
 
                 my $uut_reason = "";
+                ualarm(0);
                 if( $response =~ /200 OK/ ) {
                     $uut_reason = "Passed";
                     print_pass();
