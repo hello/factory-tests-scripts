@@ -214,13 +214,14 @@ while( 1 ) {
         my $uut_sn = read_serial();
         my $uut_time = time();
         my $upc;
+        my $id = "INVALID";
         my $session_logfile = "session/$uut_sn"."_"."$uut_time".".log";
         open (my $SESSION, ">>", $session_logfile) or die "can't open $session_logfile. ";
         $SIG{ALRM} = sub {
             print_timeout();
             print_fail();
             my $uut_reason = "Timeout";
-            close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason");
+            close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason,$id");
             die;
         };
         #region
@@ -277,32 +278,48 @@ while( 1 ) {
                 "Content-length: ".length($key)."\r\n".
                 "\r\n".
                 $key;
-                print $SESSION "post: $post\n";
+                print $SESSION "Post: $post\n";
 
                 my $cl = IO::Socket::SSL->new('provision.hello.is:443');
                 print $cl $post;
 
                 my $response = <$cl>;
-                print $SESSION "response: $response\n";
+                print $SESSION "Response: $response\n";
 
                 my $uut_reason = "";
                 ualarm(0);
                 if( $response =~ /200 OK/ ) {
-                    $uut_reason = "Passed";
-                    print_pass();
+                    my $status =  <$cl>;
+                    $status =  <$cl>;
+                    $status =  <$cl>;
+                    $status =  <$cl>;
+                    $status =  <$cl>;
+                    $status =  <$cl>;
+                    $id = <$cl>;
+                    print $SESSION "Status: $status\n";
+                    print $SESSION "ID: $id\n";
+                    print "Status: $status\n";
+                    print "ID: $id\n";
+                    if($status =~ /OK/ && !($id =~ /0000000000000000/)){
+                        $uut_reason = "Passed";
+                        print_pass();
+                    }else{
+                        $uut_reason = "KO";
+                        print_fail();
+                    }
                 } else {
                     $uut_reason = "Failed";
                     print_fail();
                 }
                 close($cl);
-                close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason");
+                close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason,$id");
                 goto RESTART;
             }
         }
         #shoud not get here: serial died
         `clear`;
         my $uut_reason = "UART";
-        close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason");
+        close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason,$id");
         exit(1);
     };
     if($@) {
