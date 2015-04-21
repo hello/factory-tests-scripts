@@ -300,7 +300,7 @@ while( 1 ) {
                     print $SESSION "ID: $id\n";
                     #print "Status: $status\n";
                     #print "ID: $id\n";
-                    if($status =~ /OK/ && !($id =~ /0000000000000000/)){
+                    if($status =~ /OK/ && $id =~ /[A-F0-9]{16}/){
                         $uut_reason = "Passed";
                         print_pass();
                     }else{
