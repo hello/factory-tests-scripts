@@ -240,11 +240,13 @@ while( 1 ) {
         }
         my $entered_genkey = 0;
         print_attach_new_device();
+        ualarm(0);
         while( $line = <SERIALPORT>)  {
             my $time = time();
             print $SESSION "[$time, $version] $line";
             if( $entered_genkey == 0 && $line =~ /FreeRTOS/ ) {
                 ualarm(0);
+                sleep(0.5);
                 slow_type($SESSION, "\r\ncountry ".$region_map{$upc}."\r\n");
                 slow_type($SESSION, "\r\nboot\r\n");
                 slow_type($SESSION, "\r\ndisconnect\r\n");
