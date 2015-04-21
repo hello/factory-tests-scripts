@@ -298,8 +298,8 @@ while( 1 ) {
                     $id = <$cl>;
                     print $SESSION "Status: $status\n";
                     print $SESSION "ID: $id\n";
-                    print "Status: $status\n";
-                    print "ID: $id\n";
+                    #print "Status: $status\n";
+                    #print "ID: $id\n";
                     if($status =~ /OK/ && !($id =~ /0000000000000000/)){
                         $uut_reason = "Passed";
                         print_pass();
