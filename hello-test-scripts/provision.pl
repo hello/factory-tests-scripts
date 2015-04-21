@@ -304,7 +304,7 @@ while( 1 ) {
                         $uut_reason = "Passed";
                         print_pass();
                     }else{
-                        $uut_reason = "KO";
+                        $uut_reason = $response;
                         print_fail();
                     }
                 } else {
