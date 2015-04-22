@@ -275,6 +275,7 @@ while( 1 ) {
                 ualarm(20_000_000);
                 my $key = $1;
                 my $post = "POST /v1/provision/".$uut_sn." HTTP/1.0\r\n".
+        print LOG "Got serial ".$serial.".\r\n";
                 "Host: provision.hello.is\r\n".
                 "Content-type: text/plain\r\n".
                 "Content-length: ".length($key)."\r\n".
@@ -309,6 +310,7 @@ while( 1 ) {
                         $uut_reason = $response;
                         print_fail();
                     }
+            print LOG "Got UPC ".$upc.".\r\n";
                 } else {
                     $uut_reason = "Failed";
                     print_fail();
