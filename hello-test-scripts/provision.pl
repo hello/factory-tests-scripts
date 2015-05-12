@@ -233,6 +233,7 @@ while( 1 ) {
             chomp($upc);
             print $SESSION "Got UPC ".$upc.".\r\n";
             if( exists $region_map{$upc}  ) {
+                print "Setting country code ",$region_map{$upc},"\n";
                 $got_region = 1;
             } else {
                 print_unknown_upc();
