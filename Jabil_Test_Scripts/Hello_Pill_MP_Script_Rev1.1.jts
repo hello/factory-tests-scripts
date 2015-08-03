@@ -1,0 +1,630 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//File Name:			Hello_Pill_MP_Script_Rev1.1.jts
+//Customer: 			Hello
+//Project:   			Hello_Pill_box
+//Creator:   			Baosheng jing
+//Revision:			Rev1.1
+//Released:			2015/8/3
+//Description:		
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Revision History:
+//Rev1.0: update file name from 9715_Pill box level dome test script Rev 20.jts to Hello_Pill_MP_Script_Rev1.0.jts 2015/7/31 Dave huang
+//Rev1.1: remove Battery_PCT and Uptime_check test.
+//
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+
+  SetFinalizeFunction("Cleanup");
+  SetFailFunction("FailConfig"); 
+  SetAbortFunction("FailConfig"); 
+
+  $PassHtmlLocation1 = "E:\\html\\";
+  $PassHtmlLocation2 = "\\\\huafile01\\Hello_data\\test log\\Pill\\";
+  //~ $PassHtmlLocation2 = "E:\\html\\";
+ConfigurableHtmlReportWriter_ConfigureLocations($PassHtmlLocation2,$PassHtmlLocation1);
+  UpdateProgressBar(0);           
+   call Barcode_Input_Check();  //check barcode
+   call Instrument_Init();     //Initial  Instruments.
+   $Count_fail=0;
+   Label Test_again:  
+  UpdateProgressBar(10);
+  call UUT_go_home(); 
+  UpdateProgressBar(20);
+  call Check_UUT();
+  UpdateProgressBar(30);
+  //~ call reset_simple();
+  call Fixture_Engage();  //UUT exist?
+  UpdateProgressBar(40);
+  call UUT_Move_Point();          // Apply 3.7V DC to UUT
+  UpdateProgressBar(50);        
+  //~ call Shake_Maghet_OFF_Test();             //Set UUT Mode
+  UpdateProgressBar(60);
+  //~ call Stop_Maghet_On_Test();                   //Connect UUT to PC via USB
+  call Shake_Maghet_On_Test();                   //Connect UUT to PC via USB
+  UpdateProgressBar(70);
+  //~ call Shake_Maghet_On_Test();  
+  call SHAKE_Magnet_OFF_Test_again();  
+   UpdateProgressBar(90);
+  call Battery_Voltage_Test();  
+  UpdateProgressBar(100); 
+End;
+///////////////////////////////////////////////////////////////////////////////////////////////
+
+function Barcode_Input_Check()
+{
+  SetTestName("Barcode Check");
+  UpdateStatus("***** Check the serial number *****");  
+  while($SerialNumber == "")
+  {
+    $SerialNumber = OperatorInputPrompt("请输入UUT的条码");
+  }
+  Label CheckSN_UUT:
+  $SerialNumber = StringToUpper($SerialNumber);
+  $length = StringLength($SerialNumber);
+  if(($length != 21)&&($length != 20))
+  {
+    $SerialNumber = OperatorInputPrompt("不正确的条码格式，请重新输入任意UUT的条码!");
+    goto CheckSN_UUT;
+  }
+  
+  $result1 = StringStartsWith($SerialNumber,"1574924","TRUE");    			//check UUT model, the SN make sure form 00001 to 9FFFF, can't have over F;910000092301145100110
+  $result2 = StringStartsWith($SerialNumber,"91000009A","TRUE");    			//check UUT model, the SN make sure form 00001 to 9FFFF, can't have over F;91000009230114510011091000009A01150700492
+  
+  if(!$result1&&!$result2)
+  {
+    $SerialNumber = OperatorInputPrompt("产品类型错误,当前测试程序只支持产品类型为910的产品，请检查并重新输入UUT的条码");
+    goto CheckSN_UUT;
+  }
+   RecordMeasurementPassFail("Barcode Check","true","Bool",true,"true");
+  return;
+}
+
+function UUT_go_home()
+{
+   SetTestName("UUT_go_home");
+   $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RK6$", "OK",1000);   // undock
+  UpdateStatus($Return);
+  
+   $Return = SerialSendMilliseconds($UserInterfaceBoard, "#HOME$", "I am at home",5000);   // release reedswitch 
+   UpdateStatus($Return);
+     $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK6$", "OK",1000);   // undock
+  UpdateStatus($Return);
+  return;
+}
+
+function Check_UUT()
+{
+  $TestName = "Check_UUT";
+  $UUTExist_Sensor = "RPA1$\n";
+  SetTestName($TestName);
+  UpdateStatus("=============================================Check_UUT===========================================");
+  $DoorClose=false;
+   $DoorWindowHandle = OperatorPromptNonBlocking("请放入UUT 和关好门", 200, 400);
+    $return = SerialSendMilliseconds($UserInterfaceBoard, "#IN4$", "OK",100);   // release reedswitch 
+  UpdateStatus($return);
+  $DoorClose = StringContains($return,"1");
+
+   while($DoorClose==false)
+   {
+    $return = SerialSendMilliseconds($UserInterfaceBoard, "#IN4$", "OK",100);   // release reedswitch 
+     UpdateStatus($return);  
+	 $DoorClose = StringContains($return,"1");
+     SleepMilliseconds(200);
+   }
+CloseForm($DoorWindowHandle);
+  // sense uut with micro switch in future
+  return;
+}
+function Fixture_Engage()
+{
+  $TestName = "Fixture_Engage";
+ // $UUTExist_Sensor = "RPA1$\n";
+  SetTestName($TestName);
+  UpdateStatus("=============================================Fixture_Engage===========================================");
+    
+  $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK7$", "OK",1000);   // Lock door
+  UpdateStatus($Return);
+ $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RK6$", "OK",1000);   // undock
+  UpdateStatus($Return);
+  $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RK4$", "OK",1000);   //enable motor
+  UpdateStatus($Return);
+  //~ SleepMilliseconds(200);
+  return;
+}
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function UUT_Move_Point()
+{
+  SetTestName("UUT_Move_Point");
+  UpdateStatus("=============================================UUT_Move_Point===========================================");
+
+   $Return = SerialSendMilliseconds($UserInterfaceBoard, "#POINT$", "Here is point", 5000);   // release reedswitch 
+   UpdateStatus($Return);
+   // send the command to DUT for reset
+   Sleep(1);
+   $Return = SerialSendMilliseconds($BallHandle, "pt\r\n", "Shake to start", 5000);   // release reedswitch 
+   UpdateStatus($Return);
+   $PassFail = StringContains($Return,"Shake to start");
+   //~ $Result1 = StringContains($Return,"Fail Magnet Off+Shake Shake to start");
+   //~ if($Result1)
+   //~ {
+     //~ $PassFail = false;
+     //~ break;
+   //~ }
+   RecordMeasurementPassFail("Pill Reset1",$Return,"String",true,$PassFail);
+  return;
+}
+function Shake_Maghet_OFF_Test()
+{
+  SetTestName("Shake_Magnet_OFF_Test_1");
+  UpdateStatus("================ Shake_Magnet_OFF_Test ================");
+  $Return_SHAKE= SerialSendMilliseconds($UserInterfaceBoard, "#SHAKE$", "Shake Start",5000);   // release reedswitch
+  UpdateStatus($Return_SHAKE);
+  Sleep(5);
+  $Return_Stop = SerialSendMilliseconds($UserInterfaceBoard, "#STOP$", "", 100);   // release reedswitch 
+  UpdateStatus($Return_Stop);
+  SleepMilliseconds(100);
+  //== Check the return from ball ===
+  $PassFail = false;
+  $Contains = "";
+  $Count = 0;
+  while($Count < 10)
+  {
+   $Return = SerialSendMilliseconds($BallHandle, "count\r\n", "", 200);   // release reedswitch 
+   UpdateStatus("*******************************************");
+   UpdateStatus($Return);
+   UpdateStatus("*******************************************");
+  //~ $Contains = $Contains + $Return;
+  //~ $Result2 = StringContains($Return,"Fail");
+   //~ if($Result2)
+   //~ {
+     //~ $PassFail = false;
+     //~ break;
+   //~ }
+  $Result1 = StringContains($Return,"count");
+   if(!$Result1)
+   {
+     goto Retyry_again;
+   }
+   $Return = StringCut($Return,"count",20) ;
+   $Return = StringTrim($Return);
+   UpdateStatus($Return);
+   if($Return>0)
+   {
+     $PassFail = true;
+     $Return_Measure = $Return;
+     break;
+   }
+   Label Retyry_again:
+  $Count = $Count + 1;
+  SleepMilliseconds(100);
+  }
+  RecordMeasurementPassFail("Shake_Magnet_OFF",$Return,"String",true,$PassFail);
+ return;
+}
+
+function Stop_Maghet_On_Test()
+{
+  SetTestName("STOP_Magnet_ON_Test");
+  UpdateStatus("================ STOP_Magnet_ON_Test ================");
+  SleepMilliseconds(100);
+  $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK9$", "OK",1000);   // release reedswitch 
+  UpdateStatus($Return);
+  Sleep(6);
+  $Return = SerialSendMilliseconds($BallHandle, "clr\r\n", "",200);   // release reedswitch 
+  UpdateStatus($Return);
+  return;
+}
+
+function Shake_Maghet_On_Test()
+{
+ SetTestName("Shake_Magnet_ON_Test");
+ UpdateStatus("================ Shake_Magnet_ON_Test ================");
+  //== Check the return from ball ===
+  $ShakeStart = 0;
+  $PassFail = false;
+  $Contains = "";
+  $Count = 0;
+  
+  $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK9$", "OK",1000);   // release reedswitch 
+  UpdateStatus($Return);
+  Sleep(5);
+  $Return = SerialSendMilliseconds($BallHandle, "clr\r\n", "",200);   // release reedswitch 
+  //~ UpdateStatus($Return);
+  $Result1_SHAKE  = SerialSendMilliseconds($UserInterfaceBoard, "#SHAKE$", "Shake Start",5000);   // release reedswitch 
+  UpdateStatus($Result1_SHAKE);
+  Sleep(7);
+  $Return_Stop = SerialSendMilliseconds($UserInterfaceBoard, "#STOP$", "", 500);   // release reedswitch 
+  UpdateStatus($Return_Stop);
+  while($Count < 10)
+  {
+    $Return = SerialSendMilliseconds($BallHandle, "count\r\n", "",200);   // release reedswitch 
+    UpdateStatus("*******************************************");
+    UpdateStatus($Return);
+    UpdateStatus("*******************************************");
+   $Result1 = StringContains($Return,"count");
+   if(!$Result1)
+   {
+     goto Retyry_again2;
+   }
+   $Return = StringCut($Return,"count",20) ;
+   $Return = StringTrim($Return);
+   $Result2 = StringContains($Return,"0");
+   if($Result2)
+   {
+     $PassFail = true;
+     break;
+   }
+   Label Retyry_again2:
+   $Count = $Count + 1;
+    SleepMilliseconds(100);
+  }
+  
+  //===============================
+  // if pass, stop 
+  //~ $Return = SerialSendMilliseconds($UserInterfaceBoard, "#STOP$", "", 2000);   // release reedswitch 
+  //~ UpdateStatus($Return);
+  RecordMeasurementPassFail("Shake_Magnet_ON",$Return,"String",true,$PassFail);
+  //~ Sleep(1);
+  // Magnet is in off state
+  return;
+}
+
+function SHAKE_Magnet_OFF_Test_again()
+{
+  SetTestName("SHAKE_Magnet_OFF_Test_again");
+  UpdateStatus("================ SHAKE_Magnet_OFF_Test ================");
+  $count = 0;
+  $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RK9$", "OK", 1500);   // release reedswitch 
+  UpdateStatus($Return);
+  //===== Check the return from ball ======
+  SerialSendMilliseconds($UserInterfaceBoard, "#SHAKE$", "Shake Start",5000);   // release reedswitch 
+  Sleep(10);
+  $Return = SerialSendMilliseconds($UserInterfaceBoard, "#STOP$", "", 200);   // release reedswitch 
+  UpdateStatus($Return);
+  $ShakeStart = 0;
+  $PassFail = false;
+  $Contains = "";
+  $Count = 0;
+  while($Count < 10)
+  {
+    $Return = SerialSendMilliseconds($BallHandle, "count\r\n", "", 200);   // release reedswitch 
+    UpdateStatus("*******************************************");
+    UpdateStatus($Return);
+    UpdateStatus("*******************************************");
+    $Result1 = StringContains($Return,"count");
+    if(!$Result1)
+   {
+     goto Retyry_again3;
+   }
+   $Return = StringCut($Return,"count",20) ;
+   $Return = StringTrim($Return);
+   if($Return > 0)
+   {
+     $PassFail = true;
+     break;
+   }
+  //~ $Contains = $Return;
+   //~ $Result1 = StringContains($Contains,"Fail");
+      //~ UpdateStatus($Result1);
+   //~ if($Result1)
+   //~ {
+      //~ $Result3 = StringContains($Contains,"Retest");
+      //~ UpdateStatus($Result3);
+   //~ if($Result3&&$Count_fail <1)
+  //~ {
+    //~ $Count_fail=$Count_fail+1;
+    //~ $DoorWindowHandle = OperatorPromptNonBlocking("重测UUT 请耐心等待", 200, 400);
+     //~ $Return = SerialSendMilliseconds($UserInterfaceBoard, "#HOME$", "I am at home", 5000);   // release reedswitch 
+     //~ $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RKA$", "OK", 500);   // release reedswitch 
+     //~ Sleep(10);
+     //~ ///////////////////////////////////////////////////////////////////////////////////
+     //~ $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK6$", "OK",1000);   // dock
+     //~ $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RK7$", "OK",1000);   // unLock door
+     //~ $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK4$", "OK", 500);   //disble motor
+     //~ $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RK9$", "OK", 500);   // release reedswitch 
+     //~ UpdateStatus($Return);
+     //~ CloseForm($DoorWindowHandle);
+     //~ goto Test_again;
+      //~ }
+      //~ $PassFail = false;
+      //~ $Return_Measure = $Return;
+      //~ break;
+   //~ }
+   //~ $Return_Measure = $Contains;
+   //~ $Result2 = StringContains($Contains,"Pass"); 
+   //~ $Contains = StringCut($Return,"count",10) ;
+   //~ $Contains = StringTrim($Contains);
+   //~ if($Contains>0)
+   //~ {
+     //~ $PassFail = true;
+     //~ $Return_Measure = $Return;
+     //~ break;
+   //~ }
+   Label Retyry_again3:
+   $Count = $Count + 1;
+   SleepMilliseconds(100);
+  }
+
+  RecordMeasurementPassFail("Magnet_OFF_Test_again",$Return,"",true,$PassFail);
+
+  return;
+}
+
+function Battery_Voltage_Test()
+{
+  /////////////////////////////////////////////////////////////////////////////////////////
+  SetTestName("Battery_Voltage_Test");
+  $ShakeStart = 0;
+  $PassFail = false;
+  $Contains = "";
+  $Count = 0;
+   while($Count < 10)
+  {
+   $Return = SerialSendMilliseconds($BallHandle, "bat\r\n", "", 1000);   // release reedswitch 
+   UpdateStatus("*******************************************");
+   UpdateStatus($Return);
+   UpdateStatus("*******************************************");
+   $Contains = $Return;
+   $Result1 = StringContains($Contains,"Fail");
+   //$split1 = StringContains($Contains,"Fail");
+   UpdateStatus($Result1);
+   if($Result1)
+   {
+     $Result3 = StringContains($Contains,"Retest");
+     UpdateStatus($Result3);
+     if($Result3&&$Count_fail <1)
+    {
+     $Count_fail=$Count_fail+1;
+    goto Test_again;
+    }
+   
+    $PassFail = false;
+    $Return_Measure = $Return;
+    break;
+   }
+   $Result2 = StringContains($Contains,"Pass");
+   if($Result2)
+   {
+     $PassFail = true;
+     $Return_Measure = $Return;
+     break;
+   }
+   $Count = $Count + 1;
+  }
+  RecordMeasurementPassFail("BAT_test",$Return,"",true,$PassFail);
+  //~ ($split1, $split2, $split3) = StringSplit($Return, " ", 3);
+  //~ RecordMeasurement("Battery_PCT", $batPct, "%", true);
+  //~ RecordMeasurement("Uptime_check", $uptime, "%",true);
+  
+  return;
+}
+
+ function StringClean()
+ {
+    $split2Length= StringLength($split2);
+    $split2 = StringToHexString($split2);
+    $split2Array = StringSplitToArray($split2, " ",$split2Length);
+    $split2ReturnArray = Array1DCreate("INTEGER", $split2Length);
+     $split2_i=0;
+     $split2_i2=0;
+     while($split2_i<$split2Length)
+     {
+       $ReturnValue = Array1DGetValue($split2Array,$split2_i);
+       $value = HexStringToInteger($ReturnValue);
+       if($value<58&&$value>47)
+       {
+	 Array1DSetValue($split2ReturnArray,$split2_i2,$value);
+	  $split2_i2 = $split2_i2 + 1;
+       }
+       
+       $split2_i = $split2_i + 1;
+     }
+     
+      $split2_i =0;
+      $split2_i2=0;
+      while($split2_i<$split2Length)
+     {
+       $ReturnValue = Array1DGetValue($split2ReturnArray,$split2_i);
+       if($ReturnValue ==0)
+       {
+	 $split2_i2=$split2_i2+1;
+       }
+       $split2_i = $split2_i + 1;
+     }
+     $split2Length=$split2Length-$split2_i2;
+     $split2ReturnArray2 = Array1DCreate("INTEGER", $split2Length);
+     
+     $split2_i =0;
+      while($split2_i<$split2Length)
+     {
+       $ReturnValue = Array1DGetValue($split2ReturnArray,$split2_i);
+       $ReturnValue=$ReturnValue-48;
+       Array1DSetValue($split2ReturnArray2,$split2_i,$ReturnValue);
+       $split2_i = $split2_i + 1;
+     }
+     
+     $split2_i =0;
+     $split2String="";
+      while($split2_i<$split2Length)
+     {
+       $ReturnValue = Array1DGetValue($split2ReturnArray2,$split2_i);
+       $split2_i = $split2_i + 1;
+       $split2String = StringCat($split2String,$ReturnValue);
+     }
+   UpdateStatus($split2String);
+   $split2=Add($split2String,0);
+   UpdateStatus($split2);
+    
+    $split3Length= StringLength($split3);
+    $split3 = StringToHexString($split3);
+    $split3Array = StringSplitToArray($split3, " ",$split3Length);
+    $ReturnArray = Array1DCreate("INTEGER", $split3Length);
+     $split3_i=0;
+     $split3_i2=0;
+     while($split3_i<$split3Length)
+     {
+       $ReturnValue = Array1DGetValue($split3Array,$split3_i);
+       $value = HexStringToInteger($ReturnValue);
+       if($value<58&&$value>47)
+       {
+	 Array1DSetValue($ReturnArray,$split3_i2,$value);
+	  $split3_i2 = $split3_i2 + 1;
+       }
+       $split3_i = $split3_i + 1;
+     }
+      $split3_i =0;
+      $split3_i2=0;
+      while($split3_i<$split3Length)
+     {
+       $ReturnValue = Array1DGetValue($ReturnArray,$split3_i);
+       if($ReturnValue ==0)
+       {
+	 $split3_i2=$split3_i2+1;
+       }
+       $split3_i = $split3_i + 1;
+     }
+     $split3Length=$split3Length-$split3_i2;
+     $ReturnArray2 = Array1DCreate("INTEGER", $split3Length);
+     $split3_i =0;
+      while($split3_i<$split3Length)
+     {
+       $ReturnValue = Array1DGetValue($ReturnArray,$split3_i);
+       $ReturnValue=$ReturnValue-48;
+       Array1DSetValue($ReturnArray2,$split3_i,$ReturnValue);
+       $split3_i = $split3_i + 1;
+     }
+     $split3_i =0;
+     $split3String="";
+      while($split3_i<$split3Length)
+     {
+       $ReturnValue = Array1DGetValue($ReturnArray2,$split3_i);
+       $split3_i = $split3_i + 1;
+       $split3String = StringCat($split3String,$ReturnValue);
+     }
+   UpdateStatus($split3String);
+   $split3=Add($split3String,0);
+   UpdateStatus($split3);
+   return;
+ }
+
+//Initial all insruments
+
+function Instrument_Init()
+{
+  UpdateStatus("================ Open com port ================");
+  $UserInterfaceBoard = SerialOpen(2,19200,8,"N",1);
+  $BallHandle = SerialOpen(6,115200,8,"N",1);
+ return;
+}
+//Need to check  wether UUT exist before test begin
+function reset_simple()
+{
+    UpdateStatus("=============================================Fixture_Engage===========================================");
+  $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK0$", "OK",2000);   // Lock door
+    UpdateStatus($Return);
+  Sleep(10);
+  return ;
+  
+}
+function Fixture_Disengage()
+{
+  $TestName = "Fixture_Disengage";
+  SetTestName($TestName);
+  UpdateStatus("=============================================Fixture_Disengage===========================================");
+   
+   $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK6$", "OK",1000);   // dock
+  UpdateStatus($Return);
+  
+  $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RK7$", "OK",1000);   // unLock door
+  UpdateStatus($Return);
+  
+  $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK4$", "OK",1000);   //disble motor
+  UpdateStatus($Return);
+ Sleep(1);
+  return;
+}
+function FailConfig()
+{
+  ConfigurableHtmlReportWriter_ConfigureLocations($PassHtmlLocation1,$PassHtmlLocation1);
+  End;
+}	
+function Cleanup()
+{
+   $Return = SerialSendMilliseconds($UserInterfaceBoard, "#STOP$", "", 200);   // release reedswitch 
+   $Return = SerialSendMilliseconds($UserInterfaceBoard, "#HOME$", "I am at home", 5000);   // release reedswitch 
+   UpdateStatus($Return);
+    Sleep(2);
+  ////////////////////////////////////////////////////////////////
+  //~ $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RKA$", "", 500);   // release reedswitch 
+  ///////////////////////////////////////////////////////////////////////////////////////////
+    //~ $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RK0$", "OK",1000);   // Lock door
+  //~ UpdateStatus($Return);
+  //~ Sleep(2);
+   //~ $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK0$", "OK",2000);   // Lock door
+    //~ UpdateStatus($Return);
+  /////////////////////////////////////////////////////////////////////////////////////////
+   $Return = SerialSendMilliseconds($BallHandle, "clr\r\n", "",300);   // release reedswitch 
+  UpdateStatus($Return);
+   $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK4$", "OK", 500);   //disble motor
+   $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RK9$", "OK", 500);   // release reedswitch 
+   UpdateStatus($Return);
+  $Return = SerialSendMilliseconds($UserInterfaceBoard, "#SK6$", "OK",1000);   // dock
+  $Return = SerialSendMilliseconds($UserInterfaceBoard, "#RK7$", "OK",1000);   // unLock door
+ 
+  
+  ///////////////////////////////////////////////////////////////////////////////
+  SerialClose($UserInterfaceBoard);
+  SerialClose($BallHandle);
+  End;
+}
+///////////////////////global/////////////////////////////////////////////////
+function Initialize()
+{
+   UpdateStatus("****************************Global*********************************"); 
+    $Userinterface_Serial = 2;
+    $UserInterfaceBoard = SerialOpen($Userinterface_Serial,19200,8,"N",1); 
+    Sleep(1);
+    $return= SerialSendMilliseconds($UserInterfaceBoard, "#SK0$\r\n", "", 50);  
+    $return= SerialSendMilliseconds($UserInterfaceBoard, "#SK1$\r\n", "", 50);  
+  SerialClose($UserInterfaceBoard);
+   Sleep(10);
+    End ;
+}
+function GlobalCleanup()
+{
+   UpdateStatus("****************************GlobalCleanup*********************************"); 
+       
+    $Userinterface_Serial = 2;
+    $UserInterfaceBoard = SerialOpen($Userinterface_Serial,19200,8,"N",1); 
+    Sleep(1);
+    $return= SerialSendMilliseconds($UserInterfaceBoard, "#RK0$\r\n", "", 50);  
+    $return= SerialSendMilliseconds($UserInterfaceBoard, "#RK1$\r\n", "", 50);  
+    $return= SerialSendMilliseconds($UserInterfaceBoard, "#RKA$\r\n", "", 50);  
+    SerialClose($UserInterfaceBoard);
+    End ;
+}
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function AutomationLoop()
+//----------------------------------------------------------------------------------------------------------------------------------------------------------------//	
+{
+    //~ Label RereadTesterStatus:
+    Label GetCellStatus:
+     Sleep(5);
+     $Status1 = GetTestCellStatus(1);
+     $Result1 = StringComparison($Status1,"RUNNING","!=");
+     if(!$Result1)
+     {
+      goto GetCellStatus;
+     }
+      if($Result1)
+     {
+       Sleep(5);
+       StartTestCell(1);
+     }
+
+     End;
+  }
