@@ -1,11 +1,11 @@
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-//File Name:			Hello_Morpheus_MP_Script_Rev1.1.jts
-//Customer: 			Hello
-//Project:   			Hello_Morpheus
-//Creator:   			Ping Wei
-//Revision:			Rev1.1
-//Released:			2015/8/3
-//Description:		
+//File Name:      Hello_Morpheus_MP_Script_Rev1.1.jts
+//Customer:       Hello
+//Project:        Hello_Morpheus
+//Creator:        Ping Wei
+//Revision:     Rev1.1
+//Released:     2015/8/3
+//Description:    
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -51,7 +51,7 @@ call BootCheck();// fast boot check with log level 40
 
 //~ Sleep(10);//3
 call Gb10_SD_Card_Read_Write();//2015-7-18
-	//sample play
+//sample play
 $return= SerialSendMilliseconds($Launchpad_Handle, "p 55 48000  RINGTONE/tone.raw\r\n" , "", 100);
 $MicHandler=CopyVariable($Launchpad_Handle1);
 
@@ -111,7 +111,7 @@ End ;
 function Gb_BarcodeCheck()
 {
   UpdateStatus("**************************** Gb01_BarcodeCheck*********************************");  
-   $nTry=0;
+  $nTry=0;
   Label labBarcodeCheckLoop:
   $value = StringLength($SerialNumber);         //M0401144900062
   if ($value != 21&&$value != 20)
@@ -126,16 +126,16 @@ function Gb_BarcodeCheck()
   if (!$bit&&!$bit1)
   {
     if (!$bit2&&!$bit3)
-   {
+    {
       goto labBarcodeError;
-   }
+    }
   }
   
   SetSerialNumberField($SerialNumber);
   UpdateStatus($SerialNumber);
   UpdateStatus("=============== Barcode Check PASS =============");
   UpdateStatus("============================================");
- RecordMeasurementPassFail("Barcode check","passed","passed",true,true);
+  RecordMeasurementPassFail("Barcode check","passed","passed",true,true);
   return;
   
   Label labBarcodeError:
@@ -151,28 +151,29 @@ function Gb_BarcodeCheck()
   goto labBarcodeCheckLoop;
   return;
 }
+
 function Gb_Instrument_Init()
 {
   UpdateStatus("**************************** Instrument_Init*********************************");  
   //OperatorPrompt("Connect USB cable","OK");
   // power on
-   SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);       //IT6322B Initialize
-   SerialSendMilliseconds($IT6322_Handle, "OUTP 1\n");
-  
-   Sleep(1);
-   //~ SerialSendMilliseconds($Userinterface_Handle, "#SK4$\r\n", "", 50); 
+  SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);       //IT6322B Initialize
+  SerialSendMilliseconds($IT6322_Handle, "OUTP 1\n");
+
+  Sleep(1);
+  //~ SerialSendMilliseconds($Userinterface_Handle, "#SK4$\r\n", "", 50); 
   // Open the form.
   $LoadWin = OperatorPromptNonBlocking("Place in UUT, plug in power", 200, 400);
-  
- $return= SerialSendMilliseconds($Userinterface_Handle, "#IN1$\r\n", "OK", 1000); //waveon
- 
+
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#IN1$\r\n", "OK", 1000); //waveon
+
   $return= SerialSendMilliseconds($Userinterface_Handle, "#IN1$\r\n", "OK", 1000); //waveon
   UpdateStatus($return);
   $Plugged = StringContains($return,"1");
   Label UUT_CheckIn:
-   $Max_Retry=1000;
-   $Cont_Retry=0;
-   while (($Plugged==false) && ($Cont_Retry < $Max_Retry))
+  $Max_Retry=1000;
+  $Cont_Retry=0;
+  while (($Plugged==false) && ($Cont_Retry < $Max_Retry))
   {
     $return= SerialSendMilliseconds($Userinterface_Handle, "#IN1$\r\n", "OK", 1000); //waveon
     UpdateStatus($return);
@@ -180,9 +181,9 @@ function Gb_Instrument_Init()
     SleepMilliseconds(100);
     $Cont_Retry = $Cont_Retry + 1;
   }   
- 
- OperatorPromptNonBlockingUpdateMessage($LoadWin, "Powerup UUT");
-   
+  
+  OperatorPromptNonBlockingUpdateMessage($LoadWin, "Powerup UUT");
+  
   $Sample_Serial = 8;
   //~ $UUT_Serial = 10;
   $UUT_Serial = 7;
@@ -201,26 +202,26 @@ function Gb_Instrument_Init()
   $tmpMsg="Current draw: " + $CH3_return ;
   OperatorPromptNonBlockingUpdateMessage($LoadWin, $tmpMsg);
   
-   $Max_Retry=1000;
-   $Cont_Retry=0;
-   while (($CH3_return < 150) && ($Cont_Retry < $Max_Retry))
+  $Max_Retry=1000;
+  $Cont_Retry=0;
+  while (($CH3_return < 150) && ($Cont_Retry < $Max_Retry))
   {
     $CH3_return = SerialSendMilliseconds($IT6322_Handle,"MEAS:CURR?\n", "", 200);
     UpdateStatus($CH3_return);
     $CH3_return=$CH3_return*1000;
     UpdateStatus($CH3_return); 
-	
-	$tmpMsg="Please plug in UUT, Current draw < 0.1A : " + $CH3_return ;
+    
+    $tmpMsg="Please plug in UUT, Current draw < 0.1A : " + $CH3_return ;
     OperatorPromptNonBlockingUpdateMessage($LoadWin, $tmpMsg);
-	
-	SleepMilliseconds(100);
+    
+    SleepMilliseconds(100);
     $Cont_Retry = $Cont_Retry + 1;
   }  
-   
+  
   if ($CH3_return < 0.1)
   {
     CloseForm($LoadWin);
-  RecordMeasurementPassFail("instrument init","failed","failed",true,false);
+    RecordMeasurementPassFail("instrument init","failed","failed",true,false);
   }
   
   $return= SerialSendMilliseconds($Userinterface_Handle, "#SK2$\r\n", "", 50); //indicator to operator to test
@@ -248,45 +249,45 @@ function Gb_Instrument_Init()
   UpdateStatus($LeftDoor);
   $LeftDoor = StringContains($return,"1");
 
-   $Max_Retry=1000;
-   $Cont_Retry=0;
-   while ((($RightDoor==false) ||($LeftDoor==false) || ($frontDoor==false) )&& ($Cont_Retry < $Max_Retry))
+  $Max_Retry=1000;
+  $Cont_Retry=0;
+  while ((($RightDoor==false) ||($LeftDoor==false) || ($frontDoor==false) )&& ($Cont_Retry < $Max_Retry))
   {
     $return= SerialSendMilliseconds($Userinterface_Handle, "#IN4$\r\n", "OK", 1000); //door close
     UpdateStatus($return);  
     $frontDoor = StringContains($return,"1");
-  
+    
     $return= SerialSendMilliseconds($Userinterface_Handle, "#IN5$\r\n", "OK", 1000); //door close
     UpdateStatus($return);
     $RightDoor = StringContains($return,"1");
-  
+    
     $LeftDoor= SerialSendMilliseconds($Userinterface_Handle, "#IN6$\r\n", "OK", 1000); //door close
     UpdateStatus($LeftDoor);
     $LeftDoor = StringContains($return,"1");    
-	
-	SleepMilliseconds(100);
+    
+    SleepMilliseconds(100);
     $Cont_Retry = $Cont_Retry + 1;
   } 
-   CloseForm($LoadWin);
-    
+  CloseForm($LoadWin);
+  
   
   RecordMeasurementPassFail("instrument init","passed","passed",true,true);
-   
+  
   return;
 }
 
 function BootCheck()
 {
-   SetTestName("BootCheck")
+  SetTestName("BootCheck")
   UpdateStatus("****************************BootCheck*********************************"); 
-  
- $return1="";
+
+  $return1="";
   $count=0;
   while($count < 20)
   {
-  $return= SerialSendMilliseconds($Launchpad_Handle, "", "", 1000);  
-  UpdateStatus($return);
-     $return = StringCat($return1, $return);
+    $return= SerialSendMilliseconds($Launchpad_Handle, "", "", 1000);  
+    UpdateStatus($return);
+    $return = StringCat($return1, $return);
     $return1=$return;
     UpdateStatus("****************return************\n");
     UpdateStatus($return);
@@ -294,41 +295,41 @@ function BootCheck()
     UpdateStatus("**************return1**************\n");
     UpdateStatus($return1);
     UpdateStatus("****************************\n");
-  //~ $Result = StringContains($return,"FreeRTOS");
-  $Result = StringContains($return,"RTOS");
-  
-   if($Result)
-   {
-     break;
-   }
-  SleepMilliseconds(100);
-  $count=$count+1;
- }
-  SerialSendMilliseconds($Launchpad_Handle, "loglevel 40\r\n", "", 1000); 
- SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 100); 
+    //~ $Result = StringContains($return,"FreeRTOS");
+    $Result = StringContains($return,"RTOS");
 
-   //sample board
-   SerialSendMilliseconds($Launchpad_Handle1, "loglevel 40\r\n", "", 1000); 
-   SerialSendMilliseconds($Launchpad_Handle1, "led\r\n", "", 100);
-   SerialSendMilliseconds($Launchpad_Handle1, "led stop\r\n", "", 100); 
-    
-  
- RecordMeasurementPassFail("FreeRTOS found",$Result,"passed",true,$Result);
+    if($Result)
+    {
+      break;
+    }
+    SleepMilliseconds(100);
+    $count=$count+1;
+  }
+  SerialSendMilliseconds($Launchpad_Handle, "loglevel 40\r\n", "", 1000); 
+  SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 100); 
+
+  //sample board
+  SerialSendMilliseconds($Launchpad_Handle1, "loglevel 40\r\n", "", 1000); 
+  SerialSendMilliseconds($Launchpad_Handle1, "led\r\n", "", 100);
+  SerialSendMilliseconds($Launchpad_Handle1, "led stop\r\n", "", 100); 
+
+
+  RecordMeasurementPassFail("FreeRTOS found",$Result,"passed",true,$Result);
   return;
 }
 
 function BootCheck1()
 {
-   SetTestName("BootCheck")
+  SetTestName("BootCheck")
   UpdateStatus("****************************BootCheck*********************************"); 
-  
- $return1="";
+
+  $return1="";
   $count=0;
   while($count < 20)
   {
-  $return= SerialSendMilliseconds($Launchpad_Handle, "", "", 1000);  
-  UpdateStatus($return);
-     $return = StringCat($return1, $return);
+    $return= SerialSendMilliseconds($Launchpad_Handle, "", "", 1000);  
+    UpdateStatus($return);
+    $return = StringCat($return1, $return);
     $return1=$return;
     UpdateStatus("****************return************\n");
     UpdateStatus($return);
@@ -336,38 +337,39 @@ function BootCheck1()
     UpdateStatus("**************return1**************\n");
     UpdateStatus($return1);
     UpdateStatus("****************************\n");
-  //~ $Result = StringContains($return,"FreeRTOS");
-  $Result = StringContains($return,"RTOS");
-  
-   if($Result)
-   {
-     break;
-   }
-  SleepMilliseconds(100);
-  $count=$count+1;
- }
- SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 100); 
+    //~ $Result = StringContains($return,"FreeRTOS");
+    $Result = StringContains($return,"RTOS");
 
-   //sample board
-   SerialSendMilliseconds($Launchpad_Handle1, "loglevel 40\r\n", "", 1000); 
-   SerialSendMilliseconds($Launchpad_Handle1, "led\r\n", "", 100);
-   SerialSendMilliseconds($Launchpad_Handle1, "led stop\r\n", "", 100); 
-    
-  
- RecordMeasurementPassFail("FreeRTOS found",$Result,"passed",true,$Result);
+    if($Result)
+    {
+      break;
+    }
+    SleepMilliseconds(100);
+    $count=$count+1;
+  }
+  SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 100); 
+
+  //sample board
+  SerialSendMilliseconds($Launchpad_Handle1, "loglevel 40\r\n", "", 1000); 
+  SerialSendMilliseconds($Launchpad_Handle1, "led\r\n", "", 100);
+  SerialSendMilliseconds($Launchpad_Handle1, "led stop\r\n", "", 100); 
+
+
+  RecordMeasurementPassFail("FreeRTOS found",$Result,"passed",true,$Result);
   return;
 }
+
 function BootTopBoard()
 {
-   SetTestName("BootTopBoard")
+  SetTestName("BootTopBoard")
   UpdateStatus("****************************BootTopBoard*********************************"); 
   $return1="";
   $count=0;
   $return= SerialSendMilliseconds($Launchpad_Handle, "boot\r\n", "", 1000); 
   while($count < 20)
   {
-  $return= SerialSendMilliseconds($Launchpad_Handle, "", "", 1000);  
-  UpdateStatus($return);
+    $return= SerialSendMilliseconds($Launchpad_Handle, "", "", 1000);  
+    UpdateStatus($return);
     $return = StringCat($return1, $return);
     $return1=$return;
     UpdateStatus("****************return************\n");
@@ -377,14 +379,14 @@ function BootTopBoard()
     UpdateStatus($return1);
     UpdateStatus("****************************\n");
   //~ $Result = StringContains($return,"FreeRTOS");
-  $Result = StringContains($return,"Start polling");
-  
-   if($Result)
-   {
-     break;
-   }
-  return;
-}
+    $Result = StringContains($return,"Start polling");
+
+    if($Result)
+    {
+      break;
+    }
+    return;
+  }
 }
 
 function Gb10_VER_Check()
@@ -395,46 +397,45 @@ function Gb10_VER_Check()
   $TestName = "Mid board FW version";
   SetTestName($TestName);
   $VER_return="";
-$VER_return1 = SerialSendMilliseconds($Launchpad_Handle, "ver\r\n", "", 100); 
+  $VER_return1 = SerialSendMilliseconds($Launchpad_Handle, "ver\r\n", "", 100); 
 
   $cont =0;
   while( $cont < 3)
   {
-  
-  $VER_return=$VER_return+$VER_return1;
-  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-  UpdateStatus($VER_return);
-  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-  
-  
-  
-$VerCount=0;
-Label RetryVera:
-  UpdateStatus($VER_return);
-//  $SerRtn=$VER_return;
-//      call filterSymbol();
-//      $VER_return=$SerRtn;
-  $ExpectedStr = StringContains($VER_return,"ver:");
-  if ((!$ExpectedStr) && ($VerCount <= 30))
-  {
-    $VER_return = SerialSendMilliseconds($Launchpad_Handle, "", "", 100);
-	UpdateStatus("Retry...");
-	$VerCount=$VerCount+1;
-	goto RetryVera;
-  } 
-  
-  $VER_length = StringLength($VER_return);
-  if($VER_length > 8)
-  {
-    break;
-  }
-  
-  SleepMilliseconds(100);
-  $cont = $cont +1;
-  $VER_return1 = SerialSendMilliseconds($Launchpad_Handle, "", "", 100); 
+    $VER_return=$VER_return+$VER_return1;
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    UpdateStatus($VER_return);
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    
+
+    
+    $VerCount=0;
+    Label RetryVera:
+    UpdateStatus($VER_return);
+    //  $SerRtn=$VER_return;
+    //      call filterSymbol();
+    //      $VER_return=$SerRtn;
+    $ExpectedStr = StringContains($VER_return,"ver:");
+    if ((!$ExpectedStr) && ($VerCount <= 30))
+    {
+      $VER_return = SerialSendMilliseconds($Launchpad_Handle, "", "", 100);
+      UpdateStatus("Retry...");
+      $VerCount=$VerCount+1;
+      goto RetryVera;
+    } 
+    
+    $VER_length = StringLength($VER_return);
+    if($VER_length > 8)
+    {
+      break;
+    }
+
+    SleepMilliseconds(100);
+    $cont = $cont +1;
+    $VER_return1 = SerialSendMilliseconds($Launchpad_Handle, "", "", 100); 
   }
 
- 
+  
   //~ $VER_Num = StringCut($VER_return,"ver: ",1);
   $VER_Num = StringCut($VER_return,"ver: ",8);
   
@@ -447,7 +448,7 @@ Label RetryVera:
   $Result2 = StringComparison($VER_Num,$Exp_VER2,"==");
   if($Result1 || $Result2)
   {
-     $Result = true;
+    $Result = true;
   }
   RecordMeasurementPassFail($TestName,$VER_Num,"Sting",true,$Result);
   return;
@@ -462,55 +463,54 @@ function Gb10_ProdVER_Check()
   $cont =0;
   while( $cont < 3)
   {
-  
-  $VER_return = SerialSendMilliseconds($Launchpad_Handle, "ver\r\n", "", 100); 
-  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-  UpdateStatus($VER_return);
-  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-$VerCount=0;
-Label RetryVerb:
-  UpdateStatus($VER_return);
-//  $SerRtn=$VER_return;
-//      call filterSymbol();
-//      $VER_return=$SerRtn;
-  $ExpectedStr = StringContains($VER_return,"ver:");
-  if ((!$ExpectedStr) && ($VerCount <= 30))
-  {
-    $VER_return = SerialSendMilliseconds($Launchpad_Handle, "", "", 100);
-	UpdateStatus("Retry...");
-	$VerCount=$VerCount+1;
-	goto RetryVerb;
-  } 
-  
-  $VER_length = StringLength($VER_return);
-  if($VER_length > 8)
-  {
-    break;
-  }
-  
-  SleepMilliseconds(100);
-  $cont = $cont +1;
+
+    $VER_return = SerialSendMilliseconds($Launchpad_Handle, "ver\r\n", "", 100); 
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    UpdateStatus($VER_return);
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    $VerCount=0;
+    Label RetryVerb:
+    UpdateStatus($VER_return);
+    //  $SerRtn=$VER_return;
+    //      call filterSymbol();
+    //      $VER_return=$SerRtn;
+    $ExpectedStr = StringContains($VER_return,"ver:");
+    if ((!$ExpectedStr) && ($VerCount <= 30))
+    {
+      $VER_return = SerialSendMilliseconds($Launchpad_Handle, "", "", 100);
+      UpdateStatus("Retry...");
+      $VerCount=$VerCount+1;
+      goto RetryVerb;
+    } 
+    
+    $VER_length = StringLength($VER_return);
+    if($VER_length > 8)
+    {
+      break;
+    }
+
+    SleepMilliseconds(100);
+    $cont = $cont +1;
   }
 
- 
+  
   //~ $VER_Num = StringCut($VER_return,"ver: ",1);
   $VER_Num = StringCut($VER_return,"ver: ",8);
-  
+
   UpdateStatus($VER_Num);
   $Exp_VER ="43d87d7c";
   $Result = StringComparison($VER_Num,$Exp_VER,"==");
   RecordMeasurementPassFail($TestName,$VER_Num,"Sting",true,$Result);
- 
+  
   return;
 }
 
 
 function Gb00_OCT()
 {
-   SetTestName("Gb00_OCT")
+  SetTestName("Gb00_OCT")
   UpdateStatus("****************************Gb00_OCT*********************************"); 
 
-  
   //uut record
   $return= SerialSendMilliseconds($MicHandler, "oct\r\n", "", 100);  
   UpdateStatus($return);
@@ -520,14 +520,14 @@ function Gb00_OCT()
 
 function ID_check()
 {
-   SetTestName("ID_check")
+  SetTestName("ID_check")
   UpdateStatus("****************************ID_check*********************************"); 
-  
+
   //uut record
   $return= SerialSendMilliseconds($Launchpad_Handle, "^ id\r\n", "", 300);  
   UpdateStatus($return);
   $returnString = StringParse($return,"<data>","</data>");
-  RecordMeasurementPassFail("ID_check",$returnString,"id",true,true);	
+  RecordMeasurementPassFail("ID_check",$returnString,"id",true,true);  
   return; 
 }
 
@@ -540,14 +540,14 @@ function Gb01_TOPver_Check()
   $Cont_Retry=0;
   $Max_Retry=5;
   $Result=false;
-   $Result0=false;
+  $Result0=false;
   $return_num="";
   $return="";
   $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 500);
   $return = $return+ $return1;
   //SleepMilliseconds(350);
   $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 500);
- 
+  
   while ((!$Result)&& ($Cont_Retry < $Max_Retry))
   {
     $return = $return+ $return1;
@@ -555,37 +555,38 @@ function Gb01_TOPver_Check()
     UpdateStatus($return);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
 
-    $Pattern = "0.7.6";	
+    $Pattern = "0.7.6"; 
     $Pattern2 = "0.5.3.1";
     ($Success,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($return,$Pattern);
     ($Success2,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($return,$Pattern2);
-	if ($Success||$Success2)
-	{
-//	   $Result = StringContains($return,"0.5.3"); //+echo hello
-//	   if ($Result)
-//	   {
-	     break;
-//	   }	  
-	}
-	$return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 700);
-	SleepMilliseconds(500);
-       $Cont_Retry= $Cont_Retry + 1;
-	//~ $return1= SerialSendMilliseconds($Launchpad_Handle, "", "", 200);  
+    if ($Success||$Success2)
+    {
+      //$Result = StringContains($return,"0.5.3"); //+echo hello
+      //if ($Result)
+      //{
+      break;
+      //}    
+    }
+    $return1= SerialSendMilliseconds($Launchpad_Handle, "^ ver\r\n", "", 700);
+    SleepMilliseconds(500);
+    $Cont_Retry= $Cont_Retry + 1;
+    //~ $return1= SerialSendMilliseconds($Launchpad_Handle, "", "", 200);  
   }
+  
   if($Success||$Success2)
   {
     if($Success)
-  {
-    $return_num="0.7.6";
+    {
+      $return_num="0.7.6";
+    }
+    if($Success2)
+    {
+      $return_num="0.5.3.1";
+    }
+    $Result0=true;
   }
-   if($Success2)
-  {
-    $return_num="0.5.3.1";
-  }
-     $Result0=true;
-  }
-  RecordMeasurementPassFail("top board FW version",$return_num,"bool",true,$Result0);	
- //$return= SerialSendMilliseconds($Launchpad_Handle, "^ dtm\r\n", "", 1000);  
+  RecordMeasurementPassFail("top board FW version",$return_num,"bool",true,$Result0); 
+  //$return= SerialSendMilliseconds($Launchpad_Handle, "^ dtm\r\n", "", 1000);  
   //~ UpdateStatus($return);
   return;
 }
@@ -593,7 +594,6 @@ function Gb01_TOPver_Check()
 
 function Gb02_rssi()
 {
-  
   //$TestName="Gb02_rssi";
   //~ $SendCmd="scan";
   $SendCmd="rssi";
@@ -603,9 +603,9 @@ function Gb02_rssi()
   $LowerLimit=-50;
   //$Pattern = "TP-LINK_A1A2AC (-?)\\d{1,2}";
   $Max_Retry=15;
-//  call GeneralTest1();
+  //call GeneralTest1();
   
-   $TempStr="****************************" & $TestName & "*********************************";
+  $TempStr="****************************" & $TestName & "*********************************";
   UpdateStatus($TempStr); 
   SetTestName($TestName);
   
@@ -615,69 +615,69 @@ function Gb02_rssi()
   $FrameFound=false;
   $TempStr=$SendCmd + "\r\n";
   
-Label rssi_Retry:
+  Label rssi_Retry:
 
-    $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
-    UpdateStatus("^^^^^^^^^^^^return^^^^^^^^^^^^");
-    UpdateStatus($CmdRtn1);
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-$CmdRtn="";
+  $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
+  UpdateStatus("^^^^^^^^^^^^return^^^^^^^^^^^^");
+  UpdateStatus($CmdRtn1);
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  $CmdRtn="";
   while($Cont_Retry < $Max_Retry)
   {
-	$Cont_Retry = $Cont_Retry + 1;
-  //	$TempStr=$SendCmd + "\r\n";
-   //~ $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,"", "", $CmdTimeOut); 
+    $Cont_Retry = $Cont_Retry + 1;
+    //$TempStr=$SendCmd + "\r\n";
+    //~ $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,"", "", $CmdTimeOut); 
     $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
     UpdateStatus("^^^^^^^^^^^^return2^^^^^^^^^^^^");
     UpdateStatus($CmdRtn1);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     $CmdRtn=$CmdRtn+$CmdRtn1;
-      UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($CmdRtn);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
 
-	$Pattern = "TP-LINK_A1A2AC (-?)\\d{1,2}";
-	UpdateStatus($Pattern);
-	($FrameFound1,$ErrMsg,$Result_Value)=cRE_GeneralSingle($CmdRtn,$Pattern);
-	 UpdateStatus("^^^^^^^^^^ee^^^^^^^^^^^^^");
+    $Pattern = "TP-LINK_A1A2AC (-?)\\d{1,2}";
+    UpdateStatus($Pattern);
+    ($FrameFound1,$ErrMsg,$Result_Value)=cRE_GeneralSingle($CmdRtn,$Pattern);
+    UpdateStatus("^^^^^^^^^^ee^^^^^^^^^^^^^");
     UpdateStatus($FrameFound1);
-	UpdateStatus($Result_Value);
-	 UpdateStatus("^^^^^^^^^^ee^^^^^^^^^^^^^");
-	
-	$Pattern = "(-?)\\d{2,3}";
-	UpdateStatus($Pattern);
-	($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($Result_Value,$Pattern);
-    UpdateStatus($FrameFound);
-	 UpdateStatus("^^^^^^^^^^ff^^^^^^^^^^^^^");
+    UpdateStatus($Result_Value);
+    UpdateStatus("^^^^^^^^^^ee^^^^^^^^^^^^^");
 
-	UpdateStatus($Result_Value);
-	 UpdateStatus("^^^^^^^^^^efe^^^^^^^^^^^^^");
+    $Pattern = "(-?)\\d{2,3}";
+    UpdateStatus($Pattern);
+    ($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($Result_Value,$Pattern);
+    UpdateStatus($FrameFound);
+    UpdateStatus("^^^^^^^^^^ff^^^^^^^^^^^^^");
+
+    UpdateStatus($Result_Value);
+    UpdateStatus("^^^^^^^^^^efe^^^^^^^^^^^^^");
     if(($FrameFound) && ($FrameFound1==true))
     {
-	  UpdateStatus("Frame found!");
-	  break;
+      UpdateStatus("Frame found!");
+      break;
     }
-      SleepMilliseconds(200);      
+    SleepMilliseconds(200);      
     if($Cont_Retry==5)
     {
       $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
     }
-   }
-	 // OperatorPrompt("Programming Completed","OK");
-    //~ //$Result_Value = StringParse($CmdRtn,",","dB");
-	UpdateStatus($Result_Value);	
-				if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
-				{	      
-				  UpdateStatus("not in spec, retry");
-				  $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
-				  SleepMilliseconds(500);
-				  goto rssi_Retry;
-				}		
-	
-	
-		
-	
-	RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
+  }
+  //OperatorPrompt("Programming Completed","OK");
+  //~ //$Result_Value = StringParse($CmdRtn,",","dB");
+  UpdateStatus($Result_Value);  
+  if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
+  {       
+    UpdateStatus("not in spec, retry");
+    $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
+    SleepMilliseconds(500);
+    goto rssi_Retry;
+  }   
+
+
+
+
+  RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
 
   return;
 }
@@ -692,28 +692,28 @@ function Gb02_rssia()
   $Result=false;  
   $return="";
   $return1= SerialSendMilliseconds($Launchpad_Handle, "rssi\r\n", "", 2000);
-    $return = $return+ $return1;
-	
+  $return = $return+ $return1;
+  
   while ((!$Result)&& ($Cont_Retry < $Max_Retry))
-  {	
+  { 
     $return = $return+ $return1;
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($return);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     
-    $Pattern = "TP-LINK_A1A2AC";	
+    $Pattern = "TP-LINK_A1A2AC";  
     ($Success,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($return,$Pattern);
-	
-	// successful of getting 1st pattern
-	if ($Success)
-	{
-       break;	  
-	}
-	SleepMilliseconds(1000);
+    
+  // successful of getting 1st pattern
+    if ($Success)
+    {
+      break;   
+    }
+    SleepMilliseconds(1000);
     $Cont_Retry= $Cont_Retry + 1;
-	$return1= SerialSendMilliseconds($Launchpad_Handle, "", "", 1000);
+    $return1= SerialSendMilliseconds($Launchpad_Handle, "", "", 1000);
   }
-  RecordMeasurementPassFail("Gb02_rssi",$Success,"bool",true,$Success);	//TP-LINK_A1A2AC
+  RecordMeasurementPassFail("Gb02_rssi",$Success,"bool",true,$Success); //TP-LINK_A1A2AC
   
   return;
 }
@@ -727,86 +727,86 @@ function Gb03_connect()
   $Max_Retry=10;
   $Result=false;
   
-   $return= SerialSendMilliseconds($Launchpad_Handle, "connect TP-LINK_A1A2AC key 0\r\n", "", 1000);  
-    UpdateStatus($return);
+  $return= SerialSendMilliseconds($Launchpad_Handle, "connect TP-LINK_A1A2AC key 0\r\n", "", 1000);  
+  UpdateStatus($return);
 
   
-    RecordMeasurementPassFail("Wifi_connect","passed","bool",true,true);	//TP-LINK_A1A2AC
-    return ;
+  RecordMeasurementPassFail("Wifi_connect","passed","bool",true,true);  //TP-LINK_A1A2AC
+  return;
 }
 
 function Gb03_Status()
 {
   SetTestName("Gb03_Status")
   UpdateStatus("****************************Gb03_connect*********************************"); 
-  
+
   $Cont_Retry=0;
   $Max_Retry=10;
   $Result=false;
   $return="";
   $return1= SerialSendMilliseconds($Launchpad_Handle, "status\r\n", "", 1000);  
-  
+
   while ((!$Result)&& ($Cont_Retry < $Max_Retry))
   {
     $return= $return+$return1;
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($return);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    
 
-	   $Result = StringContains($return,"IP=192.168.1."); //+echo hello
-	   if ($Result)
-	   {
-	     break;
-	   }	  
-  $return2= SerialSendMilliseconds($Launchpad_Handle, "disconnect\r\n", "", 100); 
-	   Sleep(3);
-   $return1= SerialSendMilliseconds($Launchpad_Handle, "connect TP-LINK_A1A2AC key 0\r\n", "", 3500);  
-   
-	//~ UpdateStatus($return);
+
+    $Result = StringContains($return,"IP=192.168.1."); //+echo hello
+    if ($Result)
+    {
+      break;
+    }   
+    $return2= SerialSendMilliseconds($Launchpad_Handle, "disconnect\r\n", "", 100); 
+    Sleep(3);
+    $return1= SerialSendMilliseconds($Launchpad_Handle, "connect TP-LINK_A1A2AC key 0\r\n", "", 3500);  
     
-	SleepMilliseconds(100);
+    //~ UpdateStatus($return);
+    
+    SleepMilliseconds(100);
     $Cont_Retry= $Cont_Retry + 1;
     $return1= SerialSendMilliseconds($Launchpad_Handle, "status\r\n", "", 1000);  
     $return= $return+$return1;
   }
   
-    RecordMeasurementPassFail("Wifi_connect",$Result,"bool",true,$Result);	//TP-LINK_A1A2AC
-    return ;
+  RecordMeasurementPassFail("Wifi_connect",$Result,"bool",true,$Result);  //TP-LINK_A1A2AC
+  return;
 }
 
 function Gb03_DisconnectStatus()
 {
   SetTestName("Gb03_DisconnectStatus")
   UpdateStatus("****************************Gb03_connect*********************************"); 
-  
+
   $Cont_Retry=0;
   $Max_Retry=10;
   $Result=false;
-   $return="";
+  $return="";
   $return1= SerialSendMilliseconds($Launchpad_Handle, "status\r\n", "", 500);  
-  
+
   while ((!$Result)&& ($Cont_Retry < $Max_Retry))
   {
     $return= $return+$return1;
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($return);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    
 
-	   $Result = StringContains($return,"IP=0.0.0.0"); //+echo hello
-	   if ($Result)
-	   {
-	     break;
-	   }	  
 
-	SleepMilliseconds(100);
-    $Cont_Retry= $Cont_Retry + 1;
-	$return1= SerialSendMilliseconds($Launchpad_Handle, "", "", 500); 
-  }
-  
-    RecordMeasurementPassFail("Wifi_connect",$Result,"bool",true,$Result);	//TP-LINK_A1A2AC
-    return ;
+     $Result = StringContains($return,"IP=0.0.0.0"); //+echo hello
+     if ($Result)
+     {
+       break;
+     }   
+
+     SleepMilliseconds(100);
+     $Cont_Retry= $Cont_Retry + 1;
+     $return1= SerialSendMilliseconds($Launchpad_Handle, "", "", 500); 
+   }
+
+  RecordMeasurementPassFail("Wifi_connect",$Result,"bool",true,$Result);  //TP-LINK_A1A2AC
+  return ;
 }
 
 function Gb04_disconnect()
@@ -815,8 +815,8 @@ function Gb04_disconnect()
   UpdateStatus("****************************Gb04_disconnect*********************************"); 
   $return= SerialSendMilliseconds($Launchpad_Handle, "disconnect\r\n", "", 100);  
 
- 
-  RecordMeasurementPassFail("Wifi_disconnect",$Result,"bool",true,$Result);	//TP-LINK_A1A2AC
+
+  RecordMeasurementPassFail("Wifi_disconnect",$Result,"bool",true,$Result); //TP-LINK_A1A2AC
   return ;
 }
 
@@ -826,22 +826,22 @@ function Gb08_LED_ON()
   SetTestName("Gb08_LED_ON")
   UpdateStatus("****************************Gb08_LED_ON*********************************"); 
   $count = 0;
-   Label LED_On_retry:
+  Label LED_On_retry:
   if($count < 10)
   {
-   //$return= SerialSendMilliseconds($Launchpad_Handle, "led 254 254 254 1 0 1 0\r\n", "", 100); 
+    //$return= SerialSendMilliseconds($Launchpad_Handle, "led 254 254 254 1 0 1 0\r\n", "", 100); 
     $return= SerialSendMilliseconds($Launchpad_Handle, "led\r\n", "", 500);  
-   UpdateStatus($return);
-   $Result = StringContains($return,"led"); //+echo hello
-  if(!$Result)
-  {
-    $return= SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 100); 
-    $count = $count + 1;
-    SleepMilliseconds(100);
-    goto LED_On_retry;   
+    UpdateStatus($return);
+    $Result = StringContains($return,"led"); //+echo hello
+    if(!$Result)
+    {
+      $return= SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 100); 
+      $count = $count + 1;
+      SleepMilliseconds(100);
+      goto LED_On_retry;   
+    }
   }
- }
-  RecordMeasurementPassFail("LED ON",$Result,"bool",true,true);	//TP-LINK_A1A2AC
+  RecordMeasurementPassFail("LED ON",$Result,"bool",true,true); //TP-LINK_A1A2AC
   return ;
 }
 
@@ -850,78 +850,79 @@ function Gb08_LED_OFF()
   SetTestName("Gb08_LED_OFF")
   UpdateStatus("****************************Gb08_LED_OFF*********************************"); 
   $count = 0;
-   Label LED_Off_retry:
+  Label LED_Off_retry:
   if($count < 10)
   {
   // $return= SerialSendMilliseconds($Launchpad_Handle, "led 254 254 254 1 1 1 0\r\n", "", 100);  
-  $return= SerialSendMilliseconds($Launchpad_Handle1, "led stop\r\n", "", 500);  // request from ben to ensure sample is off
-   UpdateStatus($return);
+    $return= SerialSendMilliseconds($Launchpad_Handle1, "led stop\r\n", "", 500);  // request from ben to ensure sample is off
+    UpdateStatus($return);
 
-  
-  $return= SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 500);  
-   UpdateStatus($return);
-   $Result = StringContains($return,"led stop"); //+echo hello
-  if(!$Result)
-  {
-    $count = $count + 1;
-    SleepMilliseconds(100);
-    goto LED_Off_retry;
+
+    $return= SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 500);  
+    UpdateStatus($return);
+    $Result = StringContains($return,"led stop"); //+echo hello
+    if(!$Result)
+    {
+      $count = $count + 1;
+      SleepMilliseconds(100);
+      goto LED_Off_retry;
+    }
   }
- }
-  RecordMeasurementPassFail("LED OFF",$Result,"bool",true,true);	//TP-LINK_A1A2AC
-  return ;
+  RecordMeasurementPassFail("LED OFF",$Result,"bool",true,true);  //TP-LINK_A1A2AC
+  return;
 }
+
 function Gb08_LED_1stOFF()
 {
   SetTestName("Gb08_LED_OFF")
   UpdateStatus("****************************Gb08_LED_OFF*********************************"); 
 
   // $return= SerialSendMilliseconds($Launchpad_Handle, "led 254 254 254 1 1 1 0\r\n", "", 100);  
-   
+  
   $return= SerialSendMilliseconds($Launchpad_Handle, "animate stop\r\n", "", 500);  
-   UpdateStatus($return);
-   $Result = StringContains($return,"animate stop"); //+echo hello
+  UpdateStatus($return);
+  $Result = StringContains($return,"animate stop"); //+echo hello
 
-  RecordMeasurementPassFail("LED OFF",$Result,"bool",true,true);	//TP-LINK_A1A2AC
-  return ;
+  RecordMeasurementPassFail("LED OFF",$Result,"bool",true,true);  //TP-LINK_A1A2AC
+  return;
 }
 
 
 
 function Gb10_SD_Card_Read_Write()
 {
-    SetTestName("SD Test")
+  SetTestName("SD Test")
   UpdateStatus("****************************SD_Card_Read_Write*********************************"); 
-   
+  
   $return2= SerialSendMilliseconds($Launchpad_Handle, "cd RINGTONE\r\n" , "", 1000);  //
-   UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    UpdateStatus($return2);
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-	SerialPurge($Launchpad_Handle);
-	 $return1= SerialSendMilliseconds($Launchpad_Handle, "ls\r\n", "", 100);  //   
- UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    UpdateStatus($return1);
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-	$return=$return1;
-	
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  UpdateStatus($return2);
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  SerialPurge($Launchpad_Handle);
+  $return1= SerialSendMilliseconds($Launchpad_Handle, "ls\r\n", "", 100);  //   
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  UpdateStatus($return1);
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  $return=$return1;
+
   $count=0;
   while($count < 50)
-    {
-   $return1= SerialSendMilliseconds($Launchpad_Handle, "", "", 300);  //
-  
+  {
+    $return1= SerialSendMilliseconds($Launchpad_Handle, "", "", 300);  //
+
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($return1);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-	$return=$return+$return1;
-  $Result = StringContains($return,"File(s)");
-      
-   if($Result )
-      {
-	break;
-      }
-      $count=$count+1;
+    $return=$return+$return1;
+    $Result = StringContains($return,"File(s)");
+
+    if($Result )
+    {
+      break;
     }
-  
+    $count=$count+1;
+  }
+
   $Result1 = StringContains($return,"tone.raw");
   $Result=$Result1 && $Result;
   $Result1 = StringContains($return,"STAR005.raw");
@@ -966,15 +967,14 @@ function Gb10_SD_Card_Read_Write()
   $Result=$Result1 && $Result;
   $Result1 = StringContains($return,"DIG001.raw");  
   $Result=$Result1 && $Result;
-  
- 
- RecordMeasurementPassFail("RINGTONE",$Result,"bool",true,$Result);	//TP-LINK_A1A2AC
+
+
+  RecordMeasurementPassFail("RINGTONE",$Result,"bool",true,$Result); //TP-LINK_A1A2AC
   return;
 }
 
 function ZOGLAB_Measure()
 {
-
   SetTestName("ZOGLAB_Measure")
   UpdateStatus("****************************ZOGLAB_Measure*********************************");
   $receiveBuffer = SerialSend($ZOGLAB,"AT*ReadSensor:0\\r\\n","",2); //Read out the Humidity
@@ -1031,58 +1031,58 @@ function humid_delta()
   $b = 243.04;
   $Count = 0;
   while($Count < 20)
+  {
+    call ZOGLAB_Measure();
+    call Gb12_temp();
+    call Gb11_humid();
+    if($Tm<$Temp_L||$Tm>$Temp_H)
     {
-        call ZOGLAB_Measure();
-	call Gb12_temp();
-        call Gb11_humid();
-	if($Tm<$Temp_L||$Tm>$Temp_H)
-	{
-	    goto temp_retry;
-	 }
-        $Ha = $Hm;// - (0.15 * (25 - $Tm));
-	UpdateStatus("*************Ha************");
-	UpdateStatus($Ha);
-	UpdateStatus("***************************");
-	
-	$Td_a = $Hs/100;
-	$Td_a = LogSpecifyBase($Td_a, 2.718281828);
-	$Td_a = $Td_a + ($a * $Ts) / ($b + $Ts);
-	$Td_a =  $b * $Td_a;
-	UpdateStatus($Td_a);
-	$Td_b = $Hs/100;
-	$Td_b = LogSpecifyBase($Td_b, 2.718281828);
-	$Td_b = $Td_b+(($a * $Ts) / ($b + $Ts));
-	$Td_b =  $a - $Td_b;
-	UpdateStatus($Td_a);
-	$Td  = $Td_a / $Td_b;
-	UpdateStatus("*************Td************");
-	UpdateStatus($Td);
-	UpdateStatus("***************************");
-	
-	$Hc_a = ($a * $Td) / ($b + $Td);
-	$Hc_a = Power(2.718281828,$Hc_a);
-	$Hc_a = 100 * $Hc_a;
-	$Hc_b = ($a * $Tm) / ($b + $Tm);
-	$Hc_b = Power(2.718281828,$Hc_b);
-	$Hc =  $Hc_a / $Hc_b;
-	UpdateStatus("*************Hc************");
-	UpdateStatus($Hc);
-	UpdateStatus("***************************");
-	
-	$delta = $Hc - ($Ha - $Oh);
-	UpdateStatus("*************delta************");
-	UpdateStatus($delta);
-	UpdateStatus("***************************");
-      
-       if($delta>$Limit_L&&$delta<$Limit_U)
-      {
-	  break;
-       }
-       Label temp_retry:
+      goto temp_retry;
+    }
+    $Ha = $Hm;// - (0.15 * (25 - $Tm));
+    UpdateStatus("*************Ha************");
+    UpdateStatus($Ha);
+    UpdateStatus("***************************");
+
+    $Td_a = $Hs/100;
+    $Td_a = LogSpecifyBase($Td_a, 2.718281828);
+    $Td_a = $Td_a + ($a * $Ts) / ($b + $Ts);
+    $Td_a =  $b * $Td_a;
+    UpdateStatus($Td_a);
+    $Td_b = $Hs/100;
+    $Td_b = LogSpecifyBase($Td_b, 2.718281828);
+    $Td_b = $Td_b+(($a * $Ts) / ($b + $Ts));
+    $Td_b =  $a - $Td_b;
+    UpdateStatus($Td_a);
+    $Td  = $Td_a / $Td_b;
+    UpdateStatus("*************Td************");
+    UpdateStatus($Td);
+    UpdateStatus("***************************");
+
+    $Hc_a = ($a * $Td) / ($b + $Td);
+    $Hc_a = Power(2.718281828,$Hc_a);
+    $Hc_a = 100 * $Hc_a;
+    $Hc_b = ($a * $Tm) / ($b + $Tm);
+    $Hc_b = Power(2.718281828,$Hc_b);
+    $Hc =  $Hc_a / $Hc_b;
+    UpdateStatus("*************Hc************");
+    UpdateStatus($Hc);
+    UpdateStatus("***************************");
+
+    $delta = $Hc - ($Ha - $Oh);
+    UpdateStatus("*************delta************");
+    UpdateStatus($delta);
+    UpdateStatus("***************************");
+
+    if($delta>$Limit_L&&$delta<$Limit_U)
+    {
+      break;
+    }
+    Label temp_retry:
     $Count = $Count + 1;
     SleepMilliseconds(500);
-   }
-  
+  }
+
   RecordMeasurement("Oh offset",$Oh,"Oh",true);
   RecordMeasurement("Temp_Station",$Temperature_Expect,"C",true);
   RecordMeasurement("Humid_Station",$Humidity_Expect,"%",true);
@@ -1107,7 +1107,7 @@ function Gb11_humid()
   $Hm = $Result_Value ;
   $Hm = Add($Hm ,0);
   $Hm = $Hm /100;
- return;
+  return;
 }
 
 function GeneralTest_humid()
@@ -1128,21 +1128,21 @@ function GeneralTest_humid()
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($CmdRtn);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-		
+
     //$Pattern = "(-?)\\d{3,5}";
     UpdateStatus($Pattern);
     ($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($CmdRtn,$Pattern);
     UpdateStatus($FrameFound);
     if($FrameFound)
     {
-	  UpdateStatus("Frame found!");
-	  break;
+      UpdateStatus("Frame found!");
+      break;
     }
     SleepMilliseconds(100);  
     $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,"", "", $CmdTimeOut);     
-   }
-  
-return;
+  }
+
+  return;
 }
 
 function Gb13_lightON()
@@ -1188,7 +1188,7 @@ function Gb21_GestureCnt()
   call GeneralTest2();
   
   
- return;
+  return;
 }
 
 //$TestName="light_Test";
@@ -1211,56 +1211,55 @@ function GeneralTest1()
   $FrameFound=false;
   $TempStr=$SendCmd + "\r\n";
   
-Label General_temp_Retry:
+  Label General_temp_Retry:
 
-    $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
-$CmdRtn="";
+  $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
+  $CmdRtn="";
   while($Cont_Retry < $Max_Retry)
   {
-	$Cont_Retry = $Cont_Retry + 1;
+    $Cont_Retry = $Cont_Retry + 1;
 //    $TempStr=$SendCmd + "\r\n";
 //    $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
     $CmdRtn=$CmdRtn+$CmdRtn1;
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($CmdRtn);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-		
-	//$Pattern = "(-?)\\d{3,5}";
-	UpdateStatus($Pattern);
-	($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($CmdRtn,$Pattern);
+
+  //$Pattern = "(-?)\\d{3,5}";
+    UpdateStatus($Pattern);
+    ($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($CmdRtn,$Pattern);
     UpdateStatus($FrameFound);
     if($FrameFound)
     {
-	  UpdateStatus("Frame found!");
-	  break;
+      UpdateStatus("Frame found!");
+      break;
     }
     SleepMilliseconds(100);  
     $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,"", "", $CmdTimeOut);     
-   }
-	  //~ OperatorPrompt("Programming Completed","OK");
-      UpdateStatus($LowerLimit);
-      UpdateStatus($Result_Value);	
-      UpdateStatus($UpperLimit);
-   
-				//~ if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
-				if(($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit))
-				{	      
-				  UpdateStatus("not in spec, retry");
-				  
-				  if($Cont_Retry < $Max_Retry)
-				  {
-				  //~ $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
-				  SleepMilliseconds(1000);    
-				  goto General_temp_Retry;
-				  }
-				
-				}		
-	
-      
-	//~ Label 
-	RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
+  }
+    //~ OperatorPrompt("Programming Completed","OK");
+  UpdateStatus($LowerLimit);
+  UpdateStatus($Result_Value); 
+  UpdateStatus($UpperLimit);
 
-return;
+        //~ if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
+  if(($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit))
+  {        
+    UpdateStatus("not in spec, retry");
+
+    if($Cont_Retry < $Max_Retry)
+    {
+      //~ $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
+      SleepMilliseconds(1000);    
+      goto General_temp_Retry;
+    }
+  }   
+
+
+  //~ Label 
+  RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
+
+  return;
 }
 
 function GeneralTest_temp()
@@ -1275,57 +1274,56 @@ function GeneralTest_temp()
   $FrameFound=false;
   $TempStr=$SendCmd + "\r\n";
   
-Label General1_Retry:
+  Label General1_Retry:
 
-    $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
-$CmdRtn="";
+  $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
+  $CmdRtn="";
   while($Cont_Retry < $Max_Retry)
   {
-	$Cont_Retry = $Cont_Retry + 1;
+    $Cont_Retry = $Cont_Retry + 1;
 //    $TempStr=$SendCmd + "\r\n";
 //    $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
     $CmdRtn=$CmdRtn+$CmdRtn1;
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($CmdRtn);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-		
-	//$Pattern = "(-?)\\d{3,5}";
-	UpdateStatus($Pattern);
-	($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($CmdRtn,$Pattern);
+
+  //$Pattern = "(-?)\\d{3,5}";
+    UpdateStatus($Pattern);
+    ($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($CmdRtn,$Pattern);
     UpdateStatus($FrameFound);
     if($FrameFound)
     {
-	  UpdateStatus("Frame found!");
-	  break;
+      UpdateStatus("Frame found!");
+      break;
     }
     SleepMilliseconds(100);  
     $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,"", "", $CmdTimeOut);     
-   }
-	  //~ OperatorPrompt("Programming Completed","OK");
-      UpdateStatus($LowerLimit);
-      UpdateStatus($Result_Value);	
-      UpdateStatus($UpperLimit);
-   
-				//~ if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
-				if(($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit))
-				{	      
-				  UpdateStatus("not in spec, retry");
-				  
-				  if($Cont_Retry < $Max_Retry)
-				  {
-				  //~ $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
-				  SleepMilliseconds(1000);    
-				  goto General1_Retry;
-				  }
-				
-				}		
-	
-	
-		
-	//~ Label 
-	//RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
+  }
+    //~ OperatorPrompt("Programming Completed","OK");
+  UpdateStatus($LowerLimit);
+  UpdateStatus($Result_Value); 
+  UpdateStatus($UpperLimit);
 
-return;
+        //~ if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
+  if(($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit))
+  {        
+    UpdateStatus("not in spec, retry");
+
+    if($Cont_Retry < $Max_Retry)
+    {
+          //~ $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
+      SleepMilliseconds(1000);    
+      goto General1_Retry;
+    }
+  }   
+
+
+
+  //~ Label 
+  //RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
+
+  return;
 }
 
 function GeneralTest_LED_ON()
@@ -1340,54 +1338,50 @@ function GeneralTest_LED_ON()
   $FrameFound=false;
   $TempStr=$SendCmd + "\r\n";
   
-Label General_LED_ON_Retry:
+  Label General_LED_ON_Retry:
 
-    $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
-$CmdRtn="";
+  $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
+  $CmdRtn="";
   while($Cont_Retry < $Max_Retry)
   {
-	$Cont_Retry = $Cont_Retry + 1;
+    $Cont_Retry = $Cont_Retry + 1;
     $CmdRtn=$CmdRtn+$CmdRtn1;
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($CmdRtn);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($Pattern);
-	($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($CmdRtn,$Pattern);
+    ($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($CmdRtn,$Pattern);
     UpdateStatus($FrameFound);
     if($FrameFound)
     {
-	  UpdateStatus("Frame found!");
-	  break;
+      UpdateStatus("Frame found!");
+      break;
     }
-      SleepMilliseconds(100);      
+    SleepMilliseconds(100);      
     $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,"", "", $CmdTimeOut); 
-   }
-      UpdateStatus($LowerLimit);
-      UpdateStatus($Result_Value);	
-      UpdateStatus($UpperLimit);
-				if(($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit))
-				{	      
-				  UpdateStatus("not in spec, retry");
-				  
-				  if($Cont_Retry < $Max_Retry)
-				  {
-				  //~ SerialSendMilliseconds($Launchpad_Handle, "led\r\n", "", 500);  // request from ben to ensure sample is off
-				  SleepMilliseconds(200); 
-				  goto General_LED_ON_Retry;
-				  }
-				
-				}		
-	
-	
-		
-	//~ Label 
-    if(!$FrameFound)
-    {
-	  $Result_Value=-1;
-    }
-	RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
+  }
+  UpdateStatus($LowerLimit);
+  UpdateStatus($Result_Value); 
+  UpdateStatus($UpperLimit);
+  if(($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit))
+  {        
+    UpdateStatus("not in spec, retry");
 
-return;
+    if($Cont_Retry < $Max_Retry)
+    {
+          //~ SerialSendMilliseconds($Launchpad_Handle, "led\r\n", "", 500);  // request from ben to ensure sample is off
+      SleepMilliseconds(200); 
+      goto General_LED_ON_Retry;
+    } 
+  }   
+  //~ Label 
+  if(!$FrameFound)
+  {
+    $Result_Value=-1;
+  }
+  RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
+
+  return;
 }
 
 function GeneralTest_LED_Off()
@@ -1402,13 +1396,13 @@ function GeneralTest_LED_Off()
   $FrameFound=false;
   $TempStr=$SendCmd + "\r\n";
   
-Label General_LED_Off_Retry:
+  Label General_LED_Off_Retry:
 
   $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
-$CmdRtn="";
+  $CmdRtn="";
   while($Cont_Retry < $Max_Retry)
   {
-	$Cont_Retry = $Cont_Retry + 1;
+    $Cont_Retry = $Cont_Retry + 1;
     $CmdRtn=$CmdRtn+$CmdRtn1;
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($CmdRtn);
@@ -1418,36 +1412,36 @@ $CmdRtn="";
     UpdateStatus($FrameFound);
     if($FrameFound)
     {
-	  UpdateStatus("Frame found!");
-	  break;
+      UpdateStatus("Frame found!");
+      break;
     }
     SleepMilliseconds(300);      
     $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,"", "", $CmdTimeOut); 
-   }
-      UpdateStatus($LowerLimit);
-      UpdateStatus($Result_Value);	
-      UpdateStatus($UpperLimit);
-				if(($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit))
-				{	      
-				  UpdateStatus("not in spec, retry");
-				  
-				  if($Cont_Retry < $Max_Retry)
-				  {
-				  SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 500);  // request from ben to ensure sample is off
-				  SleepMilliseconds(300); 
-				  goto General_LED_Off_Retry;
-				  }
-				
-				}		
-    if(!$FrameFound)
-    {
-	  $Result_Value=-1;
-    }
-		
-	//~ Label 
-	RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
+  }
+  UpdateStatus($LowerLimit);
+  UpdateStatus($Result_Value); 
+  UpdateStatus($UpperLimit);
+  if(($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit))
+  {        
+    UpdateStatus("not in spec, retry");
 
-return;
+    if($Cont_Retry < $Max_Retry)
+    {
+      SerialSendMilliseconds($Launchpad_Handle, "led stop\r\n", "", 500);  // request from ben to ensure sample is off
+      SleepMilliseconds(300); 
+      goto General_LED_Off_Retry;
+    }
+  }   
+
+  if(!$FrameFound)
+  {
+    $Result_Value=-1;
+  }
+
+  //~ Label 
+  RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
+
+  return;
 }
 
 
@@ -1456,52 +1450,52 @@ function GeneralTest2()
   $TempStr="****************************" & $TestName & "*********************************";
   UpdateStatus($TempStr); 
   SetTestName($TestName);
-  
-  
+
+
   $Cont_Retry = 0;
   $Result_Value=0;
   $FrameFound=false;
   $TempStr=$SendCmd + "\r\n";
-  
-Label General1_Retry2:
 
-    $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
-$CmdRtn="";
+  Label General1_Retry2:
+
+  $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
+  $CmdRtn="";
   while($Cont_Retry < $Max_Retry)
   {
-	$Cont_Retry = $Cont_Retry + 1;
-//	$TempStr=$SendCmd + "\r\n";
+    $Cont_Retry = $Cont_Retry + 1;
+//  $TempStr=$SendCmd + "\r\n";
 //    $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
     $CmdRtn=$CmdRtn+$CmdRtn1;
-	UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($CmdRtn);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-		
-	//$Pattern = "(-?)\\d{3,5}";
-	UpdateStatus($Pattern);
-	($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($CmdRtn,$Pattern);
+
+  //$Pattern = "(-?)\\d{3,5}";
+    UpdateStatus($Pattern);
+    ($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($CmdRtn,$Pattern);
     UpdateStatus($FrameFound);
     if($FrameFound)
     {
-	  UpdateStatus("Frame found!");
-	  break;
+      UpdateStatus("Frame found!");
+      break;
     }
-      SleepMilliseconds(100);      
+    SleepMilliseconds(100);      
     $CmdRtn1= SerialSendMilliseconds($Launchpad_Handle,"", "", $CmdTimeOut); 
-   }
-	  //~ OperatorPrompt("Programming Completed","OK");
-      $Result_Value = StringParse($CmdRtn,"gesture_count","transitions");
-	UpdateStatus($Result_Value);	
-				if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
-				{	      
-				  UpdateStatus("not in spec, retry");
-				  $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
-				  goto General1_Retry2;
-				}	
-				
+  }
+    //~ OperatorPrompt("Programming Completed","OK");
+  $Result_Value = StringParse($CmdRtn,"gesture_count","transitions");
+  UpdateStatus($Result_Value); 
+  if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
+  {        
+    UpdateStatus("not in spec, retry");
+    $CmdRtn= SerialSendMilliseconds($Launchpad_Handle,$TempStr, "", $CmdTimeOut); 
+    goto General1_Retry2;
+  } 
+
   RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);  
 
-return;
+  return;
 }
 
 
@@ -1513,7 +1507,7 @@ function Gb14_Prox()
   $Max_Retry=10;
   $Cont_Retry = 0;
 //  $Pattern = "Gesture:((.|\n|\r)*?)WAVE";
-    $Pattern = "audio task";
+  $Pattern = "audio task";
   $FailClick = false;
   $AbortClick = false;
   $GestFound = false;
@@ -1527,7 +1521,7 @@ function Gb14_Prox()
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     ($GestFound,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($return,$Pattern);
     SerialSendMilliseconds($Userinterface_Handle, "#RK4$\r\n", "", 50); //waveoff
-  
+    
    // $FailClick = OperatorPicturePromptNonBlockingWithButtonsGetButtonState($GestureWin,"Failed"); 
    // $AbortClick = OperatorPicturePromptNonBlockingWithButtonsGetButtonState($GestureWin,"Abort"); 
     SleepMilliseconds(500);
@@ -1558,40 +1552,40 @@ function dust_sensor()
   $LowerLimit=300;
   
 //  call GeneralTest1(); 
-$TempStr="****************************" & $TestName & "*********************************";
+  $TempStr="****************************" & $TestName & "*********************************";
   UpdateStatus($TempStr); 
   SetTestName($TestName);
-   $Max_Retry=5;
+  $Max_Retry=5;
   $Cont_Retry = 0;
   $Result_Value=0;
   $FrameFound=false;
   $TempStr=$SendCmd + "\r\n";
   
-Label dust_Retry:
+  Label dust_Retry:
 
   $CmdRtnA= SerialSendMilliseconds($Launchpad_Handle,$TempStr , "", $CmdTimeOut); 
-    UpdateStatus("^^^^^^^^^UUT^^^^^^^^^^^");
-    UpdateStatus($CmdRtnA);
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    $UUT_dust = StringCut($CmdRtnA,"dust 400",8);   //dj
-     $UUT_dust = StringTrim($UUT_dust);
-      UpdateStatus("^^^^^^^^^UUT^^^^^^^^^^^");
-    UpdateStatus($UUT_dust);
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    $UUT_dust = StringTrim($UUT_dust);
+  UpdateStatus("^^^^^^^^^UUT^^^^^^^^^^^");
+  UpdateStatus($CmdRtnA);
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  $UUT_dust = StringCut($CmdRtnA,"dust 400",8);   //dj
+  $UUT_dust = StringTrim($UUT_dust);
+  UpdateStatus("^^^^^^^^^UUT^^^^^^^^^^^");
+  UpdateStatus($UUT_dust);
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  $UUT_dust = StringTrim($UUT_dust);
 
   while($Cont_Retry < $Max_Retry)
   {
-	$Cont_Retry = $Cont_Retry + 1;
-	if(($UUT_dust < 50 ) && ($Cont_Retry < $Max_Retry))
-	{	      
-	    UpdateStatus("UUT is less than 50, retry");
-	    goto dust_Retry;
-	}
-   
-  RecordMeasurementWithLimits($TestName,$UUT_dust,"",true,$LowerLimit,$UpperLimit,true); 
-  return;
-}
+    $Cont_Retry = $Cont_Retry + 1;
+    if(($UUT_dust < 50 ) && ($Cont_Retry < $Max_Retry))
+    {        
+      UpdateStatus("UUT is less than 50, retry");
+      goto dust_Retry;
+    }
+
+    RecordMeasurementWithLimits($TestName,$UUT_dust,"",true,$LowerLimit,$UpperLimit,true); 
+    return;
+  }
 }
 
 
@@ -1600,7 +1594,7 @@ function Gb20_OCTget()
 {
   //$TestName="OCT Get";
   $UpperLimit=15500;
-$LowerLimit=1000;
+  $LowerLimit=1000;
   $TempStr="****************************" & $TestName & "*********************************";
   UpdateStatus($TempStr); 
   SetTestName($TestName);
@@ -1610,144 +1604,144 @@ $LowerLimit=1000;
   $Cont_Retry = 0;
   $Result_Value=0;
   $FrameFound=false;
-goto SkippedPlay;  
+  goto SkippedPlay;  
   
-Label EvalSound_Retry:
+  Label EvalSound_Retry:
 //    $return= SerialSendMilliseconds($Launchpad_Handle1, "p 60 48000  RINGTONE/tone.raw\r\n" , "", 100);  
 //    UpdateStatus($return);
 //    $Sound_return= SerialSendMilliseconds($Launchpad_Handle, "oct\r\n", "", 100); 
 //    Sleep(10);
-Label SkippedPlay:
+  Label SkippedPlay:
   Sleep(1);
   $Sound_return= SerialSendMilliseconds($MicHandler, "getoct\r\n", "", 300); 
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-    UpdateStatus($Sound_return);
-    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  UpdateStatus($Sound_return);
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
   while($Cont_Retry < $Max_Retry)
   {
     $Cont_Retry = $Cont_Retry + 1;
     if ($Cont_Retry>1)
-	{
-	  $Sound_return= SerialSendMilliseconds($MicHandler, "", "", 100); 
-	}
+    {
+      $Sound_return= SerialSendMilliseconds($MicHandler, "", "", 100); 
+    }
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
     UpdateStatus($Sound_return);
     UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-		
-	$Pattern = "(-?)\\d{3,5}((.|\n|\r)*?)";
-	UpdateStatus($Sound_return);
-	($FrameFound,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($Sound_return,$Pattern);
 
-     UpdateStatus($FrameFound);
-     if($FrameFound)
-      {
-	    UpdateStatus("Frame found!");
-		break;
-      }
+    $Pattern = "(-?)\\d{3,5}((.|\n|\r)*?)";
+    UpdateStatus($Sound_return);
+    ($FrameFound,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($Sound_return,$Pattern);
+
+    UpdateStatus($FrameFound);
+    if($FrameFound)
+    {
+      UpdateStatus("Frame found!");
+      break;
+    }
      // SleepMilliseconds(100);      
-	  // sample unit to stop sound
+    // sample unit to stop sound
       //$return= SerialSendMilliseconds($Launchpad_Handle1, "s\r\n", "", 100);  
-    }
+  }
 //    //$return= SerialSendMilliseconds($Launchpad_Handle1, "s\r\n", "", 100);  
-//	
-	if($FrameFound)// frame found within the retry count
+//  
+  if($FrameFound)// frame found within the retry count
+  {
+    // frame shall be found until here.
+    // extract string
+    // 1. extract the patter1 with "symbol && 3-5 digit && symbol"
+    // 2. extract thepattern2 3-5 digit value with -?
+
+//    $InputStr=$MatchedStr;
+//    UpdateStatus($MatchedStr);
+//    $Pattern1="[^A-Z,a-z,0-9]\\d{3,5}[^A-Z,a-z,0-9]";
+    $Pattern2="(-?)\\d{3,5}";
+//    ($Success1,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($InputStr,$Pattern1);
+//    if ((!$Success1)&& ($Cont_Retry < $Max_Retry))
+//    {
+//      UpdateStatus("[^A-Z,a-z,0-9]\\d{3,5}[^A-Z,a-z,0-9], retry");
+//      goto EvalSound_Retry; 
+//    }
+    // successful of getting 1st pattern
+//    if ($Success1)
+//    {
+    UpdateStatus($MatchedStr);
+    ($Success,$ErrMsg,$Result_Value)=cRE_GeneralSingle($MatchedStr,$Pattern2);    
+    if ((!$Success)&& ($Cont_Retry < $Max_Retry))
     {
-		// frame shall be found until here.
-		// extract string
-		// 1. extract the patter1 with "symbol && 3-5 digit && symbol"
-		// 2. extract thepattern2 3-5 digit value with -?
-		
-//		$InputStr=$MatchedStr;
-//		UpdateStatus($MatchedStr);
-//		$Pattern1="[^A-Z,a-z,0-9]\\d{3,5}[^A-Z,a-z,0-9]";
-		$Pattern2="(-?)\\d{3,5}";
-//		($Success1,$ErrMsg,$MatchedStr)=cRE_GeneralSingle($InputStr,$Pattern1);
-//		if ((!$Success1)&& ($Cont_Retry < $Max_Retry))
-//		{
-//			UpdateStatus("[^A-Z,a-z,0-9]\\d{3,5}[^A-Z,a-z,0-9], retry");
-//			goto EvalSound_Retry;	
-//		}
-		// successful of getting 1st pattern
-//		if ($Success1)
-//		{
-			UpdateStatus($MatchedStr);
-			($Success,$ErrMsg,$Result_Value)=cRE_GeneralSingle($MatchedStr,$Pattern2);    
-			if ((!$Success)&& ($Cont_Retry < $Max_Retry))
-			{
-				UpdateStatus("(-?)\\d{3,5} not found, retry");
-				goto EvalSound_Retry;
-			}	
-			if ($Success)
-			{
-				UpdateStatus($Result_Value);	
-				if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
-				{	      
-				UpdateStatus("not in spec, retry");
-				goto EvalSound_Retry;
-				}				
-			}
-//		}
+      UpdateStatus("(-?)\\d{3,5} not found, retry");
+      goto EvalSound_Retry;
+    } 
+    if ($Success)
+    {
+      UpdateStatus($Result_Value);  
+      if((($Result_Value < $LowerLimit ) || ($Result_Value > $UpperLimit)) && ($Cont_Retry < $Max_Retry))
+      {       
+        UpdateStatus("not in spec, retry");
+        goto EvalSound_Retry;
+      }       
     }
-	if(!$FrameFound)// frame found within the retry count
-    {
-	  UpdateStatus("Frame not found");
-	}	
-	
-	RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true); 
-  
-  return ;
+//    }
+  }
+  if(!$FrameFound)// frame found within the retry count
+  {
+    UpdateStatus("Frame not found");
+  }  
+
+  RecordMeasurementWithLimits($TestName,$Result_Value,"",true,$LowerLimit,$UpperLimit,true); 
+
+  return;
 }
 
 
 function Gb18_genkey()
 {
-      UpdateStatus("****************************Gb18_genkey*********************************"); 
-      $TestName="Gb18_genkey";
-     
-      SetTestName($TestName);
-      $Result1 = false;
-	      
-	  $Max_Retry=120;
-      $Cont_Retry = 0;
-      $KeyLength=0;
-	  $Keyreturn="";
+  UpdateStatus("****************************Gb18_genkey*********************************"); 
+  $TestName="Gb18_genkey";
+  
+  SetTestName($TestName);
+  $Result1 = false;
+  
+  $Max_Retry=120;
+  $Cont_Retry = 0;
+  $KeyLength=0;
+  $Keyreturn="";
   $KeyreturnA= SerialSendMilliseconds($Launchpad_Handle, "genkey\r\n", "", 100);  
- UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-      UpdateStatus($KeyreturnA);
-      UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-     while($Cont_Retry < $Max_Retry)
-     {
-	  $Keyreturn = $Keyreturn + $KeyreturnA;// accum 
-	  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-      UpdateStatus($Keyreturn);
-      UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
-	 	 
-	 $KeyLength = StringLength($Keyreturn);
-	 
-	   if ($KeyLength>=140)
-       {
-	     UpdateStatus("Key found!");
-	     break;
-       }	 
-	 $Cont_Retry = $Cont_Retry + 1;
-	 $KeyreturnA= SerialSendMilliseconds($Launchpad_Handle, "", "", 100); 
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  UpdateStatus($KeyreturnA);
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  while($Cont_Retry < $Max_Retry)
+  {
+    $Keyreturn = $Keyreturn + $KeyreturnA;// accum 
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    UpdateStatus($Keyreturn);
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
 
-     }
-          
-	
-    $Result = StringContains($Keyreturn,"factory key:");
-    if (($KeyLength>=140) && ($Result==true))
-       {
-	     $Result1=true;
-       }
-	
-	
-      
-      $SNPath="D:\\genkey\\"+$SerialNumber+".txt";
-      RecordMeasurementPassFail($TestName,$Result,"String",true,$Result1);
-      $FileWriteObject = FileWriteOpen($SNPath,"NEW");//D:
-      FileWrite($FileWriteObject,$Keyreturn);
-      FileWriteClose($FileWriteObject);
+    $KeyLength = StringLength($Keyreturn);
+
+    if ($KeyLength>=140)
+    {
+      UpdateStatus("Key found!");
+      break;
+    }  
+    $Cont_Retry = $Cont_Retry + 1;
+    $KeyreturnA= SerialSendMilliseconds($Launchpad_Handle, "", "", 100); 
+
+  }
+
+
+  $Result = StringContains($Keyreturn,"factory key:");
+  if (($KeyLength>=140) && ($Result==true))
+  {
+    $Result1=true;
+  }
+
+
+
+  $SNPath="D:\\genkey\\"+$SerialNumber+".txt";
+  RecordMeasurementPassFail($TestName,$Result,"String",true,$Result1);
+  $FileWriteObject = FileWriteOpen($SNPath,"NEW");//D:
+  FileWrite($FileWriteObject,$Keyreturn);
+  FileWriteClose($FileWriteObject);
   /////////////////////////////////////////////////
   return ;
 }
@@ -1756,39 +1750,40 @@ function Gb18_genkey()
 //$ExpectedStr
 function filterStr()
 {
-UpdateStatus("****************************filterStr*********************************"); 
-    
-$FilterCount=0;
-Label RetryFil:
+  UpdateStatus("****************************filterStr*********************************"); 
+
+  $FilterCount=0;
+  Label RetryFil:
   UpdateStatus($Ser_Return);
   $ExpectedFound = StringContains($Ser_Return,$ExpectedStr);
   if ((!$ExpectedFound) && ($FilterCount <= 10))
   {
     $Ser_Return = SerialSendMilliseconds($Launchpad_Handle, "", "", 1000);
-	UpdateStatus("Retry...");
-	$FilterCount=$FilterCount+1;
-	goto RetryFil;
+    UpdateStatus("Retry...");
+    $FilterCount=$FilterCount+1;
+    goto RetryFil;
   } 
   UpdateStatus("****************************End filterStr*********************************"); 
-    
-return;
+
+  return;
 }
 
 //$SerRtn
 function filterSymbol()
 {
-UpdateStatus("****************************filterSymbol*********************************"); 
-    
+  UpdateStatus("****************************filterSymbol*********************************"); 
+
   $SerRtn = StringReplace($SerRtn,"R","");
   $SerRtn = StringReplace($SerRtn,"+","");
   $SerRtn = StringReplace($SerRtn,"~","");
-return;
+  return;
 }
+
 function FailConfig()
 {
   ConfigurableHtmlReportWriter_ConfigureLocations($PassHtmlLocation1,$PassHtmlLocation1);
   End;
-}	
+} 
 
 
 
@@ -1796,54 +1791,54 @@ function FailConfig()
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 function Cleanup()
 {
-    UpdateStatus("****************************GlobalCleanup*********************************"); 
+  UpdateStatus("****************************GlobalCleanup*********************************"); 
   SerialSendMilliseconds($Userinterface_Handle, "#RK5$\r\n", "", 50);  //  
   SerialSendMilliseconds($Userinterface_Handle, "#RK6$\r\n", "", 50);  //  
   $return= SerialSendMilliseconds($Userinterface_Handle, "#RK2$\r\n", "", 50); //indicator reset
-	 $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  //sample switch on
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  //sample switch on
   $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50); //uut switch on
   $return= SerialSendMilliseconds($Userinterface_Handle, "#RK3$\r\n", "", 50);  //unlock
- 
-	
-	SerialClose($Launchpad_Handle);
-SerialClose($Launchpad_Handle1);
+
+
+  SerialClose($Launchpad_Handle);
+  SerialClose($Launchpad_Handle1);
   CloseForm($LoadWin);
-    End ;
+  End;
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 function GlobalCleanup()
 {
-   UpdateStatus("****************************GlobalCleanup*********************************"); 
-       
-   
-    $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  
-    $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50);  
+  UpdateStatus("****************************GlobalCleanup*********************************"); 
+
+
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50);  
     //~ $return= SerialSendMilliseconds($Userinterface_Handle, "#RK2$\r\n", "", 50);  
-    $return= SerialSendMilliseconds($Userinterface_Handle, "#RK9$\r\n", "", 50);  
-    SerialClose($Userinterface_Handle);
-	   SerialClose($ZOGLAB);
-	
-	$Userinterface_Serial = 2;
-    $Userinterface_Handle = SerialOpen($Userinterface_Serial,19200,8,"N",1);  
-    $return= SerialSendMilliseconds($Userinterface_Handle, "#RKA$\r\n", "", 250); 
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK9$\r\n", "", 50);  
+  SerialClose($Userinterface_Handle);
+  SerialClose($ZOGLAB);
+
+  $Userinterface_Serial = 2;
+  $Userinterface_Handle = SerialOpen($Userinterface_Serial,19200,8,"N",1);  
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RKA$\r\n", "", 250); 
     //~ SerialSendMilliseconds($Userinterface_Handle, "#SK4$\r\n", "", 50);    
-    SerialClose($Userinterface_Handle);
-	
-	 SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
+  SerialClose($Userinterface_Handle);
+
+  SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
   SerialSendMilliseconds($IT6322_Handle, "OUTP 0\n", "", 50);
   SerialClose($IT6322_Handle);
-    End ;
+  End ;
 }
 
 function Initialize()
 {
-   UpdateStatus("****************************GlobalCleanup*********************************"); 
+  UpdateStatus("****************************GlobalCleanup*********************************"); 
     //~ $Userinterface_Serial = 1;
     //~ $Userinterface_Handle = SerialOpen($Userinterface_Serial,19200,8,"N",1);  
     //~ $return= SerialSendMilliseconds($Userinterface_Handle, "#SK2$\r\n", "", 250);  
     //~ SerialClose($Userinterface_Handle);
-	
+
   $Userinterface_Serial = 1;    
   $Userinterface_Handle = SerialOpen($Userinterface_Serial,19200,8,"N",1);  
   $return= SerialSendMilliseconds($Userinterface_Handle, "#RKA$\r\n", "", 50);  
@@ -1852,7 +1847,7 @@ function Initialize()
  // $return= SerialSendMilliseconds($Userinterface_Handle, "#SK9$\r\n", "", 50);  
 //
  // $return= SerialSendMilliseconds($Userinterface_Handle, "#RK2$\r\n", "", 50);  // light off
-  
+
   $ZOGLAB = SerialOpen(2,9600,8,"N",1);
   SleepMilliseconds(100);
   SerialHandshakingManualSet($ZOGLAB, "RTS","FALSE");
@@ -1864,7 +1859,7 @@ function Initialize()
   $receiveBuffer = SerialSend($ZOGLAB,"AT*TakeSysState\\r\\n","",3);
   UpdateStatus("receiveBuffer...");
   UpdateStatus($receiveBuffer);
-	
+
   $IT6322_Handle = SerialOpen("3",19200,8,"N",1);
   SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);       //IT6322B Initialize
   SerialSendMilliseconds($IT6322_Handle, "INST FIR\n", "", 50);  
@@ -1880,111 +1875,109 @@ function Initialize()
   SerialSendMilliseconds($IT6322_Handle, "CURR 2A\n", "", 50);  
   SerialSendMilliseconds($IT6322_Handle, "VOLT:PROT 5V\n", "", 50);   
   SerialSendMilliseconds($IT6322_Handle,"OUTP 0\n", "", 50);
-	
-	
-	
-    End ;
+
+
+
+  End ;
 }
 
 
 function Gb08_Program_M4F()
 {
-   UpdateStatus("****************************Gb08_Program_M4F*********************************"); 
+  UpdateStatus("****************************Gb08_Program_M4F*********************************"); 
   ////////////////////////////////////////////////////////////////////////////////////////////////////////////
   /// install ============================================================
   $TestName="Programming";
   SetTestName($TestName);
-  
+
   SerialClose($Launchpad_Handle);
   // set to program pin
   $return= SerialSendMilliseconds($Userinterface_Handle, "#SK0$\r\n", "", 50); //program pin
    //Reboot UUT
-   $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50); //uut switch off
-   SleepMilliseconds(100);
-   $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50); //uut switch off
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50); //uut switch off
+  SleepMilliseconds(100);
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50); //uut switch off
 
-  
+
  //== check if the log files has been existing 
- $LogFilePath="D:\\factory_release_update-only\\log.txt";
- $fileExists= CheckFileExists($LogFilePath,"RETURNONLY");
- if($fileExists)
-{  
-  FileDelete($LogFilePath);
-}
+  $LogFilePath="D:\\factory_release_update-only\\log.txt";
+  $fileExists= CheckFileExists($LogFilePath,"RETURNONLY");
+  if($fileExists)
+  {  
+    FileDelete($LogFilePath);
+  }
 
-
-
- $MID = "D:\\factory_release_update-only\\";
- SystemCall($MID,"D:\\factory_release_update-only\\Flash_mid.bat","","TRUE","TRUE");
- //== check if the files has been created../
-// $Count = 0;
-//while($Count < 100)
-//{ 
-// $fileExists= CheckFileExists($LogFilePath,"RETURNONLY");
-// if($fileExists)
-//{
-//  Sleep(3);  // don't change this delay
-//  $inUse = CheckFileInUse($LogFilePath);  
-//  if(!$inUse)
-//  {
-//    OperatorPrompt("Device connection issue "," OK ");
-//    Sleep(3);
-//    Abort("Programming Fail");
-//  }
-//  //== power on ==
-//  //~ OperatorPrompt("File has created, power up uut ","OK");
-//   $return= SerialSendMilliseconds($Userinterface_Handle, "#SK0$\r\n", "", 50); //uut switch on
-//  //== ==========================
-//  Sleep(1);
-//  break;
-//}
-//$Count = $Count + 1;
+  $MID = "D:\\factory_release_update-only\\";
+  SystemCall($MID,"D:\\factory_release_update-only\\Flash_mid.bat","","TRUE","TRUE");
+  //== check if the files has been created../
+  // $Count = 0;
+  //while($Count < 100)
+  //{ 
+  // $fileExists= CheckFileExists($LogFilePath,"RETURNONLY");
+  // if($fileExists)
+  //{
+  //  Sleep(3);  // don't change this delay
+  //  $inUse = CheckFileInUse($LogFilePath);  
+  //  if(!$inUse)
+  //  {
+  //    OperatorPrompt("Device connection issue "," OK ");
+  //    Sleep(3);
+  //    Abort("Programming Fail");
+  //  }
+  //  //== power on ==
+  //  //~ OperatorPrompt("File has created, power up uut ","OK");
+  //   $return= SerialSendMilliseconds($Userinterface_Handle, "#SK0$\r\n", "", 50); //uut switch on
+  //  //== ==========================
+  //  Sleep(1);
+  //  break;
+  //}
+  //$Count = $Count + 1;
 //SleepMilliseconds(500);
 //}
 
 // wait for programming finish
- $Count = 0;
-while($Count < 30)
-{
- $inUse = CheckFileInUse("D:\\factory_release_update-only\\log.txt");  
+  $Count = 0;
+  while($Count < 30)
+  {
+    $inUse = CheckFileInUse("D:\\factory_release_update-only\\log.txt");  
 //~ $FileContents = FileReadAllText("D:\\factory_release\\log.txt");
 //~ $Result = StringContains($FileContents,"<End of command>");
-if(!$inUse)
-{
+    if(!$inUse)
+    {
   //~ OperatorPrompt("Programming Completed","OK");
     // $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50); //uut switch off
-  
-  break;
-}
-$Count = $Count + 1;
-SleepMilliseconds(1000);
-}
+
+      break;
+    }
+    $Count = $Count + 1;
+    SleepMilliseconds(1000);
+  }
 
   // Reset to program pin
-   $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50); //uut switch off
-  
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50); //uut switch off
+
 
 //~ OperatorPrompt("SOP2 TO L","OK");
 //SerialSendMilliseconds($Interface_Handle, "#RK1$\n","", 50);
 //== Check result ====
-$FileContents = FileReadAllText("D:\\factory_release_update-only\\log.txt");
-UpdateStatus($FileContents);
+  $FileContents = FileReadAllText("D:\\factory_release_update-only\\log.txt");
+  UpdateStatus($FileContents);
 //////////////////////////////////////////////////////////////////////////////////////////////
-$String4="Progress (/sys/mcuimg1.bin): 100%";
-$Result4 = StringContains($FileContents,$String4);
-$Result=($Result4);
-UpdateStatus($Result);
-RecordMeasurementPassFail($TestName,"True","String",true,$Result);
+  $String4="Progress (/sys/mcuimg1.bin): 100%";
+  $Result4 = StringContains($FileContents,$String4);
+  $Result=($Result4);
+  UpdateStatus($Result);
+  RecordMeasurementPassFail($TestName,"True","String",true,$Result);
 
   // set to normal pin
   $return= SerialSendMilliseconds($Userinterface_Handle, "#SK0$\r\n", "", 50); //program pin
-     $Launchpad_Handle = SerialOpen($UUT_Serial,115200,8,"N",1);   
+  $Launchpad_Handle = SerialOpen($UUT_Serial,115200,8,"N",1);   
 
     //Reboot UUT
-   $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50); //uut switch off
-   SleepMilliseconds(100);
-   $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50); //uut switch off
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50); //uut switch off
+  SleepMilliseconds(100);
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50); //uut switch off
  //OperatorPrompt("visual check","OK");
-   RecordMeasurementPassFail("Reboot done","True","true",true,true); 
- return ;
+  RecordMeasurementPassFail("Reboot done","True","true",true,true); 
+  return ;
 }
