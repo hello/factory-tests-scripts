@@ -248,7 +248,7 @@ while( 1 ) {
                 ualarm(0);
                 sleep(0.5);
                 slow_type($SESSION, "\r\ncountry ".$region_map{$upc}."\r\n");
-                slow_type($SESSION, "\r\nboot\r\n");
+                #slow_type($SESSION, "\r\nboot\r\n");
                 slow_type($SESSION, "\r\ndisconnect\r\n");
                 slow_type($SESSION, "\r\n^ pause\r\n");
                 ualarm(5_000_000);
