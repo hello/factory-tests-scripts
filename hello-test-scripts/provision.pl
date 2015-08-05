@@ -264,6 +264,7 @@ while( 1 ) {
             }
             if( $entered_genkey == 0 && $line =~ "Top Board Version" ){
                 ualarm(0);
+                sleep(1.0);
                 slow_type($SESSION, "\r\ngenkey\r\n");
                 $entered_genkey = 1;
                 print_generating_key();
