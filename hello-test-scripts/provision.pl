@@ -10,10 +10,8 @@ use read_serial;
 
 my $port = "/dev/ttyUSB0";
 my $logfile = "station.log";
-my $version = "v2";
+my $version = "v9";
 my $line;
-my $killswitch = 0;
-my $has200 = 0;
 
 
 my %region_map = (
@@ -33,13 +31,19 @@ open (SERIALPORT, "+<", "$port") or die "can't open $port. ";
 open (LOG, ">>", $logfile) or die "can't open $logfile. ";
 usleep(100000);
 
+sub close_and_upload{
+    my ($session, $filename, $result) = @_;
+    print $session $result;
+    print LOG "$version,$result\n";
+    close $session;
+    #`~/sanders_linux_386 pch $filename &`;
+}
 sub slow_type{
-    my ($str) = @_;
-    if ($killswitch == 0){
-        for my $char (split //, $str){
-            print SERIALPORT $char;
-            usleep(1_000);
-        }
+    my ($handle, $str) = @_;
+    print $handle "Command: $str";
+    for my $char (split //, $str){
+        print SERIALPORT $char;
+        usleep(1_000);
     }
 }
 sub print_generating_key{
@@ -87,28 +91,6 @@ sub print_scan_upc{
              \\m___m__|_|    \\m_m_|   \\mm_|
 
 ", RESET;
-}
-sub print_testing{
-		  print "
-####### #######  #####  #######   ###   #     #  #####
-   #    #       #     #    #       #    ##    # #     #
-   #    #       #          #       #    # #   # #
-   #    #####    #####     #       #    #  #  # #  ####
-   #    #             #    #       #    #   # # #     #
-   #    #       #     #    #       #    #    ## #     #
-   #    #######  #####     #      ###   #     #  #####
-";
-}
-sub print_connecting{
-		  print "
- #####  ####### #     # #     # #######  #####  #######   ###   #     #  #####
-#     # #     # ##    # ##    # #       #     #    #       #    ##    # #     #
-#       #     # # #   # # #   # #       #          #       #    # #   # #
-#       #     # #  #  # #  #  # #####   #          #       #    #  #  # #  ####
-#       #     # #   # # #   # # #       #          #       #    #   # # #     #
-#     # #     # #    ## #    ## #       #     #    #       #    #    ## #     #
- #####  ####### #     # #     # #######  #####     #      ###   #     #  #####
-";
 }
 sub print_fail{
     print RED, "
@@ -161,20 +143,40 @@ print GREEN, '
  #       #     #  #####   #####  ####### ######
 ', RESET;
 }
-sub print_test_begin{
-		  print YELLOW, "
-
-
-####### #######  #####  #######         ######  #######  #####    ###   #     #
-   #    #       #     #    #            #     # #       #     #    #    ##    #
-   #    #       #          #            #     # #       #          #    # #   #
-   #    #####    #####     #            ######  #####   #  ####    #    #  #  #
-   #    #             #    #            #     # #       #     #    #    #   # #
-   #    #       #     #    #            #     # #       #     #    #    #    ##
-   #    #######  #####     #            ######  #######  #####    ###   #     #
-
-
+sub print_timeout{
+    print RED, "
+#######   ###   #     # ####### ####### #     # #######
+#       #    ##   ## #       #     # #     #    #
+#       #    # # # # #       #     # #     #    #
+#       #    #  #  # #####   #     # #     #    #
+#       #    #     # #       #     # #     #    #
+#       #    #     # #       #     # #     #    #
+#      ###   #     # ####### #######  #####     #
 ", RESET;
+}
+sub print_attach_new_device{
+print "
+
+
+   #    ####### #######    #     #####  #     #         #     # ####### #     #
+  # #      #       #      # #   #     # #     #         ##    # #       #  #  #
+ #   #     #       #     #   #  #       #     #         # #   # #       #  #  #
+#     #    #       #    #     # #       #######         #  #  # #####   #  #  #
+#######    #       #    ####### #       #     #         #   # # #       #  #  #
+#     #    #       #    #     # #     # #     #         #    ## #       #  #  #
+#     #    #       #    #     #  #####  #     #         #     # #######  ## ##
+
+
+######  ####### #     #   ###    #####  #######
+#     # #       #     #    #    #     # #
+#     # #       #     #    #    #       #
+#     # #####   #     #    #    #       #####
+#     # #        #   #     #    #       #
+#     # #         # #      #    #     # #
+######  #######    #      ###    #####  #######
+
+
+";
 }
 sub print_unknown_upc{
               print "
@@ -204,158 +206,126 @@ sub print_unknown_upc{
                #####  #        #####
           ";
 }
-$SIG{ALRM} = sub {
-$killswitch = 1;
-`clear`;
-print RED, "
-
-
-#######   ###   #     # ####### ####### #     # #######
-   #       #    ##   ## #       #     # #     #    #
-   #       #    # # # # #       #     # #     #    #
-   #       #    #  #  # #####   #     # #     #    #
-   #       #    #     # #       #     # #     #    #
-   #       #    #     # #       #     # #     #    #
-   #      ###   #     # ####### #######  #####     #
-
-######  #######    #    ####### #######    #     #####  #     #
-#     # #         # #      #       #      # #   #     # #     #
-#     # #        #   #     #       #     #   #  #       #     #
-######  #####   #     #    #       #    #     # #       #######
-#   #   #       #######    #       #    ####### #       #     #
-#    #  #       #     #    #       #    #     # #     # #     #
-#     # ####### #     #    #       #    #     #  #####  #     #
-
-
-", RESET;
-};
-`clear`;
-print "
-
-
-   #    ####### #######    #     #####  #     #         #     # ####### #     #
-  # #      #       #      # #   #     # #     #         ##    # #       #  #  #
- #   #     #       #     #   #  #       #     #         # #   # #       #  #  #
-#     #    #       #    #     # #       #######         #  #  # #####   #  #  #
-#######    #       #    ####### #       #     #         #   # # #       #  #  #
-#     #    #       #    #     # #     # #     #         #    ## #       #  #  #
-#     #    #       #    #     #  #####  #     #         #     # #######  ## ##
-
-
-######  ####### #     #   ###    #####  #######
-#     # #       #     #    #    #     # #
-#     # #       #     #    #    #       #
-#     # #####   #     #    #    #       #####
-#     # #        #   #     #    #       #
-#     # #         # #      #    #     # #
-######  #######    #      ###    #####  #######
-
-
-";
-
-while( $line = <SERIALPORT>)  {
-    my $time = time();
-    print LOG "[$time, $version] $line";
-    if( $line =~ /FreeRTOS/ ) {
-        ualarm(0);
-        $has200 = 0;
-        $killswitch = 0;
-        `clear`;
-        print_test_begin();
-        slow_type("\r\nboot\r\n");
-        slow_type("\r\ndisconnect\r\n");
-        slow_type("\r\n^ pause\r\n");
-        slow_type("\r\nrm logs/0\r\n");
-        slow_type("\r\nrm logs/1\r\n");
-        slow_type("\r\nrm logs/2\r\n");
-        slow_type("\r\nrm logs/3\r\n");
-        slow_type("\r\nrm logs/4\r\n");
-        slow_type("\r\nrm logs/5\r\n");
-        slow_type("\r\nrm logs/6\r\n");
-        ualarm(10_000_000);
-    }
-    if($killswitch == 1){
-        #noop
-        next;
-    }
-    if( $line =~ /PAIRING MODE/ ) {
-        ualarm(0);
-        slow_type("\r\ngenkey\r\n");
-        `clear`;
-        print_generating_key();
-        ualarm(20_000_000);
-    }
-    if( $line =~ /SL_NETAPP_IPV4_ACQUIRED/) {
-        ualarm(0);
-        `clear`;
-        print_testing();
-        $has200 = 0;
-        slow_type("\r\ntestkey\r\n");
-        ualarm(45_000_000);
-    }
-    if( $line =~ /factory key: ([0-9A-Z]+)/ ) {
-        ualarm(0);
-        my $key = $1;
-        `clear`;
-        print_scan_sense_serial();
-        my $serial = read_serial();
-        chomp($serial);
-        print "Got serial ".$serial.".\r\n";
-
-        my $post = "POST /v1/provision/".$serial." HTTP/1.0\r\n".
-        "Host: provision.hello.is\r\n".
-        "Content-type: text/plain\r\n".
-        "Content-length: ".length($key)."\r\n".
-        "\r\n".
-        $key;
-        #print $post;
-
-        my $cl = IO::Socket::SSL->new('provision.hello.is:443');
-        print $cl $post;
-
-        my $response = <$cl>;
-        #print "Reply:\r\n".$response;
-
-        if( $response =~ /200 OK/ ) {
-            # Allocate MAC?
-            slow_type("\r\nconnect hello-prov myfunnypassword 2\r\n");
-            `clear`;
-            print_connecting();
-            ualarm(10_000_000);
-        } else {
-            `clear`;
+while( 1 ) {
+    print_scan_sense_serial();
+    RESTART:
+    eval{
+        #print_scan_sense_serial();
+        my $uut_sn = read_serial();
+        my $uut_time = time();
+        my $upc;
+        my $id = "INVALID";
+        my $session_logfile = "session/$uut_sn"."_"."$uut_time".".log";
+        open (my $SESSION, ">>", $session_logfile) or die "can't open $session_logfile. ";
+        $SIG{ALRM} = sub {
+            print_timeout();
             print_fail();
-        }
-        close($cl);
-    }
-    if($line =~ /200 OK/){
-        $has200 = 1;
-    }
-    if( $line =~ /test key validated/ || ($line =~ / test key success/ && $has200 == 1)){
-        ualarm(0);
-        slow_type("\r\nloglevel 40\r\ndisconnect\r\n");
+            my $uut_reason = "Timeout";
+            close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason,$id");
+            die;
+        };
+        #region
         my $got_region = 0;
         while( !$got_region ) { #disable for demo
             `clear`;
             print_scan_upc();
-            my $upc = <>;
+            $upc = <>;
             chomp($upc);
-            print "Got UPC ".$upc.".\r\n";
-            # if (0) { # enable for demo
+            print $SESSION "Got UPC ".$upc.".\r\n";
             if( exists $region_map{$upc}  ) {
-                print "Setting country code ",$region_map{$upc},"\n";
-                slow_type("\r\ncountry ",$region_map{$upc},"\r\n");
                 $got_region = 1;
             } else {
                 print_unknown_upc();
             }
         }
-        print_pass();
-    }
-    if( $line =~ /test key not valid/ ) {
+        my $entered_genkey = 0;
+        print_attach_new_device();
         ualarm(0);
+        while( $line = <SERIALPORT>)  {
+            my $time = time();
+            print $SESSION "[$time, $version] $line";
+            if( $entered_genkey == 0 && $line =~ /FreeRTOS/ ) {
+                ualarm(0);
+                sleep(0.5);
+                slow_type($SESSION, "\r\ncountry ".$region_map{$upc}."\r\n");
+                #slow_type($SESSION, "\r\nboot\r\n");
+                slow_type($SESSION, "\r\ndisconnect\r\n");
+                slow_type($SESSION, "\r\n^ pause\r\n");
+                ualarm(5_000_000);
+            }
+            if($line =~ "PAIRING MODE" ){
+                #this unblocks genkey for 0.3.6.9
+                #TODO remove once fw update to later version
+                slow_type($SESSION, "\r\nloglevel 40\r\n");
+                sleep(1.0);
+                slow_type($SESSION, "\r\nled stop\r\n");
+                sleep(1.0);
+                slow_type($SESSION, "\r\nled stop\r\n");
+            }
+            if( $entered_genkey == 0 && $line =~ "Top Board Version" ){
+                ualarm(0);
+                sleep(1.0);
+                slow_type($SESSION, "\r\ngenkey\r\n");
+                $entered_genkey = 1;
+                print_generating_key();
+                ualarm(20_000_000);
+            }
+            if( $entered_genkey == 1 && $line =~ /factory key: ([0-9A-Z]{256})/ ) {
+                `clear`;
+                ualarm(0);
+                ualarm(20_000_000);
+                my $key = $1;
+                my $post = "POST /v1/provision/".$uut_sn." HTTP/1.0\r\n".
+                "Host: provision.hello.is\r\n".
+                "Content-type: text/plain\r\n".
+                "Content-length: ".length($key)."\r\n".
+                "\r\n".
+                $key;
+                print $SESSION "Post: $post\n";
+
+                my $cl = IO::Socket::SSL->new('provision.hello.is:443');
+                print $cl $post;
+
+                my $response = <$cl>;
+                print $SESSION "Response: $response\n";
+
+                my $uut_reason = "";
+                ualarm(0);
+                if( $response =~ /200 OK/ ) {
+                    my $status =  <$cl>;
+                    $status =  <$cl>;
+                    $status =  <$cl>;
+                    $status =  <$cl>;
+                    $status =  <$cl>;
+                    $status =  <$cl>;
+                    $id = <$cl>;
+                    print $SESSION "Status: $status\n";
+                    print $SESSION "ID: $id\n";
+                    #print "Status: $status\n";
+                    #print "ID: $id\n";
+                    if($status =~ /OK/ && $id =~ /[A-F0-9]{16}/){
+                        $uut_reason = "Passed";
+                        print_pass();
+                    }else{
+                        $uut_reason = $response;
+                        print_fail();
+                    }
+                } else {
+                    $uut_reason = "Failed";
+                    print_fail();
+                }
+                close($cl);
+                close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason,$id");
+                goto RESTART;
+            }
+        }
+        #shoud not get here: serial died
         `clear`;
-        print_fail();
+        my $uut_reason = "UART";
+        close_and_upload($SESSION, $session_logfile, "$uut_time,$uut_sn,$upc,$uut_reason,$id");
+        exit(1);
+    };
+    if($@) {
+        goto RESTART;
     }
 }
-
