@@ -10,7 +10,7 @@ use read_serial;
 
 my $port = "/dev/ttyUSB0";
 my $logfile = "station.log";
-my $version = "v8";
+my $version = "v9";
 my $line;
 
 
@@ -248,7 +248,7 @@ while( 1 ) {
                 ualarm(0);
                 sleep(0.5);
                 slow_type($SESSION, "\r\ncountry ".$region_map{$upc}."\r\n");
-                slow_type($SESSION, "\r\nboot\r\n");
+                #slow_type($SESSION, "\r\nboot\r\n");
                 slow_type($SESSION, "\r\ndisconnect\r\n");
                 slow_type($SESSION, "\r\n^ pause\r\n");
                 ualarm(5_000_000);
@@ -262,8 +262,9 @@ while( 1 ) {
                 sleep(1.0);
                 slow_type($SESSION, "\r\nled stop\r\n");
             }
-            if( $entered_genkey == 0 && $line =~ "Boot completed" ){
+            if( $entered_genkey == 0 && $line =~ "Top Board Version" ){
                 ualarm(0);
+                sleep(1.0);
                 slow_type($SESSION, "\r\ngenkey\r\n");
                 $entered_genkey = 1;
                 print_generating_key();
