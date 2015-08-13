@@ -251,7 +251,7 @@ while( 1 ) {
                 #slow_type($SESSION, "\r\nboot\r\n");
                 slow_type($SESSION, "\r\ndisconnect\r\n");
                 slow_type($SESSION, "\r\n^ pause\r\n");
-                ualarm(5_000_000);
+                ualarm(10_000_000);
             }
             if($line =~ "PAIRING MODE" ){
                 #this unblocks genkey for 0.3.6.9
