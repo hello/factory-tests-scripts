@@ -5,7 +5,7 @@ import boto
 import os
 from filechunkio import FileChunkIO
 from s3multipart import s3mpdownload
-from pylzma import py7zlib
+import py7zlib
 #7z
 
 def parseArgs():
@@ -42,7 +42,7 @@ def extractArchive(destPath,outputFolder):
             f = open(destPath,'rb')
             arc = py7zlib.Archive7z(f)
             for fileName in arc.getnames():
-                outPath = os.path.join(arguments.tbp_folder_out,fileName)
+                outPath = os.path.join(outputFolder,fileName)
                 try:
                     os.makedirs(os.path.dirname(outPath))
                 except OSError:
