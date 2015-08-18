@@ -73,7 +73,7 @@ def addToDict(dic, value, name):
     dic[name.replace(" ","_")] = newVal
     return dic
 
-def setupParser():
+def setupParser(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-t","--tags",      help="tags to add to the data to make it easier to find in elasticsearch",
             nargs="+")
@@ -89,7 +89,10 @@ def setupParser():
             const="~/s3SyncDir", nargs="?")
     parser.add_argument("directory",        help="directory of files to process")
 
-    arguments = parser.parse_args()
+    if args:
+        arguments = parser.parse_args(args)
+    else:
+        arguments = parser.parse_args()
 
     return arguments
 
@@ -389,8 +392,8 @@ def navigateDirectoryAndProcess(directory, arguments, es, ic, existingTags, chan
 
     return existingTags, changedPaths
 
-def main():
-    arguments = setupParser()
+def main(*args):
+    arguments = setupParser(args)
     if not os.path.exists(arguments.directory):
         print "Directory must exist\n"
         return
