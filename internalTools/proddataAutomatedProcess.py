@@ -6,9 +6,10 @@ import os
 from filechunkio import FileChunkIO
 from s3multipart import s3mpdownload
 import py7zlib
+import jabilHtmlParser
 #7z
 
-def parseArgs():
+def parseArgs(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-t","--tag_file_out",          help="specify the output path of the tag file",
             default="/home/ubuntu/proddata/tagFile.txt")
@@ -22,8 +23,13 @@ def parseArgs():
             default="hello-manufacturing")
     parser.add_argument("-s","--skip_s3",               help="skip the s3 pulldown, basically useful if there's an error and files are now local",
             action="store_true")
+    parser.add_argument("-e","--skip_elasticsearch",    help="skip the elasticsearch html processing",
+            action="store_true")
 
-    arguments = parser.parse_args()
+    if args:
+        arguments = parser.parse_args(args)
+    else:
+        arguments = parser.parse_args()
 
     return arguments
 
@@ -55,8 +61,18 @@ def extractArchive(destPath,outputFolder):
             f.close()
     return false
 
-def main():
-    arguments = parseArgs()
+def callHtmlParser(tbpFolder,tagFile):
+    parserOptions = [tbpFolder,#make this argument first to avoid confusion/issues
+                     "-o",'/home/ubuntu/proddata',
+                     "-s",'/home/ubuntu/s3SyncDir',
+                     "-f",tagFile,
+                     "-r","-v"]
+
+    jabilHtmlParser.main(parserOptions)
+
+
+def main(*args):
+    arguments = parseArgs(args)
 
     if not arguments.skip_s3:
         conn = boto.connect_s3()
@@ -83,6 +99,8 @@ def main():
             destPath = os.path.join(arguments.tbp_folder_out,fileName)
             extractArchive(destPath,arguments.tbp_folder_out)
 
+    if not arguments.skip_es:
+        callHtmlParser(arguments.tbp_folder_out,arguments.tag_file_out)
 
 
 if __name__ == "__main__":
