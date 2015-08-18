@@ -6,24 +6,24 @@ import os
 from filechunkio import FileChunkIO
 from s3multipart import s3mpdownload
 import py7zlib
-import jabilHtmlParser
+import jabilHtmlProcessor
 #7z
 
 def parseArgs(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-t","--tag_file_out",          help="specify the output path of the tag file",
-            default="/home/ubuntu/proddata/tagFile.txt")
+            default="/home/ubuntu/data/proddata/tagFile.txt")
     parser.add_argument("-a","--tag_file_in",           help="specify the s3 input for the tag file",
             default="s3://hello-manufacturing/sense-data/tagFile.txt")
     parser.add_argument("-p","--tbp_folder_out",        help="what folder to use for files that need to be processed",
-            default="/home/ubuntu/toBeProcessed")
+            default="/home/ubuntu/data/toBeProcessed")
     parser.add_argument("-f","--tbp_folder_in",         help="specify the s3 input for the to be processed folder",
             default="sense-data-to-process")
     parser.add_argument("-b","--tbp_bucket_in",         help="specify the s3 bucket for the to be processed folder",
             default="hello-manufacturing")
     parser.add_argument("-s","--skip_s3",               help="skip the s3 pulldown, basically useful if there's an error and files are now local",
             action="store_true")
-    parser.add_argument("-e","--skip_elasticsearch",    help="skip the elasticsearch html processing",
+    parser.add_argument("-e","--skip_es",    help="skip the elasticsearch html processing",
             action="store_true")
 
     if args:
@@ -37,12 +37,12 @@ def extractArchive(destPath,outputFolder):
     if destPath.endswith("zip") and zipfile.is_zipfile(destPath):
         with zipfile.Zipfile(destPath) as zipF:
             zipF.extractall(outputFolder)
-        return true
+        return True
     elif destPath.endswith("tar.gz") and tarfile.is_tarfile(destPath):
         tar = tarfile.open(destPath)
         tar.extractall(outputFolder)
         tar.close()
-        return true
+        return True
     elif destPath.endswith("7z"):
         try:
             f = open(destPath,'rb')
@@ -56,23 +56,34 @@ def extractArchive(destPath,outputFolder):
                 outFP = open(outPath,'wb')
                 outFP.write(arc.getmember(fileName).read())
                 outFP.close()
-            return true
+            return True
         finally:
             f.close()
     return false
 
-def callHtmlParser(tbpFolder,tagFile):
-    parserOptions = [tbpFolder,#make this argument first to avoid confusion/issues
-                     "-o",'/home/ubuntu/proddata',
-                     "-s",'/home/ubuntu/s3SyncDir',
+def callHtmlProcessor(tbpFolder,tagFile):
+    parserOptions = (tbpFolder,#make this argument first to avoid confusion/issues
+                     "-o","/home/ubuntu/data/proddata",
+                     "-s","/home/ubuntu/data/s3SyncDir",
                      "-f",tagFile,
-                     "-r","-v"]
+                     "-r","-v")
 
-    jabilHtmlParser.main(parserOptions)
+    jabilHtmlProcessor.main(*parserOptions)
 
 
 def main(*args):
     arguments = parseArgs(args)
+
+    try:
+        try:
+            os.makedirs(arguments.tbp_folder_out)
+        except OSError:
+            pass
+        f = open(os.path.join(arguments.tbp_folder_out,".tmp"),'w')
+        f.close()
+    except:
+        print "Must have permissions on folder. Try running as sudo as data folder has restricted permissions\n"
+        raise
 
     if not arguments.skip_s3:
         conn = boto.connect_s3()
@@ -100,7 +111,7 @@ def main(*args):
             extractArchive(destPath,arguments.tbp_folder_out)
 
     if not arguments.skip_es:
-        callHtmlParser(arguments.tbp_folder_out,arguments.tag_file_out)
+        callHtmlProcessor(arguments.tbp_folder_out,arguments.tag_file_out)
 
 
 if __name__ == "__main__":
