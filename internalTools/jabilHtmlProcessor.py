@@ -7,6 +7,7 @@ import shutil
 import math
 import argparse
 import tarfile
+import tempfile
 from copy import deepcopy
 from elasticsearch import Elasticsearch
 from elasticsearch.exceptions import RequestError
@@ -346,22 +347,50 @@ def formatForS3(dirsToTar, outDir, verbose):
         remains, year    = os.path.split(remains)
         remains, product = os.path.split(remains)
 
-        tarName = "%s%s%s_%s.tar.gz" % (year,month,day,productLookup[product])
-        manifestName = "%s%s%s_%s.manifest" % (year,month,day,productLookup[product])
         outputFolder = os.path.join(os.path.expanduser(outDir),year,month,day)
+        tarPath = os.path.join(outputFolder,"%s%s%s_%s.tar.gz" % (year,month,day,productLookup[product]))
+        manifestPath = os.path.join(outputFolder,"%s%s%s_%s.manifest" % (year,month,day,productLookup[product]))
 
         try:
             os.makedirs(outputFolder)
         except OSError:
             pass
 
-        with tarfile.open(os.path.join(outputFolder,tarName),'w:gz') as tar:
-            with open(os.path.join(outputFolder,manifestName),'w') as mani:
-                for fileName in os.listdir(directory):
-                    tar.add(os.path.join(directory,fileName),arcname=os.path.join(product,year,month,day,fileName))
-                    mani.write(fileName+'\n')
-                    if verbose:
-                        print "%s added to %s" % (fileName, tarName)
+        with tempfile.NamedTemporaryFile(delete=False) as tarFP:
+            with tarfile.open(fileobj=tarFP,'w:gz') as tar:
+                with tempfile.NamedTemporaryFile(delete=False) as mani:
+                    if os.path.exists(manifestPath):
+                        with open(manifestPath) as existingMani:
+                            lines = existingMani.read().splitlines()
+                    else:
+                        lines = []
+                    filesInDir = os.listdir(directory)
+                    for fileName in lines:
+                        if not fileName.endswith(".htm"):
+                            continue
+                        if not fileName in filesInDir:
+                            print "%s MISSING FROM %s" % (fileName,directory)
+                            return
+                        else:# do this here to keep added order to manifest. makes diffing way easier, but alphabetical not as easy for directories with diff add dates
+                            tar.add(os.path.join(directory,fileName),arcname=os.path.join(product,year,month,day,fileName))
+                            mani.write(fileName+'\n')
+                            if verbose:
+                                print "%s added to %s" % (fileName, tarPath.split()[1])
+                    for fileName in filesInDir:
+                        if not fileName.endswith(".htm"):
+                            continue
+                        if fileName in lines:#already added, move on. should only be new files
+                            continue
+                        tar.add(os.path.join(directory,fileName),arcname=os.path.join(product,year,month,day,fileName))
+                        mani.write(fileName+'\n')
+                        if verbose:
+                            print "%s added to %s" % (fileName, tarName)
+
+        shutil.copy(os.path.join(tempfile.tempdir,tarFP.name),tarPath)
+        os.remove(os.path.join(tempfile.tempdir,tarFP.name))
+        shutil.copy(os.path.join(tempfile.tempdir,mani.name),manifestPath)
+        os.remove(os.path.join(tempfile.tempdir,mani.name))
+
 
     return
 
