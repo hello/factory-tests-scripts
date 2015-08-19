@@ -35,14 +35,20 @@ def parseArgs(args=None):
 
 def extractArchive(destPath,outputFolder):
     if destPath.endswith("zip") and zipfile.is_zipfile(destPath):
-        with zipfile.Zipfile(destPath) as zipF:
-            zipF.extractall(outputFolder)
-        return True
+        try:
+            with zipfile.Zipfile(destPath) as zipF:
+                zipF.extractall(outputFolder)
+            return True
+        except:
+            return False
     elif destPath.endswith("tar.gz") and tarfile.is_tarfile(destPath):
-        tar = tarfile.open(destPath)
-        tar.extractall(outputFolder)
-        tar.close()
-        return True
+        try:
+            tar = tarfile.open(destPath)
+            tar.extractall(outputFolder)
+            tar.close()
+            return True
+        except:
+            return False
     elif destPath.endswith("7z"):
         try:
             f = open(destPath,'rb')
@@ -57,6 +63,8 @@ def extractArchive(destPath,outputFolder):
                 outFP.write(arc.getmember(fileName).read())
                 outFP.close()
             return True
+        except:
+            return False
         finally:
             f.close()
     return false
@@ -104,11 +112,15 @@ def main(*args):
         for fileName in buck.list(prefix=arguments.tbp_folder_in):
             destPath = os.path.join(arguments.tbp_folder_out,os.path.split(fileName.key)[1])
             s3mpdownload.main(os.path.join("s3://",arguments.tbp_bucket_in,fileName.key),destPath,force=True)
-            extractArchive(destPath,arguments.tbp_folder_out)
+            if extractArchive(destPath,arguments.tbp_folder_out):
+                #TODO: Test this shiz
+                buck.delete_key(fileName.key)
+                os.remove(destPath)
     else:#assume there was a problem last time and files are in the right spot
         for fileName in os.listdir(arguments.tbp_folder_out):
             destPath = os.path.join(arguments.tbp_folder_out,fileName)
-            extractArchive(destPath,arguments.tbp_folder_out)
+            if extractArchive(destPath,arguments.tbp_folder_out):
+                os.remove(destPath)
 
     if not arguments.skip_es:
         callHtmlProcessor(arguments.tbp_folder_out,arguments.tag_file_out)
