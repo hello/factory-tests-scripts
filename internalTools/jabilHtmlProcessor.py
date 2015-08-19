@@ -356,8 +356,9 @@ def formatForS3(dirsToTar, outDir, verbose):
         except OSError:
             pass
 
+        newFiles = False
         with tempfile.NamedTemporaryFile(delete=False) as tarFP:
-            with tarfile.open(fileobj=tarFP,'w:gz') as tar:
+            with tarfile.open(fileobj=tarFP,mode='w:gz') as tar:
                 with tempfile.NamedTemporaryFile(delete=False) as mani:
                     if os.path.exists(manifestPath):
                         with open(manifestPath) as existingMani:
@@ -375,20 +376,23 @@ def formatForS3(dirsToTar, outDir, verbose):
                             tar.add(os.path.join(directory,fileName),arcname=os.path.join(product,year,month,day,fileName))
                             mani.write(fileName+'\n')
                             if verbose:
-                                print "%s added to %s" % (fileName, tarPath.split()[1])
+                                print "%s added to %s" % (fileName, os.path.split(tarPath)[1])
                     for fileName in filesInDir:
                         if not fileName.endswith(".htm"):
                             continue
                         if fileName in lines:#already added, move on. should only be new files
                             continue
+                        newFiles = True
                         tar.add(os.path.join(directory,fileName),arcname=os.path.join(product,year,month,day,fileName))
                         mani.write(fileName+'\n')
                         if verbose:
-                            print "%s added to %s" % (fileName, tarName)
+                            print "%s added to %s" % (fileName, os.path.split(tarPath)[1])
 
-        shutil.copy(os.path.join(tempfile.tempdir,tarFP.name),tarPath)
+        if newFiles:
+            shutil.copy(os.path.join(tempfile.tempdir,tarFP.name),tarPath)
         os.remove(os.path.join(tempfile.tempdir,tarFP.name))
-        shutil.copy(os.path.join(tempfile.tempdir,mani.name),manifestPath)
+        if newFiles:
+            shutil.copy(os.path.join(tempfile.tempdir,mani.name),manifestPath)
         os.remove(os.path.join(tempfile.tempdir,mani.name))
 
 
@@ -399,7 +403,7 @@ def navigateDirectoryAndProcess(directory, arguments, es, ic, existingTags, chan
         print "Entering: %s" % directory
     for fileName in os.listdir(directory)[::-1]:
         if arguments.recursive and os.path.isdir(os.path.join(directory,fileName)):
-            existingTags = navigateDirectoryAndProcess(os.path.join(directory,fileName), arguments, es, ic, existingTags, changedPaths)
+            existingTags, changedPaths = navigateDirectoryAndProcess(os.path.join(directory,fileName), arguments, es, ic, existingTags, changedPaths)
         if not fileName.endswith('.htm') or os.path.isdir(os.path.join(directory,fileName)):
             continue
         filePath = os.path.join(directory,fileName)

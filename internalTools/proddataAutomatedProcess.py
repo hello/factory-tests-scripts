@@ -36,7 +36,7 @@ def parseArgs(args=None):
 def extractArchive(destPath,outputFolder):
     if destPath.endswith("zip") and zipfile.is_zipfile(destPath):
         try:
-            with zipfile.Zipfile(destPath) as zipF:
+            with zipfile.ZipFile(destPath) as zipF:
                 zipF.extractall(outputFolder)
             return True
         except:
