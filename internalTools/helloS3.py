@@ -5,7 +5,7 @@ import re
 import os
 import hashlib
 
-def sync(connection, source, dest, verbose = False, dryRun=False):
+def sync(conn, source, dest, verbose = False, dryRun=False):
     if source.lower().startswith("s3://") and not dest.lower().startswith("s3://"):
         if os.path.exists(dest) and os.path.isfile(dest):
             raise TypeError("dest must be a folder path")
@@ -77,7 +77,7 @@ def sync(connection, source, dest, verbose = False, dryRun=False):
                     leftover = filePath.lstrip(source)
                     leftover = leftover.lstrip('/')
                     leftover = leftover.lstrip('\\')
-                    key = buck.get_key(dest+leftover)
+                    key = buck.get_key(s3DestPath[1]+'/'+leftover)
                     sourceHash = "not"
                     destHash = "equal"
                     if key:

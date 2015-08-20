@@ -7,6 +7,7 @@ from filechunkio import FileChunkIO
 from s3multipart import s3mpdownload
 import py7zlib
 import jabilHtmlProcessor
+import helloS3
 #7z
 
 def parseArgs(args=None):
@@ -23,7 +24,7 @@ def parseArgs(args=None):
             default="hello-manufacturing")
     parser.add_argument("-s","--skip_s3",               help="skip the s3 pulldown, basically useful if there's an error and files are now local",
             action="store_true")
-    parser.add_argument("-e","--skip_es",    help="skip the elasticsearch html processing",
+    parser.add_argument("-e","--skip_es",               help="skip the elasticsearch html processing",
             action="store_true")
 
     if args:
@@ -123,6 +124,8 @@ def main(*args):
 
     if not arguments.skip_es:
         callHtmlProcessor(arguments.tbp_folder_out,arguments.tag_file_out)
+
+    helloS3.sync(conn,"/home/ubuntu/data/s3SyncDir/","s3://hello-manufacturing/sense-data/",dryRun=False,verbose=True)
 
 
 if __name__ == "__main__":
