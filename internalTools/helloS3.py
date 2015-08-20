@@ -5,10 +5,10 @@ import re
 import os
 import hashlib
 
-def sync(connection, source, dest, queryIndividually=True):
-    if os.path.exists(dest) and os.path.isfile(dest):
-        raise TypeError("dest must be a folder path")
+def sync(connection, source, dest, verbose = False, dryRun=False):
     if source.lower().startswith("s3://") and not dest.lower().startswith("s3://"):
+        if os.path.exists(dest) and os.path.isfile(dest):
+            raise TypeError("dest must be a folder path")
         s3SourcePath = splitTotalKeyIntoParts(source)
         buck = conn.get_bucket(s3SourcePath[0])
         if s3SourcePath[2] == "":#source is directory
@@ -24,7 +24,10 @@ def sync(connection, source, dest, queryIndividually=True):
                     os.makedirs(os.path.split(destPath)[0])
                 except OSError:
                     pass
-                s3mpdownload.main(os.path.join(source,leftover), destPath, force=True)
+                if dryRun or verbose:
+                    print "%s --> %s" % (os.path.join(source,leftover),destPath)
+                if not dryRun:
+                    s3mpdownload.main(os.path.join(source,leftover), destPath, force=True)
         else:
             key = buck.get_key(source)
             if not key:
@@ -41,11 +44,50 @@ def sync(connection, source, dest, queryIndividually=True):
                     os.makedirs(os.path.split(destPath)[0])
                 except OSError:
                     pass
-                s3mpdownload.main(os.path.join(source,leftover), destPath, force=True)
+                if dryRun or verbose:
+                    print "%s --> %s" % (os.path.join(source,leftover),destPath)
+                if not dryRun:
+                    s3mpdownload.main(os.path.join(source,leftover), destPath, force=True)
     elif not source.lower().startswith("s3://") and dest.lower().startswith("s3://"):
+        if not os.path.exists(source):
+            raise IOError("Source path not found")
+        if not dest.endswith('/'):#more forgiving than throwing an error
+            dest = dest + '/'
         s3DestPath = splitTotalKeyIntoParts(dest)
-
-
+        buck = conn.get_bucket(s3DestPath[0])
+        if os.path.isfile(source):#individual file
+            fileName = os.path.split(source)[1]
+            key = buck.get_key(dest+fileName)
+            sourceHash = "not"
+            destHash = "equal"
+            if key:
+                sourceHash = hashlib.md5(open(source, "rb").read()).hexdigest()
+                destHash = key.etag.strip('"')
+            if sourceHash != destHash:
+                if dryRun or verbose:
+                    print "%s --> %s" % (source,dest+fileName)
+                if not dryRun:
+                    s3mpupload.main(source,dest+fileName,force=True)
+        else:
+            for root, dirs, fileNames in os.walk(source):
+                if fileNames == []:
+                    continue
+                for fileName in fileNames:
+                    filePath = os.path.join(root,fileName)
+                    leftover = filePath.lstrip(source)
+                    leftover = leftover.lstrip('/')
+                    leftover = leftover.lstrip('\\')
+                    key = buck.get_key(dest+leftover)
+                    sourceHash = "not"
+                    destHash = "equal"
+                    if key:
+                        sourceHash = hashlib.md5(open(filePath, "rb").read()).hexdigest()
+                        destHash = key.etag.strip('"')
+                    if sourceHash != destHash:
+                        if dryRun or verbose:
+                            print "%s --> %s" % (filePath,dest+leftover)
+                        if not dryRun:
+                            s3mpupload.main(open(filePath),dest+leftover,force=True)
 
 
 
@@ -65,4 +107,4 @@ def splitTotalKeyIntoParts(totalKey):
 
 if __name__ == "__main__":
     conn = boto.connect_s3()
-    sync(conn, "s3://hello-manufacturing/sense-data/","tmp")
+    sync(conn, "tmp","s3://hello-manufacturing/sense-data-to-process/")
