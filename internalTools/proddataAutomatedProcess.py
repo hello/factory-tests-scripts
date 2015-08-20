@@ -113,7 +113,6 @@ def main(*args):
             destPath = os.path.join(arguments.tbp_folder_out,os.path.split(fileName.key)[1])
             s3mpdownload.main(os.path.join("s3://",arguments.tbp_bucket_in,fileName.key),destPath,force=True)
             if extractArchive(destPath,arguments.tbp_folder_out):
-                #TODO: Test this shiz
                 buck.delete_key(fileName.key)
                 os.remove(destPath)
     else:#assume there was a problem last time and files are in the right spot
