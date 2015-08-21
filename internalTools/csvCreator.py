@@ -63,7 +63,6 @@ def buildCommonSearch(arguments, search=None, size=0):
         query = Q("query_string", query=" ".join(arguments.tags), analyze_wildcard=True)
         search = search.query(query)
 
-    rootFilter = Search()
     filters = [["Product",      arguments.products],
                ["Test_Name",    arguments.test_names],
                ["Test_Group",   arguments.test_groups],
@@ -71,10 +70,10 @@ def buildCommonSearch(arguments, search=None, size=0):
 
     for filt in filters:
         if filt[1]:
-            rootFilter = rootFilter.filter(generalQFBuilder(filt[0], filt[1], arguments.enable_regexp, F))
+            search = search.filter(generalQFBuilder(filt[0], filt[1], arguments.enable_regexp, F))
 
     if arguments.begin_date or arguments.end_date:
-        rootFilter = rootFilter.filter(dateFilter("Start_Time", arguments.begin_date, arguments.end_date))
+        search = search.filter(dateFilter("Start_Time", arguments.begin_date, arguments.end_date))
 
         begin = arguments.begin_date
         if not begin:
@@ -92,9 +91,9 @@ def buildCommonSearch(arguments, search=None, size=0):
             indexList.append("proddata-%s" % begin.strftime("%Y.%m.%d"))
             begin += datetime.timedelta(days=1)
 
-        rootFilter = F("indices",indices=indexList,filter=rootFilter,no_match_filter="none")
+        search = F("indices",indices=indexList,filter=search,no_match_filter="none")
 
-    search = search.filter(rootFilter)
+    #search = search.filter(search)
 
     if size:
         search = search[0:size]
