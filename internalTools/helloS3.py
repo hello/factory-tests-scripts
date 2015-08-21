@@ -32,7 +32,7 @@ def sync(conn, source, dest, verbose = False, dryRun=False, individualQuery=True
                 if not dryRun:
                     s3mpdownload.main(fullKeyPath, destPath, force=True)
         else:
-            key = buck.get_key(source)
+            key = buck.get_key(s3SourcePath[1]+'/'+s3SourcePath[2])
             if not key:
                 raise IOError("Source file not found: %s" % source)
             destPath = os.path.join(dest,os.path.split(source)[1])
@@ -41,7 +41,7 @@ def sync(conn, source, dest, verbose = False, dryRun=False, individualQuery=True
             if os.path.exists(destPath):
                 sourceHash = key.etag.strip('"')
                 destHash = hashlib.md5(open(destPath, "rb").read()).hexdigest()
-            if localHash != sourceHash:
+            if sourceHash != destHash:
                 try:
                     os.makedirs(dest)
                 except OSError:
@@ -59,7 +59,7 @@ def sync(conn, source, dest, verbose = False, dryRun=False, individualQuery=True
         buck = conn.get_bucket(s3DestPath[0])
         if os.path.isfile(source):#individual file
             fileName = os.path.split(source)[1]
-            key = buck.get_key(s3DestPath[1]+fileName)
+            key = buck.get_key(s3DestPath[1]+'/'+fileName)
             sourceHash = "not"
             destHash = "equal"
             if key:
@@ -75,7 +75,7 @@ def sync(conn, source, dest, verbose = False, dryRun=False, individualQuery=True
                 for root, dirs, fileNames in os.walk(source):
                     for fileName in fileNames:
                         filePath = os.path.join(root,fileName)
-                        leftover = filePath.replace(source)
+                        leftover = filePath.replace(source,"")
                         leftover = leftover.replace('\\','/')
                         leftover = leftover.lstrip('/')
                         key = buck.get_key(s3DestPath[1]+'/'+leftover)
@@ -96,7 +96,7 @@ def sync(conn, source, dest, verbose = False, dryRun=False, individualQuery=True
                 for root, dirs, fileNames in os.walk(source):
                     for fileName in fileNames:
                         filePath = os.path.join(root,fileName)
-                        leftover = filePath.replace(source)
+                        leftover = filePath.replace(source,"")
                         leftover = leftover.replace('\\','/')
                         leftover = leftover.lstrip('/')
                         sourceHash = "not"
@@ -130,4 +130,4 @@ def splitTotalKeyIntoParts(totalKey):
 
 if __name__ == "__main__":
     conn = boto.connect_s3()
-    sync(conn, "s3://hello-manufacturing/sense-data-to-process/","tmp",individualQuery=False)
+    sync(conn, "tmp", "s3://hello-manufacturing/sense-data-to-process/", individualQuery=True)
