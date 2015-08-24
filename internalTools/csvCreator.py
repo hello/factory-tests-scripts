@@ -70,11 +70,9 @@ def buildCommonSearch(arguments, search=None, size=0):
 
     for filt in filters:
         if filt[1]:
-            #search = search.filter(generalQFBuilder(filt[0], filt[1], arguments.enable_regexp, F))
             toFilter.append(generalQFBuilder(filt[0], filt[1], arguments.enable_regexp, F))
 
     if arguments.begin_date or arguments.end_date:
-        #search = search.filter(dateFilter("Start_Time", arguments.begin_date, arguments.end_date))
         toFilter.append(dateFilter("Start_Time", arguments.begin_date, arguments.end_date))
 
         begin = arguments.begin_date
