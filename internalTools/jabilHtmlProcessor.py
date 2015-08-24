@@ -347,6 +347,9 @@ def formatForS3(dirsToTar, outDir, verbose):
         remains, year    = os.path.split(remains)
         remains, product = os.path.split(remains)
 
+        if product.lower() == "unknown":
+            continue
+
         outputFolder = os.path.join(os.path.expanduser(outDir),year,month,day)
         tarPath = os.path.join(outputFolder,"%s%s%s_%s.tar.gz" % (year,month,day,productLookup[product]))
         manifestPath = os.path.join(outputFolder,"%s%s%s_%s.manifest" % (year,month,day,productLookup[product]))
