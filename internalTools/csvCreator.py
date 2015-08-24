@@ -58,7 +58,7 @@ def mkdate(datestr):
 def buildCommonSearch(arguments, search=None, size=0):
     if not search:
         search = Search()
-
+    toFilter = []
     if arguments.tags:
         query = Q("query_string", query=" ".join(arguments.tags), analyze_wildcard=True)
         search = search.query(query)
@@ -70,18 +70,20 @@ def buildCommonSearch(arguments, search=None, size=0):
 
     for filt in filters:
         if filt[1]:
-            search = search.filter(generalQFBuilder(filt[0], filt[1], arguments.enable_regexp, F))
+            #search = search.filter(generalQFBuilder(filt[0], filt[1], arguments.enable_regexp, F))
+            toFilter.append(generalQFBuilder(filt[0], filt[1], arguments.enable_regexp, F))
 
     if arguments.begin_date or arguments.end_date:
-        search = search.filter(dateFilter("Start_Time", arguments.begin_date, arguments.end_date))
+        #search = search.filter(dateFilter("Start_Time", arguments.begin_date, arguments.end_date))
+        toFilter.append(dateFilter("Start_Time", arguments.begin_date, arguments.end_date))
 
         begin = arguments.begin_date
-        if not begin:
+        if arguments.begin_date == None:
             begin = date(2015,12,22)#start of testing "epoch"
         else:
-            begin = begin.date()
+            begin = begin.date()#strip time if present
         end = arguments.end_date
-        if not end:
+        if arguments.end_date == None:#not end is preferable, but doesn't work?
             end = date.today() + datetime.timedelta(days=2)#time change potential weirdness
         else:
             end = end.date()
@@ -91,9 +93,16 @@ def buildCommonSearch(arguments, search=None, size=0):
             indexList.append("proddata-%s" % begin.strftime("%Y.%m.%d"))
             begin += datetime.timedelta(days=1)
 
-        search = F("indices",indices=indexList,filter=search,no_match_filter="none")
+        if toFilter:
+            newBool = F("bool", must=toFilter)
+        else:
+            newBool = F()
 
-    #search = search.filter(search)
+        search = search.filter(F("indices",indices=indexList,no_match_filter="none",filter=newBool))
+
+    else:
+        for toFilt in toFilter:
+            search = search.filter(toFilt)
 
     if size:
         search = search[0:size]
