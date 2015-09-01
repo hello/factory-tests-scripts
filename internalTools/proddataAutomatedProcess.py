@@ -8,23 +8,25 @@ from s3multipart import s3mpdownload
 import py7zlib
 import jabilHtmlProcessor
 import helloS3
-#7z
+import tempfile
 
 def parseArgs(args=None):
     parser = argparse.ArgumentParser()
     parser.add_argument("-t","--tag_file_out",          help="specify the output path of the tag file",
-            default="/home/ubuntu/data/proddata/tagFile.txt")
+            default="/home/ubuntu/data/s3SyncDir/tagFile.txt")
     parser.add_argument("-a","--tag_file_in",           help="specify the s3 input for the tag file",
             default="s3://hello-manufacturing/sense-data/tagFile.txt")
-    parser.add_argument("-p","--tbp_folder_out",        help="what folder to use for files that need to be processed",
+    parser.add_argument("-o","--tbp_folder_out",        help="what folder to use for files that need to be processed",
             default="/home/ubuntu/data/toBeProcessed")
     parser.add_argument("-f","--tbp_folder_in",         help="specify the s3 input for the to be processed folder",
             default="sense-data-to-process")
     parser.add_argument("-b","--tbp_bucket_in",         help="specify the s3 bucket for the to be processed folder",
             default="hello-manufacturing")
-    parser.add_argument("-s","--skip_s3",               help="skip the s3 pulldown, basically useful if there's an error and files are now local",
+    parser.add_argument("-p","--skip_pulldown",         help="skip the s3 pulldown, basically useful if there's an error and files are now local",
             action="store_true")
     parser.add_argument("-e","--skip_es",               help="skip the elasticsearch html processing",
+            action="store_true")
+    parser.add_argument("-s","--skip_sync",             help="skip the elasticsearch html processing",
             action="store_true")
 
     if args:
@@ -68,7 +70,7 @@ def extractArchive(destPath,outputFolder):
             return False
         finally:
             f.close()
-    return false
+    return False
 
 def callHtmlProcessor(tbpFolder,tagFile):
     parserOptions = (tbpFolder,#make this argument first to avoid confusion/issues
@@ -84,18 +86,14 @@ def main(*args):
     arguments = parseArgs(args)
 
     try:
-        try:
-            os.makedirs(arguments.tbp_folder_out)
-        except OSError:
+        with tempfile.TemporaryFile(dir=arguments.tbp_folder_out) as f:
             pass
-        f = open(os.path.join(arguments.tbp_folder_out,".tmp"),'w')
-        f.close()
     except:
-        print "Must have permissions on folder. Try running as sudo as data folder has restricted permissions\n"
+        print "\nMust have permissions on folder. Try running as sudo as data folder has restricted permissions\n"
         raise
 
-    if not arguments.skip_s3:
-        conn = boto.connect_s3()
+    conn = boto.connect_s3()
+    if not arguments.skip_pulldown:
         try:
             os.makedirs(os.path.split(arguments.tag_file_out)[0])
         except OSError:
@@ -125,7 +123,9 @@ def main(*args):
     if not arguments.skip_es:
         callHtmlProcessor(arguments.tbp_folder_out,arguments.tag_file_out)
 
-    helloS3.sync(conn,"/home/ubuntu/data/s3SyncDir/","s3://hello-manufacturing/sense-data/",dryRun=False,verbose=True)
+    if not arguments.skip_sync:
+        print "Syncing..."
+        helloS3.sync(conn,"/home/ubuntu/data/s3SyncDir/","s3://hello-manufacturing/sense-data/",dryRun=False,verbose=True, individualQuery=False)
 
 
 if __name__ == "__main__":

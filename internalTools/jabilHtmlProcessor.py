@@ -28,6 +28,8 @@ def addToDict(dic, value, name):
         if newVal == float('Inf') or newVal == -float('Inf') or name == "Serial Number" or math.isnan(newVal):
             raise ValueError
         if name == "Measurement":
+            if newVal > 1e13 and dic["Test_Name"] == "ID_check":
+                raise ValueError
             dic[name] = None
             name += "_num"
         if (name == "Total Execution Time" or name == "Elapsed Time" or name == "Elapsed Time_result") and newVal > 1000000:
@@ -277,9 +279,12 @@ def indexValues(testData, existingTags, fileName, es, ic):
             except KeyError:
                 pass
 
-        tagableValues = [testData[i]['Test_Name'],
-                         testData[i]['Test_Group'],
-                         testData[i]['Measurement']]
+        try:
+            tagableValues = [testData[i]['Test_Name'],
+                             testData[i]['Test_Group'],
+                             testData[i]['Measurement']]
+        except KeyError:
+            tagableValues = ["Incomplete"]
 
         for tag in tagableValues:
             try:
