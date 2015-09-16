@@ -230,7 +230,7 @@ def getStuff(arguments,es):
             if result['Measurement'] == None:
                 data[result['Test_Run_ID']][nameNum+"Value"] =              result['Measurement_num']
             else:
-                data[result['Test_Run_ID']][nameNum+"Value"] =              result['Measurement']
+                data[result['Test_Run_ID']][nameNum+"Value"] =              result['Measurement'].encode('utf-8')
 
             try:
                 headerHash[nameNum+"Value"]
