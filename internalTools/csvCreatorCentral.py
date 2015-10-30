@@ -91,7 +91,7 @@ def buildCommonSearch(arguments, search=None, size=0):
 
         indexList = []
         while begin <= end:
-            indexList.append("proddata-%s" % begin.strftime("%Y.%m.%d"))
+            indexList.append("sensedata-%s" % begin.strftime("%Y"))
             begin += datetime.timedelta(days=1)
 
         if toFilter:
@@ -168,7 +168,7 @@ def listTests(arguments,es):
                 arguments.output_file.write(formatString.format(productBucket.key, groupBucket.key, nameBucket.key))
 
 def getStuff(arguments,es):
-    search = Search(using=es, index='proddata-*')
+    search = Search(using=es, index='sensedata-*')
     search = buildCommonSearch(arguments, search=search, size=arguments.num_results)
 
     if arguments.print_query:
