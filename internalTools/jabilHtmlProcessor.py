@@ -15,7 +15,7 @@ from elasticsearch.client import IndicesClient
 
 mapName = "testResult"
 
-mapping = {mapName:{"properties":{"Stop_Time":{"type":"date","format":"dateOptionalTime"},"Test_Script":{"type":"string","index":"not_analyzed"},"Elapsed_Time":{"type":"long"},"Test_Cell":{"type":"long"},"Start_Time":{"type":"date","format":"dateOptionalTime"},"Test_Station":{"type":"string","index":"not_analyzed"},"Serial_Number":{"type":"string","index":"not_analyzed"},"Total_Execution_Time":{"type":"long"},"Test_Result":{"type":"string","index":"not_analyzed"},"Test_Script_Validation_Hash":{"type":"string","index":"not_analyzed"},"Lower_Limit":{"type":"double"},"Measurement_Unit":{"type":"string","index":"not_analyzed"},"Elapsed_Time_result":{"type":"double"},"Measurement_num":{"type":"double"},"Execution_Time":{"type":"double"},"Upper_Limit":{"type":"double"},"Test_Name":{"type":"string","index":"not_analyzed"},"Measurement":{"type":"string","index":"not_analyzed"},"Test_Status":{"type":"string","index":"not_analyzed"},"Is_Measurement":{"type":"boolean"},"Test_Group":{"type":"string","index":"not_analyzed"},"Parametric_Test":{"type":"boolean"},"Color":{"type":"string","index":"not_analyzed"},"Product":{"type":"string","index":"not_analyzed"},"Calc_runtime":{"type":"double"},"Test_Run_ID":{"type":"string","index":"not_analyzed"},"tags":{"type":"string"}}}}
+mapping = {mapName:{"_routing":{"required":"true","path":"Product"},"properties":{"Stop_Time":{"type":"date","format":"dateOptionalTime"},"Test_Script":{"type":"string","index":"not_analyzed"},"Elapsed_Time":{"type":"long"},"Test_Cell":{"type":"long"},"Start_Time":{"type":"date","format":"dateOptionalTime"},"Test_Station":{"type":"string","index":"not_analyzed"},"Serial_Number":{"type":"string","index":"not_analyzed"},"Total_Execution_Time":{"type":"long"},"Test_Result":{"type":"string","index":"not_analyzed"},"Test_Script_Validation_Hash":{"type":"string","index":"not_analyzed"},"Lower_Limit":{"type":"double"},"Measurement_Unit":{"type":"string","index":"not_analyzed"},"Elapsed_Time_result":{"type":"double"},"Measurement_num":{"type":"double"},"Execution_Time":{"type":"double"},"Upper_Limit":{"type":"double"},"Test_Name":{"type":"string","index":"not_analyzed"},"Measurement":{"type":"string","index":"not_analyzed"},"Test_Status":{"type":"string","index":"not_analyzed"},"Is_Measurement":{"type":"boolean"},"Test_Group":{"type":"string","index":"not_analyzed"},"Parametric_Test":{"type":"boolean"},"Color":{"type":"string","index":"not_analyzed"},"Product":{"type":"string","index":"not_analyzed"},"Calc_runtime":{"type":"double"},"Test_Run_ID":{"type":"string","index":"not_analyzed"},"tags":{"type":"string"}}}}
 
 def addToDict(dic, value, name):
     try:#some duplicate names in test results table and top of file
@@ -263,11 +263,12 @@ def parseFile(filePath,verbose):
 def indexValues(testData, existingTags, fileName, es, ic):
     timeObj = time.strptime(testData[0]['Start_Time'], "%Y-%m-%dT%H:%M:%S")
     idName = time.strftime('%Y%m%d%H%M%S',timeObj)+'_'+testData[0]['Serial_Number']
-    indexName = "proddata-" + time.strftime('%Y.%m.%d',timeObj)
+    indexName = "sensedata-" + time.strftime('%Y',timeObj)
     try:#to create instance and mapping
-        ic.create(index=indexName)
+        settings = {"number_of_shards":7,"number_of_replicas":1}
+        ic.create(index=indexName, body=settings)
         ic.put_mapping(index=indexName, doc_type=mapName, body=mapping) #if this errors it shouldn't get caught and bad things should happen
-    except RequestError:#this happens when the index is already created, which is fine, just don't need to remap it
+    except RequestError as e:#this happens when the index is already created, which is fine, just don't need to remap it
         pass
 
     for i in range(0,len(testData)):
