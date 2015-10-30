@@ -20,7 +20,9 @@ def setupParser():
             nargs="+")
     parser.add_argument("-g","--test_groups",   help="names of test groups to pull records for",
             nargs="+")
-    parser.add_argument("-p","--products",      help="Morpheus, Top_Board, Middle_Board, LED_Board, Bottom_Board",
+    parser.add_argument("-p","--products",      help="Morpheus, \"Top Board\", Middle Board, \"LED Board\", \"Bottom Board\", \"Pill Board\", Pill",
+            nargs="+")
+    parser.add_argument("--hashes",             help="for getting results from a specific test hash",
             nargs="+")
     parser.add_argument("-r","--enable_regexp", help="enable regular expressions for products, test names, test groups",
             action="store_true")
@@ -28,8 +30,8 @@ def setupParser():
             action="store_true")
     parser.add_argument("-c","--enable_calc_t", help="add the calculated time for each test to the output",
             action="store_true")
-    parser.add_argument("-n","--num_results",   help="max number of returned rows (default: 50000)",
-            type=int, default=50000)
+    parser.add_argument("-n","--num_results",   help="max number of returned rows (default: 500000)",
+            type=int, default=500000)
     parser.add_argument("-o","--output_file",   help="output file name (default: csvResults.csv, no arg for stdout)",
             nargs="?", type=argparse.FileType('w'), const=sys.stdout, default="csvResults.csv")
     parser.add_argument("-a","--tags",          help="search for tests, groups, results that you don't know the exact format of",
@@ -66,7 +68,8 @@ def buildCommonSearch(arguments, search=None, size=0):
     filters = [["Product",      arguments.products],
                ["Test_Name",    arguments.test_names],
                ["Test_Group",   arguments.test_groups],
-               ["Serial_Number",arguments.serial_numbers]]
+               ["Serial_Number",arguments.serial_numbers],
+               ["Test_Script_Validation_Hash",arguments.hashes]]
 
     for filt in filters:
         if filt[1]:
