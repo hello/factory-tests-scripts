@@ -16,6 +16,8 @@ def parseArgs(args=None):
             default="/home/ubuntu/data/s3SyncDir/tagFile.txt")
     parser.add_argument("-a","--tag_file_in",           help="specify the s3 input for the tag file",
             default="s3://hello-manufacturing/sense-data/tagFile.txt")
+    parser.add_argument("-l","--list_file_out",         help="specify the output path of the list file")
+    parser.add_argument("-i","--list_file_in",          help="specify the input path of the list file")
     parser.add_argument("-o","--tbp_folder_out",        help="what folder to use for files that need to be processed",
             default="/home/ubuntu/data/toBeProcessed")
     parser.add_argument("-f","--tbp_folder_in",         help="specify the s3 input for the to be processed folder",
@@ -26,7 +28,9 @@ def parseArgs(args=None):
             action="store_true")
     parser.add_argument("-e","--skip_es",               help="skip the elasticsearch html processing",
             action="store_true")
-    parser.add_argument("-s","--skip_sync",             help="skip the elasticsearch html processing",
+    parser.add_argument("-s","--skip_sync",             help="skip the s3 tar sync",
+            action="store_true")
+    parser.add_argument("-d","--delete_s3_src",         help="delete the s3 src (zip) files (DO NOT DO THIS ON hello-jabil BUCKET)",
             action="store_true")
 
     if args:
@@ -106,14 +110,29 @@ def main(*args):
         except OSError:
             pass
 
+        filesProcessed = []
+        if arguments.list_file_in:
+            try:
+                with open(arguments.list_file_in) as f:
+                    filesProcessed = f.readlines()
+            except IOError:
+                print "\nList file must exist if input is specified\n"
+                raise
+
         buck = conn.get_bucket(arguments.tbp_bucket_in)
 
         for fileName in buck.list(prefix=arguments.tbp_folder_in):
+            if fileName in filesProcessed:
+                continue
             destPath = os.path.join(arguments.tbp_folder_out,os.path.split(fileName.key)[1])
             s3mpdownload.main(os.path.join("s3://",arguments.tbp_bucket_in,fileName.key),destPath,force=True)
             if extractArchive(destPath,arguments.tbp_folder_out):
-                buck.delete_key(fileName.key)
                 os.remove(destPath)
+                if arguments.delete_s3_src:
+                    buck.delete_key(fileName.key)
+                if arguments.list_file_out:
+                    with open(arguments.list_file_out,'a') as f:
+                        f.write(fileName+'\n')
     else:#assume there was a problem last time and files are in the right spot
         for fileName in os.listdir(arguments.tbp_folder_out):
             destPath = os.path.join(arguments.tbp_folder_out,fileName)
