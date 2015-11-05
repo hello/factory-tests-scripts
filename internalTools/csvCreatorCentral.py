@@ -92,7 +92,7 @@ def buildCommonSearch(arguments, search=None, size=0):
         indexList = []
         while begin <= end:
             indexList.append("sensedata-%s" % begin.strftime("%Y"))
-            begin += datetime.timedelta(days=1)
+            begin += datetime.timedelta(days=366)
 
         if toFilter:
             newBool = F("bool", must=toFilter)
