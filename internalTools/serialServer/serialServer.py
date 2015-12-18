@@ -235,6 +235,8 @@ def mainLoop(hWaitStop):
         state['action'] = "idle"
         state['status'] = "none"
         otherData = ""
+        if runningAsService:
+            isDone = win32event.WaitForSingleObject(hWaitStop, 5)
         try:
             connection, clientAddr = sock.accept()
             state['caller'] = clientAddr
