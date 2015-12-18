@@ -393,12 +393,13 @@ def mainLoop(hWaitStop):
                 print reply
                 logger.error(_(state, message="Error sending reply", reply=json.dumps(reply)))
 
-        try:
-            connection.close()
-            logger.debug(_(state, message="connection closed"))
-        except Exception as e:
-            logger.error(_(state, message="error closing connection",
-                errorMessage=e.message))
+        if connection:
+            try:
+                connection.close()
+                logger.debug(_(state, message="connection closed"))
+            except Exception as e:
+                logger.error(_(state, message="error closing connection",
+                    errorMessage=e.message))
 
         if state['isRecording']:
             if otherData:
