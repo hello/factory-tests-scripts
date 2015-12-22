@@ -86,7 +86,7 @@ class SerialPort:
     def send(self, message):
         if not self.status is self.connected:
             raise HelloSerialException("Can't send when not connected")
-        self.ser.write((message + '\r\n').encode())
+        self.ser.write((message).encode())
 
     def receiveRe(self, expression, receiveTime=None):
         if not self.status is self.connected:
@@ -265,7 +265,7 @@ def mainLoop(hWaitStop):
                 except socket.timeout:
                     raise HelloSerialException("Socket timed out during receive", totalData)
                 except socket.error as e:
-                    if e.errno == errno.EAGAIN and totalErrs < 10:#bullshit mac stuff
+                    if e.errno == errno.EAGAIN and totalErrs < 100:#bullshit mac stuff
                         time.sleep(.1)
                         totalErrs += 1
                         continue
