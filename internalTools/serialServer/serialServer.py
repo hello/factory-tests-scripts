@@ -159,6 +159,15 @@ logger.setLevel(logging.DEBUG)
 logger.addHandler(fileHandler)
 logger.propagate = False
 
+state = {
+        "rootLogPath": rootLogPath,
+        "isRecording": False,
+        "recordingPath": None,
+        "caller": None,
+        "action": "idle",
+        "restarted": False
+        }
+
 if runningAsService:
     import win32serviceutil
     import win32service
@@ -166,19 +175,19 @@ if runningAsService:
     import servicemanager
     #import win32api
 
-    logger.debug("Service command issued")
+    logger.debug(_(state,"Service command issued"))
 
     class AppServerSvc (win32serviceutil.ServiceFramework):
         _svc_name_ = "HelloSerialServer"
         _svc_display_name_ = "Hello Serial Server"
         _svc_description_  = "Server to manage serial connections for tester backend"
 
-        def __init__(self,args):
-            win32serviceutil.ServiceFramework.__init__(self,args)
-            self.hWaitStop = win32event.CreateEvent(None,0,0,None)
+        def __init__(self, args):
+            win32serviceutil.ServiceFramework.__init__(self, args)
+            self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
 
         def SvcStop(self):
-            logger.info("Main loop stopped from service command")
+            logger.info(_(state,"Main loop stopped from service command"))
             self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
             win32event.SetEvent(self.hWaitStop)
             servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,
@@ -192,7 +201,7 @@ if runningAsService:
             self.main()
 
         def main(self):
-            logger.info("Main loop started from service command")
+            logger.info(_(state, "Main loop started from service command"))
             mainLoop(self.hWaitStop)
 
 
@@ -207,15 +216,6 @@ def mainLoop(hWaitStop):
     sock.bind(localAddr)
 
     sock.listen(1)
-
-    state = {
-            "rootLogPath": rootLogPath,
-            "isRecording": False,
-            "recordingPath": None,
-            "caller": None,
-            "action": "idle",
-            "restarted": False
-            }
 
     logger.debug(_(state, message="Service started"))
 
@@ -431,7 +431,7 @@ def mainLoop(hWaitStop):
 if __name__ == '__main__':
     if runningAsService:
         if len(sys.argv) == 2 and sys.argv[1] == "install":
-            sys.argv = [sys.argv[0],"--startup","delayed",sys.argv[1]]
+            sys.argv = [sys.argv[0],"--startup","delayed", sys.argv[1]]
 
         win32serviceutil.HandleCommandLine(AppServerSvc, argv=sys.argv)
     else:
