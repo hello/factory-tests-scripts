@@ -19,29 +19,45 @@ class SerialPort:
             ]
     disconnected, connected = range(2)
     defaultReceiveTimeSec = 3
-    def __init__(self, purpose, portNum=None):
+    def __init__(self, purpose, port=None, baudrate=115200, parity=serial.PARITY_NONE,
+        stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS, connectionTimeout=2):
+#defaults work with sense
         if not purpose in self.serialPurposes:
             raise ValueError("Purpose %s must be one of %s" % (purpose, ", ".join(self.serialPurposes)))
-        self.portNum = portNum
         self.purpose = purpose
         self.status = self.disconnected
         self.ser = None
+        self.port = port
+        self.baudrate = baudrate
+        self.parity = parity
+        self.stopbits = stopbits
+        self.bytesize = bytesize
+        self.connectionTimeout = connectionTimeout
 
-    def connect(self, port=None):
+    def connect(self, port=None, baudrate=None, parity=None,
+        stopbits=None, bytesize=None, connectionTimeout=None):
         if not self.status is self.disconnected:
             raise HelloSerialException("Can't connect when already connected")
-        if not port:
-            port = self.portNum
-        else:
-            self.portNum = port
+        if port:
+            self.port = port
+        if baudrate:
+            self.baudrate = baudrate
+        if parity:
+            self.parity = parity
+        if stopbits:
+            self.stopbits = stopbits
+        if bytesize:
+            self.bytesize = bytesize
+        if connectionTimeout:
+            self.connectionTimeout = connectionTimeout
         try:
             self.ser = serial.Serial(
-                port=port,
-                baudrate=115200,
-                parity=serial.PARITY_NONE,
-                stopbits=serial.STOPBITS_ONE,
-                bytesize=serial.EIGHTBITS,
-                timeout=2
+                port=self.port,
+                baudrate=self.baudrate,
+                parity=self.parity,
+                stopbits=self.stopbits,
+                bytesize=self.bytesize,
+                timeout=self.connectionTimeout
                 )
         except OSError as e:
             raise HelloSerialException("Could not open serial port", str(e))
@@ -175,7 +191,7 @@ if runningAsService:
     import servicemanager
     #import win32api
 
-    logger.debug(_(state,"Service command issued"))
+    logger.debug(_(state, message="Service command issued"))
 
     class AppServerSvc (win32serviceutil.ServiceFramework):
         _svc_name_ = "HelloSerialServer"
@@ -187,7 +203,7 @@ if runningAsService:
             self.hWaitStop = win32event.CreateEvent(None, 0, 0, None)
 
         def SvcStop(self):
-            logger.info(_(state,"Main loop stopped from service command"))
+            logger.info(_(state, message="Main loop stopped from service command"))
             self.ReportServiceStatus(win32service.SERVICE_STOP_PENDING)
             win32event.SetEvent(self.hWaitStop)
             servicemanager.LogMsg(servicemanager.EVENTLOG_INFORMATION_TYPE,
@@ -201,7 +217,7 @@ if runningAsService:
             self.main()
 
         def main(self):
-            logger.info(_(state, "Main loop started from service command"))
+            logger.info(_(state, message="Main loop started from service command"))
             mainLoop(self.hWaitStop)
 
 
@@ -280,9 +296,14 @@ def mainLoop(hWaitStop):
             response = ""
             if state['action'] == "connect_serial":
                 try:
-                    serialPorts[jsonObj['purpose']].connect(jsonObj['port'])
+                    serialPorts[jsonObj['purpose']].connect(
+                        port=jsonObj['port'],
+                        baudrate=jsonObj['baudrate'],
+                        parity=jsonObj['parity'],
+                        stopbits=jsonObj['stopbits'],
+                        bytesize=jsonObj['bytesize'])
                 except KeyError as e:
-                    raise HelloSerialException("connect_serial must have purpose and port fields", jsonObj)
+                    raise HelloSerialException("connect_serial must have fields: purpose, port, baudrate, parity, stopbits, bytesize", jsonObj)
                 logger.debug(_(state, message="serial connected", purpose=jsonObj['purpose'],
                     port=jsonObj['port']))
             elif state['action'] == "serial_message":
