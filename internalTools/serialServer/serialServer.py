@@ -245,8 +245,8 @@ def mainLoop(hWaitStop):
         isDone = False
 
     recRef = None
-    connection = None
     while isDone != returnDone():
+        connection = None
         state['caller'] = None
         state['action'] = "idle"
         state['status'] = "none"
