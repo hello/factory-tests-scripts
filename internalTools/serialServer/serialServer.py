@@ -269,8 +269,10 @@ def mainLoop(hWaitStop):
                         time.sleep(.1)
                         totalErrs += 1
                         continue
-                    else:
+                    elif e.errno == errno.EAGAIN:
                         raise HelloSerialException("Socket couldn't receive 10 times for one message", totalData)
+                    else:
+                        raise e
                 if data:
                     if len(data) + totalData > maxSize:
                         raise HelloSerialException("Message too big, max size is %d" % maxSize)
