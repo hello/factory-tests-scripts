@@ -265,12 +265,12 @@ def mainLoop(hWaitStop):
                 except socket.timeout:
                     raise HelloSerialException("Socket timed out during receive", totalData)
                 except socket.error as e:
-                    if e.errno == errno.EAGAIN and totalErrs < 100:#bullshit mac stuff
+                    if (e.errno == errno.EAGAIN or e.errno == 10035) and totalErrs < 100:#bullshit mac stuff
                         time.sleep(.1)
                         totalErrs += 1
                         continue
-                    elif e.errno == errno.EAGAIN:
-                        raise HelloSerialException("Socket couldn't receive 10 times for one message", totalData)
+                    elif e.errno == errno.EAGAIN or e.errno == 10035:
+                        raise HelloSerialException("Lotsa socket errors", totalData)
                     else:
                         raise e
                 if data:
