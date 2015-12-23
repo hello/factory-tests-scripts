@@ -26,6 +26,10 @@ class SerialPort:
         self.stopbits = stopbits
         self.bytesize = bytesize
         self.connectionTimeout = connectionTimeout
+        self.isRecording = False
+        self.recordingPath = None
+        self.recRef = None
+        self.otherData = ""
 
     def connect(self, port=None, baudrate=None, parity=None,
         stopbits=None, bytesize=None, connectionTimeout=None):
@@ -102,6 +106,7 @@ class SerialPort:
             if reObj:
                 done = True
 
+        self.otherData = data
         if reObj:
             return reObj.group(0), data#let the client get sub matches if they want, don't bother pickling here
         else:
@@ -111,7 +116,8 @@ class SerialPort:
         data = self.clearReadBuffer()
         self.send(message)
         matchedExpresion, otherData = self.receiveRe(expression, receiveTime)
-        return matchedExpresion, data+otherData
+        self.otherData = data + otherData
+        return matchedExpresion, self.otherData
 
     def disconnect(self):
         if not self.status is self.connected:
@@ -170,8 +176,6 @@ logger.propagate = False
 
 state = {
         "rootLogPath": rootLogPath,
-        "isRecording": False,
-        "recordingPath": None,
         "caller": None,
         "action": "idle",
         "restarted": False
@@ -235,13 +239,11 @@ def mainLoop(hWaitStop):
     else:
         isDone = False
 
-    recRef = None
     while isDone != returnDone():
         connection = None
         state['caller'] = None
         state['action'] = "idle"
         state['status'] = "none"
-        otherData = ""
         if runningAsService:
             isDone = win32event.WaitForSingleObject(hWaitStop, 5)
         try:
@@ -314,75 +316,79 @@ def mainLoop(hWaitStop):
                         delay = jsonObj['delay']
                     except KeyError as e:
                         delay = SerialPort.defaultReceiveTimeSec
-                    (response, otherData) = serialPorts[jsonObj['purpose']].sendAndReceiveRE(jsonObj['message'], jsonObj['regular_expression'], delay)
+                    response = serialPorts[jsonObj['purpose']].sendAndReceiveRE(jsonObj['message'], jsonObj['regular_expression'], delay)[0]
                 except KeyError as e:
                     raise HelloSerialException("serial_message_re must have purpose, message, and regular_expression fields", jsonObj)
                 logger.debug(_(state, message="sent serial message and received re",
                     purpose=jsonObj['purpose'], sentMessage=jsonObj['message'],
                     receivedRe=response))
             elif state['action'] == "disconnect_serial":
-                if state['isRecording']:
-                    raise HelloSerialException("Can't disconnect_serial while recording", state)
                 try:
+                    serialPorts[jsonObj['purpose']].isRecording = False
                     serialPorts[jsonObj['purpose']].disconnect()
                 except KeyError as e:
                     raise HelloSerialException("disconnect_serial must have purpose field", jsonObj)
                 logger.debug(_(state, message="disconnected serial",
                     purpose=jsonObj['purpose']))
             elif state['action'] == "enable_recording":
-                if state['isRecording']:
-                    raise HelloSerialException("Already recording", state)
+                try:
+                    if serialPorts[jsonObj['purpose']].isRecording:
+                        raise HelloSerialException("Serial port already recording", jsonObj['purpose'])
+                except KeyError as e:
+                    raise HelloSerialException("enable recording requires specifying a serial purpose", jsonObj)
                 try:
                     filePath = os.path.join(rootLogDir, jsonObj['file_path'])
                     if not os.path.abspath(filePath).startswith(rootLogDir):
                         raise HelloSerialException("no relative paths outside the current directory", filePath)
                     if os.path.isdir(filePath):
                         raise HelloSerialException("directory with that name, try something else", filePath)
-                    state['recordingPath'] = filePath
+                    serialPorts[jsonObj['purpose']].recordingPath = filePath
                     os.makedirs(os.path.split(filePath)[0])
                 except KeyError as e:
-                    state['recordingPath'] = os.path.join(rootLogDir, "recordingPath.txt")
+                    serialPorts[jsonObj['purpose']].recordingPath = os.path.join(rootLogDir, "recordingFile_%s.txt" % jsonObj['purpose'])
                 except OSError as e:
                     pass#dirs exist
                 try:
-                    recRef = open(state['recordingPath'],'w', 0)#0 means no buffer
+                    serialPorts[jsonObj['purpose']].recRef = open(state['recordingPath'],'w', 0)#0 means no buffer
                 except IOError as e:
                     raise HelloSerialException("Can't open recording file", state['recordingPath'])
-                state['isRecording'] = True
+                serialPorts[jsonObj['purpose']].isRecording = True
                 logger.debug(_(state, message="recording enabled",
                     recordingPath=state['recordingPath']))
             elif state['action'] == "add_recording_tag":
-                if not state['isRecording']:
-                    raise HelloSerialException("Not currently recording", state)
-                if not recRef:
-                    raise HelloSerialException("Something bad happened, no recording reference", state)
                 try:
-                    recRef.write(jsonObj['tag']+'\r\n')
+                    if not serialPorts[jsonObj['purpose']].isRecording:
+                        raise HelloSerialException("Not currently recording", serialPorts[jsonObj['purpose']])
+                    if not serialPorts[jsonObj['purpose']].recRef:
+                        raise HelloSerialException("Something bad happened, no recording reference", serialPorts[jsonObj['purpose']])
+                    serialPorts[jsonObj['purpose']].recRef.write(jsonObj['tag']+'\r\n')
                 except KeyError as e:
-                    raise HelloSerialException("add_recording_tag needs tag field", jsonObj)
+                    raise HelloSerialException("add_recording_tag needs purpose and tag fields", jsonObj)
                 except IOError as e:
-                    raise HelloSerialException("Something went wrong writing", e.message)
+                    raise HelloSerialException("Something went wrong writing", str(e))
                 logger.debug(_(state, message="added recording tag", tag=jsonObj['tag']))
             elif state['action'] == "disable_recording":
-                if not state['isRecording']:
-                    raise HelloSerialException("Not currently recording", state)
-                if not recRef:
-                    raise HelloSerialException("Something bad happened, no recording reference", state)
                 try:
-                    recRef.close()
+                    if not serialPorts[jsonObj['purpose']].isRecording:
+                        raise HelloSerialException("Not currently recording", serialPorts[jsonObj['purpose']])
+                    if not serialPorts[jsonObj['purpose']].recRef:
+                        raise HelloSerialException("Something bad happened, no recording reference", serialPorts[jsonObj['purpose']])
+                    serialPorts[jsonObj['purpose']].recRef.close()
+                except KeyError as e:
+                    raise HelloSerialException("disable recording must have purpose field", jsonObj)
                 except IOError as e:
-                    raise HelloSerialException("Something went wrong closing", e.message)
+                    raise HelloSerialException("Something went wrong closing", str(e))
                 finally:
                     state['isRecording'] = False
                 logger.debug(_(state, message="disabled recording"))
-            elif state['action'] == "close_service":
-                isDone = returnDone()
-                logger.debug(_(state, message="closing service"))
             elif state['action'] == "add_logging_tag":
                 try:
                     logger.info(_(state, message="adding logging tag", tag=jsonObj['tag']))
                 except KeyError as e:
                     raise HelloSerialException("add_logging_tag needs tag field", jsonObj)
+            elif state['action'] == "close_service":
+                isDone = returnDone()
+                logger.debug(_(state, message="closing service"))
             else:
                 raise HelloSerialException("Unknown action", state['action'])
 
@@ -408,7 +414,6 @@ def mainLoop(hWaitStop):
                 connection.sendall(json.dumps(reply) + "\0")
                 logger.info(_(state, message="reply sent", reply=json.dumps(reply)))
             except Exception as e:
-                print reply
                 logger.error(_(state, message="Error sending reply", reply=json.dumps(reply)))
 
         if connection:
@@ -419,12 +424,13 @@ def mainLoop(hWaitStop):
                 logger.error(_(state, message="error closing connection",
                     errorMessage=e.message))
 
-        if state['isRecording']:
-            if otherData:
-                recRef.write(otherData)
-            moreData = serialPorts['uut'].clearReadBuffer()
-            if moreData:
-                recRef.write(moreData)
+        for ser in serialPorts:
+            if ser.isRecording:
+                if ser.otherData:
+                    ser.recRef.write(ser.otherData)
+                moreData = ser.clearReadBuffer()
+                if moreData:
+                    ser.recRef.write(moreData)
 
 
     for ser in serialPorts:
@@ -432,11 +438,11 @@ def mainLoop(hWaitStop):
             ser.disconnect()
         except Exception:
             pass
+        try:
+            ser.recRef.close()
+        except Exception:
+            pass
 
-    try:
-        recRef.close()
-    except Exception:
-        pass
 
     try:
         sock.close()
