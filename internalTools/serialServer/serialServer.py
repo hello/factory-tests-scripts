@@ -12,18 +12,11 @@ import sys
 
 class SerialPort:
     """ Higher level serial port class to contain port and status info."""
-    serialPurposes = [
-            "uut",
-            "golden",
-            "control_board"
-            ]
     disconnected, connected = range(2)
     defaultReceiveTimeSec = 3
     def __init__(self, purpose, port=None, baudrate=115200, parity=serial.PARITY_NONE,
         stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS, connectionTimeout=2):
 #defaults work with sense
-        if not purpose in self.serialPurposes:
-            raise ValueError("Purpose %s must be one of %s" % (purpose, ", ".join(self.serialPurposes)))
         self.purpose = purpose
         self.status = self.disconnected
         self.ser = None
@@ -184,7 +177,7 @@ state = {
         "restarted": False
         }
 
-if runningAsService:
+if runningAsService:#windows service stuff
     import win32serviceutil
     import win32service
     import win32event
@@ -236,8 +229,6 @@ def mainLoop(hWaitStop):
     logger.debug(_(state, message="Service started"))
 
     serialPorts = {}
-    for serialPurpose in SerialPort.serialPurposes:
-        serialPorts[serialPurpose] = SerialPort(serialPurpose)
 
     if runningAsService:
         isDone = None
@@ -298,12 +289,13 @@ def mainLoop(hWaitStop):
             response = ""
             if state['action'] == "connect_serial":
                 try:
-                    serialPorts[jsonObj['purpose']].connect(
+                    serialPorts[jsonObj['purpose']] = SerialPort(
                         port=jsonObj['port'],
                         baudrate=jsonObj['baudrate'],
                         parity=jsonObj['parity'],
                         stopbits=jsonObj['stopbits'],
                         bytesize=jsonObj['bytesize'])
+                    serialPorts[jsonObj['purpose']].connect()
                 except KeyError as e:
                     raise HelloSerialException("connect_serial must have fields: purpose, port, baudrate, parity, stopbits, bytesize", jsonObj)
                 logger.debug(_(state, message="serial connected", purpose=jsonObj['purpose'],
@@ -434,9 +426,9 @@ def mainLoop(hWaitStop):
                 recRef.write(moreData)
 
 
-    for purposeName in SerialPort.serialPurposes:
+    for ser in serialPorts:
         try:
-            serialPorts[purposeName].disconnect()
+            ser.disconnect()
         except Exception:
             pass
 
