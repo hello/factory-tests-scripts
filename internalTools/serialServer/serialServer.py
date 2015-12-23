@@ -290,6 +290,7 @@ def mainLoop(hWaitStop):
             if state['action'] == "connect_serial":
                 try:
                     serialPorts[jsonObj['purpose']] = SerialPort(
+                        purpose=jsonObj['purpose'],
                         port=jsonObj['port'],
                         baudrate=jsonObj['baudrate'],
                         parity=jsonObj['parity'],
