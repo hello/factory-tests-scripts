@@ -349,7 +349,7 @@ def mainLoop(hWaitStop):
                 except OSError as e:
                     pass#dirs exist
                 try:
-                    serialPorts[jsonObj['purpose']].recRef = open(state['recordingPath'],'w', 0)#0 means no buffer
+                    serialPorts[jsonObj['purpose']].recRef = open(serialPorts[jsonObj['purpose']].recordingPath,'w', 0)#0 means no buffer
                 except IOError as e:
                     raise HelloSerialException("Can't open recording file", state['recordingPath'])
                 serialPorts[jsonObj['purpose']].isRecording = True
