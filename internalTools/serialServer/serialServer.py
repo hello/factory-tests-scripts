@@ -432,7 +432,7 @@ def mainLoop(hWaitStop):
                 if moreData:
                     ser.recRef.write(moreData)
                 else:
-                    logger.debug(_(state, "no data for recording"))
+                    logger.debug(_(state, message="no data for recording"))
 
 
     for key, ser in serialPorts.iteritems():

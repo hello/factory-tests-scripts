@@ -27,7 +27,7 @@ messages.append({"action":"serial_message","purpose":"uut","message":"CURR 2A\n"
 messages.append({"action":"serial_message","purpose":"uut","message":"VOLT:PROT 5V\n"})
 messages.append({"action":"serial_message","purpose":"uut","message":"OUTP 1\n"})
 messages.append({"action":"serial_message","purpose":"uut","message":"OUTP 0\n"})
-messages.append({"action":"disable_recording"})
+messages.append({"action":"disable_recording", "purpose":"uut"})
 messages.append({"action":"disconnect_serial","purpose":"uut"})
 #message = {"action":"connect_serial","port":"/dev/cu.usbserial-FTXKC7LC","purpose":"uut"}
 #message = {"action":"enable_recording"}
