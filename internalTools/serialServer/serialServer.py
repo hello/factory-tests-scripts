@@ -354,7 +354,7 @@ def mainLoop(hWaitStop):
                     raise HelloSerialException("Can't open recording file", serialPorts[jsonObj['purpose']].recordingPath)
                 serialPorts[jsonObj['purpose']].isRecording = True
                 logger.debug(_(state, message="recording enabled",
-                    recordingPath=state['recordingPath']))
+                    recordingPath=serialPorts[jsonObj['purpose']].recordingPath))
             elif state['action'] == "add_recording_tag":
                 try:
                     if not serialPorts[jsonObj['purpose']].isRecording:
