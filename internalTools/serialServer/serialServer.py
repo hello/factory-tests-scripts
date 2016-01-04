@@ -351,7 +351,7 @@ def mainLoop(hWaitStop):
                 try:
                     serialPorts[jsonObj['purpose']].recRef = open(serialPorts[jsonObj['purpose']].recordingPath,'w', 0)#0 means no buffer
                 except IOError as e:
-                    raise HelloSerialException("Can't open recording file", state['recordingPath'])
+                    raise HelloSerialException("Can't open recording file", serialPorts[jsonObj['purpose']].recordingPath)
                 serialPorts[jsonObj['purpose']].isRecording = True
                 logger.debug(_(state, message="recording enabled",
                     recordingPath=state['recordingPath']))
@@ -377,9 +377,9 @@ def mainLoop(hWaitStop):
                 except KeyError as e:
                     raise HelloSerialException("disable recording must have purpose field", jsonObj)
                 except IOError as e:
-                    raise HelloSerialException("Something went wrong closing", str(e))
-                finally:
                     serialPorts[jsonObj['purpose']].isRecording = False
+                    raise HelloSerialException("Something went wrong closing", str(e))
+                serialPorts[jsonObj['purpose']].isRecording = False
                 logger.debug(_(state, message="disabled recording"))
             elif state['action'] == "add_logging_tag":
                 try:
