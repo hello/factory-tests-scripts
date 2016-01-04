@@ -379,7 +379,7 @@ def mainLoop(hWaitStop):
                 except IOError as e:
                     raise HelloSerialException("Something went wrong closing", str(e))
                 finally:
-                    state['isRecording'] = False
+                    serialPorts[jsonObj['purpose']].isRecording = False
                 logger.debug(_(state, message="disabled recording"))
             elif state['action'] == "add_logging_tag":
                 try:
@@ -424,7 +424,7 @@ def mainLoop(hWaitStop):
                 logger.error(_(state, message="error closing connection",
                     errorMessage=e.message))
 
-        for ser in serialPorts:
+        for key, ser in serialPorts.iteritems():
             if ser.isRecording:
                 if ser.otherData:
                     ser.recRef.write(ser.otherData)
@@ -433,7 +433,7 @@ def mainLoop(hWaitStop):
                     ser.recRef.write(moreData)
 
 
-    for ser in serialPorts:
+    for key, ser in serialPorts.iteritems():
         try:
             ser.disconnect()
         except Exception:
