@@ -403,8 +403,8 @@ def mainLoop(hWaitStop):
             logger.error(_(state, message="known error thrown", errorMessage=str(e)))
         except:
             state['status'] = "error"
-            response = sys.exc_info()[1]
-            logger.error(_(state, message="UNKNOWN error thrown", errorMessage=response))
+            response = sys.exc_info()[1].message
+            logger.error(_(state, message="UNKNOWN error thrown", errorMessage=str(sys.exc_info()[1])))
 
         if not state['action'] == "idle":
             reply = {'action': state['action'],
