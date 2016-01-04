@@ -413,7 +413,7 @@ def mainLoop(hWaitStop):
             try:
                 connection.sendall(json.dumps(reply) + "\0")
                 logger.info(_(state, message="reply sent", reply=json.dumps(reply)))
-            except Exception as e:
+            except:
                 logger.error(_(state, message="Error sending reply", reply=json.dumps(reply)))
 
         if connection:
@@ -435,17 +435,17 @@ def mainLoop(hWaitStop):
     for key, ser in serialPorts.iteritems():
         try:
             ser.disconnect()
-        except Exception:
+        except:
             pass
         try:
             ser.recRef.close()
-        except Exception:
+        except:
             pass
 
 
     try:
         sock.close()
-    except Exception:
+    except:
         pass
 
 
