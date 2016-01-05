@@ -170,7 +170,7 @@ fileHandler = RotatingFileHandler(rootLogPath, mode='a', maxBytes=100000000, bac
 formatter = logging.Formatter('{"%(levelname)s": %(message)s}')
 fileHandler.setFormatter(formatter)
 logger = logging.getLogger('logger')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 logger.addHandler(fileHandler)
 logger.propagate = False
 
