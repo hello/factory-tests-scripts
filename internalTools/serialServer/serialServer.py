@@ -37,7 +37,7 @@ class SerialPort:
         "recordingPath=%r, recRef=%r, otherData=%r)" % (self.purpose,
             self.status, self.ser, self.port, self.baudrate, self.parity,
             self.stopbits, self.bytesize, self.connectionTimeout,
-            self.isRecording, self.recordingPath, self.recRef, self.otherdata)
+            self.isRecording, self.recordingPath, self.recRef, self.otherData)
 
     def __str__(self):
         return "%r(status=%r, port=%s, baudrate=%r, parity=%r, " \
@@ -420,7 +420,7 @@ def mainLoop(hWaitStop):
                 isDone = returnDone()
                 logger.debug(_(state, message="closing service"))
             elif state['action'] == "serial_status":
-                response = str(serialPorts)
+                response = ", ".join(str(serialPorts))
                 try:
                     if jsonObj['verbose']:
                         response = repr(serialPorts)
