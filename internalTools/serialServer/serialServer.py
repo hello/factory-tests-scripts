@@ -40,7 +40,7 @@ class SerialPort:
             self.isRecording, self.recordingPath, self.recRef, self.otherData)
 
     def __str__(self):
-        return "%r BLAH status=%r, port=%r, baudrate=%r, parity=%r, " \
+        return "%r(status=%r, port=%r, baudrate=%r, parity=%r, " \
         "stopbits=%r, bytesize=%r, isRecording=%r, " \
         "recordingPath=%r)" % (self.purpose,
             self.status, self.port, self.baudrate, self.parity,
