@@ -362,8 +362,10 @@ def mainLoop(hWaitStop):
                     pass
             elif state['action'] == "enable_recording":
                 try:
+                    if serialPorts[jsonObj['purpose']].status != SerialPort.connected:
+                        raise HelloSerialException("Serial Port not connected", serialPorts[jsonObj['purpose']])
                     if serialPorts[jsonObj['purpose']].isRecording:
-                        raise HelloSerialException("Serial port already recording", jsonObj['purpose'])
+                        raise HelloSerialException("Serial port already recording", serialPorts[jsonObj['purpose']])
                 except KeyError as e:
                     raise HelloSerialException("enable recording requires specifying a serial purpose", jsonObj)
                 try:
@@ -420,7 +422,11 @@ def mainLoop(hWaitStop):
                 isDone = returnDone()
                 logger.debug(_(state, message="closing service"))
             elif state['action'] == "serial_status":
-                response = ", ".join(map(str, serialPorts))
+                response = ""
+                for key, ser in serialPorts.iteritems():
+                    if response:
+                        response += ", "
+                    response += str(ser)
                 try:
                     if jsonObj['verbose']:
                         response = repr(serialPorts)
