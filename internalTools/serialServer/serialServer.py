@@ -31,6 +31,22 @@ class SerialPort:
         self.recRef = None
         self.otherData = ""
 
+    def __repr__(self):
+        return "%r(status=%r, ser=%r, port=%s, baudrate=%r, parity=%r, "
+        "stopbits=%r, bytesize=%r, connectionTimeout=%r, isRecording=%r, "
+        "recordingPath=%r, recRef=%r, otherData=%r)" % (self.purpose,
+            self.status, self.ser, self.port, self.baudrate, self.parity,
+            self.stopbits, self.bytesize, self.connectionTimeout,
+            self.isRecording, self.recordingPath, self.recRef, self.otherdata)
+
+    def __str__(self):
+        return "%r(status=%r, port=%s, baudrate=%r, parity=%r, "
+        "stopbits=%r, bytesize=%r, isRecording=%r, "
+        "recordingPath=%r)" % (self.purpose,
+            self.status, self.port, self.baudrate, self.parity,
+            self.stopbits, self.bytesize,
+            self.isRecording, self.recordingPath)
+
     def connect(self, port=None, baudrate=None, parity=None,
         stopbits=None, bytesize=None, connectionTimeout=None):
         if not self.status is self.disconnected:
@@ -330,6 +346,20 @@ def mainLoop(hWaitStop):
                     raise HelloSerialException("disconnect_serial must have purpose field", jsonObj)
                 logger.debug(_(state, message="disconnected serial",
                     purpose=jsonObj['purpose']))
+            elif state['action'] == "disconnect_all_serials":
+                for key, ser in serialPorts:
+                    ser.isRecording = False
+                    try:
+                        ser.disconnect()
+                        logger.debug(_(state, message="Serial port %s cleared" % key))
+                    except HelloSerialException:#catch everything?
+                        pass
+                try:
+                    if jsonObj['clear']:
+                        serialPorts = {}
+                        logger.debug(_(state, message="Serial ports cleared"))
+                except KeyError:
+                    pass
             elif state['action'] == "enable_recording":
                 try:
                     if serialPorts[jsonObj['purpose']].isRecording:
@@ -389,6 +419,13 @@ def mainLoop(hWaitStop):
             elif state['action'] == "close_service":
                 isDone = returnDone()
                 logger.debug(_(state, message="closing service"))
+            elif state['action'] == "serial_status":
+                response = str(serialPorts)
+                try:
+                    if jsonObj['verbose']:
+                        response = repr(serialPorts)
+                except KeyError:
+                    pass
             else:
                 raise HelloSerialException("Unknown action", state['action'])
 
