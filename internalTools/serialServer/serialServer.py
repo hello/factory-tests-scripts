@@ -1,3 +1,18 @@
+#Readme
+#Primary dev: Brandon Clarke
+#How to use: python serialServer [install|start|stop|restart|remove|debug]
+#Note: Unless run on windows, willl default to debug. This code is
+#designed to be run as a windows service. It runs in the background and
+#manages the direct serial connections to support systems that otherwise
+#don't multitask or do anything at all very well. This will also be very
+#helpful if Jabil ever drops us and we need to use the existing testers
+#at another manufacturer. This code shouldn't crash. If it does and you
+#were running it as a windows service, to get to the error log:
+#Start->event viewer->windows logs->applications and look for the Error
+#at the top (you need to refresh that window for the next one to appear)
+
+#Other stuff: to install as a windows service, google pywin32 and install
+#the appropriate version. You might also need some serial class for osx
 import os
 import socket
 import json
@@ -143,6 +158,7 @@ class SerialPort:
         self.status = self.disconnected
 
 class HelloSerialException(Exception):
+    """Error class to differentiate expected vs unexpected errors."""
     def __init__(self, message, errors=None):
         super(HelloSerialException, self).__init__(message)
         self.errors = errors
@@ -152,6 +168,7 @@ class HelloSerialException(Exception):
         return "Error Message: \"%s\" Other info: \"%s\"" % (self.message, self.errors)
 
 class StructuredMessage(object):
+    """Class to make logging look pretty"""
     def __init__(self, state, **kwargs):
         self.state = state
         self.kwargs = kwargs
@@ -164,6 +181,7 @@ class StructuredMessage(object):
 _ = StructuredMessage #easier to read
 
 def returnDone():
+    """Returns the correct value of done for usage type"""
     if runningAsService:
         return win32event.WAIT_OBJECT_0
     else:
@@ -182,29 +200,28 @@ try:
 except:
     pass
 
-fileHandler = RotatingFileHandler(rootLogPath, mode='a', maxBytes=100000000, backupCount=20)
+fileHandler = RotatingFileHandler(rootLogPath, mode='a', maxBytes=100000000, backupCount=20)#avoids super giant log files
 formatter = logging.Formatter('{"%(levelname)s": %(message)s}')
 fileHandler.setFormatter(formatter)
 logger = logging.getLogger('logger')
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.INFO)#suggest info for regular usage, debug for ...
 logger.addHandler(fileHandler)
 logger.propagate = False
 
-state = {
+state = {#this is what gets sent when logging. in my original plan there would be more stuff
         "rootLogPath": rootLogPath,
         "caller": None,
         "action": "idle",
         "restarted": False
         }
 
-if runningAsService:#windows service stuff
+if runningAsService:#windows service stuff, don't touch
     import win32serviceutil
     import win32service
     import win32event
     import servicemanager
-    #import win32api
 
-    logger.debug(_(state, message="Service command issued"))
+    logger.critical(_(state, message="Service command issued"))
 
     class AppServerSvc (win32serviceutil.ServiceFramework):
         _svc_name_ = "HelloSerialServer"
@@ -235,7 +252,7 @@ if runningAsService:#windows service stuff
 
 
 def mainLoop(hWaitStop):
-    packetSize = 1024
+    packetSize = 1024#this is awful and should be changed
     maxSize = 4096
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -261,7 +278,7 @@ def mainLoop(hWaitStop):
         state['action'] = "idle"
         state['status'] = "none"
         if runningAsService:
-            isDone = win32event.WaitForSingleObject(hWaitStop, 5)
+            isDone = win32event.WaitForSingleObject(hWaitStop, 5)#without this you can't stop the service without restarting
         try:
             connection, clientAddr = sock.accept()
             state['caller'] = clientAddr
@@ -274,7 +291,7 @@ def mainLoop(hWaitStop):
                 except socket.timeout:
                     raise HelloSerialException("Socket timed out during receive", totalData)
                 except socket.error as e:
-                    if (e.errno == errno.EAGAIN or e.errno == 10035) and totalErrs < 100:#bullshit mac stuff
+                    if (e.errno == errno.EAGAIN or e.errno == 10035) and totalErrs < 100:#bullshit mac stuff, and picked 100 randomly
                         time.sleep(.1)
                         totalErrs += 1
                         continue
@@ -292,7 +309,7 @@ def mainLoop(hWaitStop):
                 else:
                     break
 
-            finalData = ''.join(dataList).split('\0')[0]
+            finalData = ''.join(dataList).split('\0')[0]#python string join instead of += , lmgtfy
             try:
                 jsonObj = json.loads(finalData)
                 logger.info(_(state, message="message received", jsonMessage=json.dumps(jsonObj)))
@@ -306,6 +323,7 @@ def mainLoop(hWaitStop):
 
             response = ""
             if state['action'] == "connect_serial":
+                """connect to a serial port"""
                 try:
                     serialPorts[jsonObj['purpose']] = SerialPort(
                         purpose=jsonObj['purpose'],
@@ -320,6 +338,7 @@ def mainLoop(hWaitStop):
                 logger.debug(_(state, message="serial connected", purpose=jsonObj['purpose'],
                     port=jsonObj['port']))
             elif state['action'] == "serial_message":
+                """send a message bug don't worry about response"""
                 try:
                     serialPorts[jsonObj['purpose']].send(jsonObj['message'])
                 except KeyError as e:
@@ -327,6 +346,7 @@ def mainLoop(hWaitStop):
                 logger.debug(_(state, message="sent serial message", purpose=jsonObj['purpose'],
                     sentMessage=jsonObj['message']))
             elif state['action'] == "serial_message_re":
+                """send a message and get the response"""
                 try:
                     try:
                         delay = jsonObj['delay']
@@ -339,6 +359,7 @@ def mainLoop(hWaitStop):
                     purpose=jsonObj['purpose'], sentMessage=jsonObj['message'],
                     receivedRe=response))
             elif state['action'] == "disconnect_serial":
+                """disconnect serial port"""
                 try:
                     serialPorts[jsonObj['purpose']].isRecording = False
                     serialPorts[jsonObj['purpose']].disconnect()
@@ -347,6 +368,7 @@ def mainLoop(hWaitStop):
                 logger.debug(_(state, message="disconnected serial",
                     purpose=jsonObj['purpose']))
             elif state['action'] == "disconnect_all_serials":
+                """disconnect all, don't return errors"""
                 for key, ser in serialPorts:
                     ser.isRecording = False
                     try:
@@ -354,13 +376,17 @@ def mainLoop(hWaitStop):
                         logger.debug(_(state, message="Serial port %s cleared" % key))
                     except HelloSerialException:#catch everything?
                         pass
-                try:
+                try:#great to run at end of test to get everything clean
                     if jsonObj['clear']:
                         serialPorts = {}
                         logger.debug(_(state, message="Serial ports cleared"))
                 except KeyError:
                     pass
             elif state['action'] == "enable_recording":
+                """record everything that comes out of the serial port.
+                This is great for debugging and is kind of the whole
+                point of this, so you should probably have it on for uut
+                """
                 try:
                     if serialPorts[jsonObj['purpose']].status != SerialPort.connected:
                         raise HelloSerialException("Serial Port not connected", serialPorts[jsonObj['purpose']])
@@ -388,6 +414,10 @@ def mainLoop(hWaitStop):
                 logger.debug(_(state, message="recording enabled",
                     recordingPath=serialPorts[jsonObj['purpose']].recordingPath))
             elif state['action'] == "add_recording_tag":
+                """Want to make debugging easier?
+                Ask me how to make a take in the recording log
+                so you can easily see what you did when!
+                """
                 try:
                     if not serialPorts[jsonObj['purpose']].isRecording:
                         raise HelloSerialException("Not currently recording", serialPorts[jsonObj['purpose']])
@@ -400,6 +430,7 @@ def mainLoop(hWaitStop):
                     raise HelloSerialException("Something went wrong writing", str(e))
                 logger.debug(_(state, message="added recording tag", tag=jsonObj['tag']))
             elif state['action'] == "disable_recording":
+                """you'll never guess what this does"""
                 try:
                     if not serialPorts[jsonObj['purpose']].isRecording:
                         raise HelloSerialException("Not currently recording", serialPorts[jsonObj['purpose']])
@@ -414,14 +445,17 @@ def mainLoop(hWaitStop):
                 serialPorts[jsonObj['purpose']].isRecording = False
                 logger.debug(_(state, message="disabled recording"))
             elif state['action'] == "add_logging_tag":
+                """Like a recording tag, but not as sexy"""
                 try:
                     logger.info(_(state, message="adding logging tag", tag=jsonObj['tag']))
                 except KeyError as e:
                     raise HelloSerialException("add_logging_tag needs tag field", jsonObj)
             elif state['action'] == "close_service":
+                """You probably don't want to do this"""
                 isDone = returnDone()
-                logger.debug(_(state, message="closing service"))
+                logger.critical(_(state, message="closing service"))
             elif state['action'] == "serial_status":
+                """see what's going on with the serial ports"""
                 response = ""
                 for key, ser in serialPorts.iteritems():
                     if response:
@@ -433,6 +467,7 @@ def mainLoop(hWaitStop):
                 except KeyError:
                     pass
             else:
+                """Add your own fun here!"""
                 raise HelloSerialException("Unknown action", state['action'])
 
             state['status'] = "pass"
@@ -444,12 +479,12 @@ def mainLoop(hWaitStop):
             state['status'] = "error"
             response = str(e)
             logger.error(_(state, message="known error thrown", errorMessage=str(e)))
-        except:
+        except:#don't crash!
             state['status'] = "error"
             response = sys.exc_info()[1].message
             logger.error(_(state, message="UNKNOWN error thrown", errorMessage=str(sys.exc_info()[1])))
 
-        if not state['action'] == "idle":
+        if not state['action'] == "idle":#if you got a message, reply
             reply = {'action': state['action'],
                     'status': state['status'],
                     'response': response}
@@ -470,7 +505,7 @@ def mainLoop(hWaitStop):
         for key, ser in serialPorts.iteritems():
             if ser.isRecording:
                 if ser.otherData:
-                    ser.recRef.write(ser.otherData)
+                    ser.recRef.write(ser.otherData)#stuff captured waiting for regular expression
                 moreData = ser.clearReadBuffer()
                 if moreData:
                     ser.recRef.write(moreData)
@@ -493,7 +528,7 @@ def mainLoop(hWaitStop):
 
 
 if __name__ == '__main__':
-    if runningAsService:
+    if runningAsService:#don't screw with this
         if len(sys.argv) == 2 and sys.argv[1] == "install":
             sys.argv = [sys.argv[0],"--startup","delayed", sys.argv[1]]
 
