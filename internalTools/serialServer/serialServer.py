@@ -32,16 +32,16 @@ class SerialPort:
         self.otherData = ""
 
     def __repr__(self):
-        return "%r(status=%r, ser=%r, port=%s, baudrate=%r, parity=%r, "
-        "stopbits=%r, bytesize=%r, connectionTimeout=%r, isRecording=%r, "
+        return "%r(status=%r, ser=%r, port=%s, baudrate=%r, parity=%r, " \
+        "stopbits=%r, bytesize=%r, connectionTimeout=%r, isRecording=%r, " \
         "recordingPath=%r, recRef=%r, otherData=%r)" % (self.purpose,
             self.status, self.ser, self.port, self.baudrate, self.parity,
             self.stopbits, self.bytesize, self.connectionTimeout,
             self.isRecording, self.recordingPath, self.recRef, self.otherdata)
 
     def __str__(self):
-        return "%r(status=%r, port=%s, baudrate=%r, parity=%r, "
-        "stopbits=%r, bytesize=%r, isRecording=%r, "
+        return "%r(status=%r, port=%s, baudrate=%r, parity=%r, " \
+        "stopbits=%r, bytesize=%r, isRecording=%r, " \
         "recordingPath=%r)" % (self.purpose,
             self.status, self.port, self.baudrate, self.parity,
             self.stopbits, self.bytesize,
