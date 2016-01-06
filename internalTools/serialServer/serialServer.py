@@ -420,7 +420,7 @@ def mainLoop(hWaitStop):
                 isDone = returnDone()
                 logger.debug(_(state, message="closing service"))
             elif state['action'] == "serial_status":
-                response = ", ".join(str(serialPorts))
+                response = ", ".join(map(str, serialPorts))
                 try:
                     if jsonObj['verbose']:
                         response = repr(serialPorts)
