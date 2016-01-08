@@ -110,7 +110,7 @@ def main(src, dest, num_processes=2, split=32, force=False, verbose=False, quiet
     s3 = boto.connect_s3(calling_format=OrdinaryCallingFormat())
     s3.is_secure = secure
     logger.debug("split_rs: %s" % str(split_rs))
-    bucket = s3.lookup(split_rs.netloc)
+    bucket = s3.lookup(split_rs.netloc,validate=False)#don't validate as we may not have permission on bucket root. only verify key (all that matters)
     if bucket == None:
         raise ValueError("'%s' is not a valid bucket" % split_rs.netloc)
     key = bucket.get_key(split_rs.path)

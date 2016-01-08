@@ -32,6 +32,8 @@ def parseArgs(args=None):
             action="store_true")
     parser.add_argument("-d","--delete_s3_src",         help="delete the s3 src (zip) files (DO NOT DO THIS ON hello-jabil BUCKET)",
             action="store_true")
+    parser.add_argument("-v","--verbose",               help="lots of words, potentially",
+            action="store_true")
 
     if args:
         arguments = parser.parse_args(args)
@@ -114,25 +116,30 @@ def main(*args):
         if arguments.list_file_in:
             try:
                 with open(arguments.list_file_in) as f:
-                    filesProcessed = f.readlines()
+                    filesProcessed = f.read().splitlines()
             except IOError:
                 print "\nList file must exist if input is specified\n"
                 raise
 
-        buck = conn.get_bucket(arguments.tbp_bucket_in)
+        buck = conn.get_bucket(arguments.tbp_bucket_in, validate=False)
 
-        for fileName in buck.list(prefix=arguments.tbp_folder_in):
-            if fileName in filesProcessed:
+        test = buck.list(prefix=arguments.tbp_folder_in)
+        for fileName in test:
+            if fileName.key in filesProcessed or fileName.key.endswith('/'):
                 continue
             destPath = os.path.join(arguments.tbp_folder_out,os.path.split(fileName.key)[1])
             s3mpdownload.main(os.path.join("s3://",arguments.tbp_bucket_in,fileName.key),destPath,force=True)
+            if arguments.verbose:
+                print "Downloaded from S3: %s/%s" % (fileName.bucket, fileName.key)
             if extractArchive(destPath,arguments.tbp_folder_out):
                 os.remove(destPath)
                 if arguments.delete_s3_src:
                     buck.delete_key(fileName.key)
+                    if arguments.verbose:
+                        print "Deleted from s3: %s/%s" % (fileName.bucket, fileName.key)
                 if arguments.list_file_out:
                     with open(arguments.list_file_out,'a') as f:
-                        f.write(fileName+'\n')
+                        f.write(fileName.key+'\n')
     else:#assume there was a problem last time and files are in the right spot
         for fileName in os.listdir(arguments.tbp_folder_out):
             destPath = os.path.join(arguments.tbp_folder_out,fileName)
