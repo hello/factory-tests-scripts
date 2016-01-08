@@ -1,3 +1,9 @@
+#Readme
+#Primary dev: Brandon Clarke
+#Notes: This is made to sit on top of the jabil html parser and pull down files from s3 so they are processed,
+#either automatically via cron or something, or just from the command line to pull down a certain data set.
+#If putting on a new machine, make sure bogo is setup with the keys correctly for AWS
+
 import argparse
 import tarfile
 import zipfile
@@ -11,6 +17,7 @@ import helloS3
 import tempfile
 
 def parseArgs(args=None):
+    """Command line parser"""
     parser = argparse.ArgumentParser()
     parser.add_argument("-t","--tag_file_out",          help="specify the output path of the tag file",
             default="/home/ubuntu/data/s3SyncDir/tagFile.txt")
@@ -43,6 +50,7 @@ def parseArgs(args=None):
     return arguments
 
 def extractArchive(destPath,outputFolder):
+    """Supports different archive types"""
     if destPath.endswith("zip") and zipfile.is_zipfile(destPath):
         try:
             with zipfile.ZipFile(destPath) as zipF:
@@ -79,7 +87,8 @@ def extractArchive(destPath,outputFolder):
     return False
 
 def callHtmlProcessor(tbpFolder,tagFile):
-    parserOptions = (tbpFolder,#make this argument first to avoid confusion/issues
+    """See the documentation in the jabilHtmlProcessor file"""
+    parserOptions = (tbpFolder,
                      "-o","/home/ubuntu/data/proddata",
                      "-s","/home/ubuntu/data/s3SyncDir",
                      "-f",tagFile,
@@ -91,7 +100,7 @@ def callHtmlProcessor(tbpFolder,tagFile):
 def main(*args):
     arguments = parseArgs(args)
 
-    try:
+    try:#the instance this was originally installed on required sudo to access the data drive
         with tempfile.TemporaryFile(dir=arguments.tbp_folder_out) as f:
             pass
     except:
@@ -113,7 +122,7 @@ def main(*args):
             pass
 
         filesProcessed = []
-        if arguments.list_file_in:
+        if arguments.list_file_in:#ignore already processed archives (don't re-download all jabil uploaded data, or delete it)
             try:
                 with open(arguments.list_file_in) as f:
                     filesProcessed = f.read().splitlines()
@@ -140,7 +149,7 @@ def main(*args):
                 if arguments.list_file_out:
                     with open(arguments.list_file_out,'a') as f:
                         f.write(fileName.key+'\n')
-    else:#assume there was a problem last time and files are in the right spot
+    else:#assume there was a problem last time and files are in the right spot, or just don't need to be pulled down
         for fileName in os.listdir(arguments.tbp_folder_out):
             destPath = os.path.join(arguments.tbp_folder_out,fileName)
             if extractArchive(destPath,arguments.tbp_folder_out):
@@ -149,7 +158,7 @@ def main(*args):
     if not arguments.skip_es:
         callHtmlProcessor(arguments.tbp_folder_out,arguments.tag_file_out)
 
-    if not arguments.skip_sync:
+    if not arguments.skip_sync:#push compiled archives to S3
         print "Syncing..."
         helloS3.sync(conn,"/home/ubuntu/data/s3SyncDir/","s3://hello-manufacturing/sense-data/",dryRun=False,verbose=True, individualQuery=False)
 

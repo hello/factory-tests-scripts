@@ -1,8 +1,12 @@
+#Readme
+#Primary Dev: Brandon Clarke
+#Notes: This code is for processing jabil test result files (for sense and pill)
+#and adding them to an elasticsearch database. It also organizes and zips the files
+
 import re
 import os
 import csv
 import time
-import json
 import shutil
 import math
 import argparse
@@ -14,10 +18,16 @@ from elasticsearch.exceptions import RequestError
 from elasticsearch.client import IndicesClient
 
 mapName = "testResult"
-
+#yes, this mapping probably isn't the best way to store data. I wanted to use a nested format,
+#but kibana is a piece of shit and doesn't support it. And since the initial point of this
+#was to make pretty graphs, this is what I came up with. So suck it
 mapping = {mapName:{"_routing":{"required":"true","path":"Product"},"properties":{"Stop_Time":{"type":"date","format":"dateOptionalTime"},"Test_Script":{"type":"string","index":"not_analyzed"},"Elapsed_Time":{"type":"long"},"Test_Cell":{"type":"long"},"Start_Time":{"type":"date","format":"dateOptionalTime"},"Test_Station":{"type":"string","index":"not_analyzed"},"Serial_Number":{"type":"string","index":"not_analyzed"},"Total_Execution_Time":{"type":"long"},"Test_Result":{"type":"string","index":"not_analyzed"},"Test_Script_Validation_Hash":{"type":"string","index":"not_analyzed"},"Lower_Limit":{"type":"double"},"Measurement_Unit":{"type":"string","index":"not_analyzed"},"Elapsed_Time_result":{"type":"double"},"Measurement_num":{"type":"double"},"Execution_Time":{"type":"double"},"Upper_Limit":{"type":"double"},"Test_Name":{"type":"string","index":"not_analyzed"},"Measurement":{"type":"string","index":"not_analyzed"},"Test_Status":{"type":"string","index":"not_analyzed"},"Is_Measurement":{"type":"boolean"},"Test_Group":{"type":"string","index":"not_analyzed"},"Parametric_Test":{"type":"boolean"},"Color":{"type":"string","index":"not_analyzed"},"Product":{"type":"string","index":"not_analyzed"},"Calc_runtime":{"type":"double"},"Test_Run_ID":{"type":"string","index":"not_analyzed"},"tags":{"type":"string"}}}}
 
 def addToDict(dic, value, name):
+    """Function to add objects to the dictionary
+    Very much a specific function to the Jabil test Reports for sense 1.0
+    should easily apply to anything jabil tests with a little tweaking and edge cases
+    """
     try:#some duplicate names in test results table and top of file
         dic[name.replace(" ","_")]
         name = name+"_result"
@@ -34,7 +44,7 @@ def addToDict(dic, value, name):
             name += "_num"
         if (name == "Total Execution Time" or name == "Elapsed Time" or name == "Elapsed Time_result") and newVal > 1000000:
             newVal = newVal / 10000000
-    except ValueError as e:
+    except ValueError:
         if name == "Measurement":
             dic[name+"_num"] = None
         newVal = value.strip()
@@ -77,6 +87,7 @@ def addToDict(dic, value, name):
     return dic
 
 def setupParser(args=None):
+    """Controls the command line arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument("-t","--tags",      help="tags to add to the data to make it easier to find in elasticsearch",
             nargs="+")
@@ -100,8 +111,11 @@ def setupParser(args=None):
     return arguments
 
 def parseFile(filePath,verbose):
+    """Where magic happens
+    Basically reads through the file and extracts the table of data for the tests,
+    as well as the top information
+    """
     numValuesPerLine = 4
-    allFilesData = []
     topTriggers = [
             ("Serial Number",r'Serial Number:(.*)</h3>',str),
             ("Start Time",r'Start Time:(.*)</h3>',time.time),
@@ -159,7 +173,7 @@ def parseFile(filePath,verbose):
         if not reObj:
             continue
         else:
-            tableTitle = reObj.group(1).strip()
+            #tableTitle = reObj.group(1).strip()
             break
 
     #find column headers
@@ -261,6 +275,7 @@ def parseFile(filePath,verbose):
     return dataValues
 
 def indexValues(testData, existingTags, fileName, es, ic):
+    """Actually put the stuff in the elasticsearch database"""
     timeObj = time.strptime(testData[0]['Start_Time'], "%Y-%m-%dT%H:%M:%S")
     idName = time.strftime('%Y%m%d%H%M%S',timeObj)+'_'+testData[0]['Serial_Number']
     indexName = "sensedata-" + time.strftime('%Y',timeObj)
@@ -268,7 +283,7 @@ def indexValues(testData, existingTags, fileName, es, ic):
         settings = {"number_of_shards":7,"number_of_replicas":1}
         ic.create(index=indexName, body=settings)
         ic.put_mapping(index=indexName, doc_type=mapName, body=mapping) #if this errors it shouldn't get caught and bad things should happen
-    except RequestError as e:#this happens when the index is already created, which is fine, just don't need to remap it
+    except RequestError:#this happens when the index is already created, which is fine, just don't need to remap it
         pass
 
     for i in range(0,len(testData)):
@@ -294,12 +309,13 @@ def indexValues(testData, existingTags, fileName, es, ic):
                 pass
         testData[i]['tags'] = tags.strip()
         try:
-            res = es.index(index=indexName, id=idName+"_%d"%(i+1), doc_type=mapName, body=testData[i])
-        except Exception as e:
+            es.index(index=indexName, id=idName+"_%d"%(i+1), doc_type=mapName, body=testData[i])
+        except Exception:
             print "IDNAME: %s\n%s" % (idName+"_"+str(i+1),testData[i])
             raise
 
 def moveFile(rootDirectory,dataValue,sourceDir,fileName,verbose):
+    """Moves files ;-)"""
     try:
         timeObj = time.strptime(dataValue['Start_Time'], "%Y-%m-%dT%H:%M:%S")
         destPath = os.path.join(rootDirectory,dataValue['Product'],time.strftime("%Y",timeObj),time.strftime("%m",timeObj),time.strftime("%d",timeObj))
@@ -318,6 +334,7 @@ def moveFile(rootDirectory,dataValue,sourceDir,fileName,verbose):
     return os.path.join(destPath,fileName)
 
 def readInTagFile(filePath):
+    """reads in the tags file, so you can make things easy to search for"""
     tags = {}
     with open(filePath,'r') as f:
         csvr = csv.reader(f)
@@ -329,6 +346,7 @@ def readInTagFile(filePath):
     return tags
 
 def updateTags(fileName, newTags, existingTags):
+    """Self explanitory"""
     tagList = []
     try:
         tagList = existingTags[fileName]
@@ -340,6 +358,7 @@ def updateTags(fileName, newTags, existingTags):
     return existingTags
 
 def formatForS3(dirsToTar, outDir, verbose):
+    """Makes everything all nice and pretty for putting onto S3"""
     productLookup ={'Bottom Board':'bottomBoard',
                     'LED Board':'ledBoard',
                     'Middle Board':'middleBoard',
@@ -408,6 +427,7 @@ def formatForS3(dirsToTar, outDir, verbose):
     return
 
 def navigateDirectoryAndProcess(directory, arguments, es, ic, existingTags, changedPaths):
+    """I got all fancy and recursive to go through directories because I didn't know about os.walk"""
     if arguments.verbose:
         print "Entering: %s" % directory
     for fileName in os.listdir(directory)[::-1]:
@@ -435,6 +455,7 @@ def navigateDirectoryAndProcess(directory, arguments, es, ic, existingTags, chan
     return existingTags, changedPaths
 
 def main(*args):
+    """Start the beast"""
     arguments = setupParser(args)
     if not os.path.exists(arguments.directory):
         print "Directory must exist\n"
