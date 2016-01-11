@@ -466,6 +466,12 @@ def mainLoop(hWaitStop):
                         response = repr(serialPorts)
                 except KeyError:
                     pass
+            elif state['action'] == "delay":
+                """don't send a response for a certain amount of time"""
+                try:
+                    time.sleep(jsonObj['length'])
+                except KeyError:
+                    raise HelloSerialException("delay requires length number value", jsonObj)
             else:
                 """Add your own fun here!"""
                 raise HelloSerialException("Unknown action", state['action'])
