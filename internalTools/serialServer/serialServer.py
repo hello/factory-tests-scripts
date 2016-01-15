@@ -208,7 +208,7 @@ runningAsService = os.name == 'nt' and not (len(sys.argv) == 2 and sys.argv[1] =
 if os.name == 'nt':#windows
     rootLogDir = r'C:\helloLogs'
 else:
-    rootLogDir = r'/Users/brandon/tmp/helloLogs'
+    rootLogDir = os.path.join(os.path.expanduser("~"),'tmp','helloLogs')
 
 rootLogPath = os.path.join(rootLogDir,"serviceLog.txt")
 try:
