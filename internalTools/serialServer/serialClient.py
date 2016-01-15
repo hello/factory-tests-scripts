@@ -13,7 +13,7 @@ messages.append({"action":"disconnect_serial","purpose":"power_supply"})
 messages.append({"action":"disconnect_serial","purpose":"uut"})
 messages.append({"action":"disconnect_serial","purpose":"golden"})
 messages.append({"action":"disconnect_serial","purpose":"control_board"})
-
+message
 
 messages.append({"action":"connect_serial","port":0,"purpose":"control_board", "baudrate":19200, "parity":'N', "stopbits":1,"bytesize":8})
 #messages.append({"action":"enable_recording","purpose":"control_board"})

@@ -12,7 +12,7 @@
 #at the top (you need to refresh that window for the next one to appear)
 
 #Other stuff: to install as a windows service, google pywin32 and install
-#the appropriate version. You might also need some serial class for osx
+#the appropriate version. You might also need some serial module for osx
 import os
 import socket
 import json
@@ -30,7 +30,7 @@ class SerialPort:
     disconnected, connected = range(2)
     defaultReceiveTimeSec = 3
     def __init__(self, purpose, port=None, baudrate=115200, parity=serial.PARITY_NONE,
-        stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS, connectionTimeout=2):
+        stopbits=serial.STOPBITS_ONE, bytesize=serial.EIGHTBITS, connectionTimeout=2, timestampEnabled=False, timestampDelay=60, detectRestart=False):
 #defaults work with sense
         self.purpose = purpose
         self.status = self.disconnected
@@ -45,22 +45,32 @@ class SerialPort:
         self.recordingPath = None
         self.recRef = None
         self.otherData = ""
+        self.lastTimestamp = datetime.datetime(1970,1,1)
+        self.timestampEnabled = timestampEnabled
+        self.timestampDelay = timestampDelay
+        self.detectRestart = False
 
     def __repr__(self):
         return "%r(status=%r, ser=%r, port=%r, baudrate=%r, parity=%r, " \
         "stopbits=%r, bytesize=%r, connectionTimeout=%r, isRecording=%r, " \
-        "recordingPath=%r, recRef=%r, otherData=%r)" % (self.purpose,
-            self.status, self.ser, self.port, self.baudrate, self.parity,
-            self.stopbits, self.bytesize, self.connectionTimeout,
-            self.isRecording, self.recordingPath, self.recRef, self.otherData)
+        "recordingPath=%r, recRef=%r, otherData=%r, lastTimestamp=%r, " \
+        "timestampEnabled=%r, timestampDelay=%r, detectRestart=%r)" % \
+            (self.purpose, self.status, self.ser, self.port, self.baudrate,
+            self.parity, self.stopbits, self.bytesize, self.connectionTimeout,
+            self.isRecording, self.recordingPath, self.recRef, self.otherData,
+            self.lastTimestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            self.timestampEnabled, self.timestampDelay, self.detectRestart)
 
     def __str__(self):
         return "%r(status=%r, port=%r, baudrate=%r, parity=%r, " \
         "stopbits=%r, bytesize=%r, isRecording=%r, " \
-        "recordingPath=%r)" % (self.purpose,
+        "recordingPath=%r, lastTimestamp=%r, timestampEnabled=%r, " \
+        "timestampDelay=%r, detectRestart=%r)" % (self.purpose,
             self.status, self.port, self.baudrate, self.parity,
             self.stopbits, self.bytesize,
-            self.isRecording, self.recordingPath)
+            self.isRecording, self.recordingPath,
+            self.lastTimestamp.strftime("%Y-%m-%d %H:%M:%S"),
+            self.timestampEnabled, self.timestampDelay, self.detectRestart)
 
     def connect(self, port=None, baudrate=None, parity=None,
         stopbits=None, bytesize=None, connectionTimeout=None):
@@ -187,6 +197,12 @@ def returnDone():
     else:
         return True
 
+def writeRecordingTag(fileRef, message):
+    messageString = "%s - %s\r\n" % (datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"), message)
+    fileRef.write(letterBox)
+    fileRef.write(messageString)
+    fileRef.write(letterBox)
+
 runningAsService = os.name == 'nt' and not (len(sys.argv) == 2 and sys.argv[1] == "debug")
 
 if os.name == 'nt':#windows
@@ -199,6 +215,8 @@ try:
     os.makedirs(rootLogDir)
 except:
     pass
+
+letterBox = "************************************************************\r\n"
 
 fileHandler = RotatingFileHandler(rootLogPath, mode='a', maxBytes=100000000, backupCount=20)#avoids super giant log files
 formatter = logging.Formatter('{"%(levelname)s": %(message)s}')
@@ -252,8 +270,8 @@ if runningAsService:#windows service stuff, don't touch
 
 
 def mainLoop(hWaitStop):
-    packetSize = 1024#this is awful and should be changed
-    maxSize = 4096
+    packetSize = 1024
+    maxSize = 4096#100% arbitrary
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     sock.setblocking(0)
@@ -278,14 +296,16 @@ def mainLoop(hWaitStop):
         state['action'] = "idle"
         state['status'] = "none"
         if runningAsService:
-            isDone = win32event.WaitForSingleObject(hWaitStop, 5)#without this you can't stop the service without restarting
+            isDone = win32event.WaitForSingleObject(hWaitStop, 5)#without this you can't stop the service without restarting, which is bad
         try:
+            """Capture all exceptions so the service doesn't crash"""
             connection, clientAddr = sock.accept()
             state['caller'] = clientAddr
             totalData = 0
             dataList = []
             totalErrs = 0
             while True:
+                """Get Socket data"""
                 try:
                     data = connection.recv(packetSize)
                 except socket.timeout:
@@ -318,7 +338,7 @@ def mainLoop(hWaitStop):
 
             try:
                 state['action'] = jsonObj['action']
-            except KeyError as e:
+            except KeyError:
                 raise HelloSerialException("Message must have 'action'", jsonObj)
 
             response = ""
@@ -335,6 +355,17 @@ def mainLoop(hWaitStop):
                     serialPorts[jsonObj['purpose']].connect()
                 except KeyError as e:
                     raise HelloSerialException("connect_serial must have fields: purpose, port, baudrate, parity, stopbits, bytesize", jsonObj)
+                try:
+                    serialPorts[jsonObj['purpose']].timestampEnabled = jsonObj['timestamp_enabled']
+                    serialPorts[jsonObj['purpose']].timestampDelay = jsonObj['timestamp_delay']
+                except KeyError:
+                    pass
+                try:
+                    if not isinstance(jsonObj['detect_restart'], bool):
+                        raise HelloSerialException("detect_restart is strictly typed to bool for your protection", jsonObj)
+                    serialPorts[jsonObj['purpose']].detectRestart = jsonObj['detect_restart']
+                except KeyError:
+                    pass
                 logger.debug(_(state, message="serial connected", purpose=jsonObj['purpose'],
                     port=jsonObj['port']))
             elif state['action'] == "serial_message":
@@ -415,7 +446,7 @@ def mainLoop(hWaitStop):
                     recordingPath=serialPorts[jsonObj['purpose']].recordingPath))
             elif state['action'] == "add_recording_tag":
                 """Want to make debugging easier?
-                Ask me how to make a take in the recording log
+                Ask me how to make a tag in the recording log
                 so you can easily see what you did when!
                 """
                 try:
@@ -423,12 +454,26 @@ def mainLoop(hWaitStop):
                         raise HelloSerialException("Not currently recording", serialPorts[jsonObj['purpose']])
                     if not serialPorts[jsonObj['purpose']].recRef:
                         raise HelloSerialException("Something bad happened, no recording reference", serialPorts[jsonObj['purpose']])
-                    serialPorts[jsonObj['purpose']].recRef.write(jsonObj['tag']+'\r\n')
+                    writeRecordingTag(serialPorts[jsonObj['purpose']].recRef,
+                        jsonObj['tag'])
                 except KeyError as e:
                     raise HelloSerialException("add_recording_tag needs purpose and tag fields", jsonObj)
                 except IOError as e:
                     raise HelloSerialException("Something went wrong writing", str(e))
                 logger.debug(_(state, message="added recording tag", tag=jsonObj['tag']))
+            elif state['action'] == "timestamping":
+                """enable/disable/modify timestamping for a serial port"""
+                try:
+                    if not isinstance(jsonObj['timestamp_enabled'], bool):
+                        raise HelloSerialException("timestamp_enabled is strictly typed to a boolean for your protection", jsonObj)
+                    serialPorts[jsonObj['purpose']].timestampEnabled = jsonObj['timestamp_enabled']
+                except KeyError:
+                    raise HelloSerialException("Must supply purpose and timestamp_enabled",jsonObj)
+                try:
+                    serialPorts[jsonObj['purpose']].timestampDelay = jsonObj['timestamp_delay']
+                except KeyError:
+                    pass
+                logger.debug(_(state, message="changed timestamping", jsonMessage=str(jsonObj)))
             elif state['action'] == "disable_recording":
                 """you'll never guess what this does"""
                 try:
@@ -463,6 +508,8 @@ def mainLoop(hWaitStop):
                     response += str(ser)
                 try:
                     if jsonObj['verbose']:
+                        if not isinstance(jsonObj['verbose'], bool):
+                            raise HelloSerialException("verbose is strongly typed to bool for your protection", jsonObj)
                         response = repr(serialPorts)
                 except KeyError:
                     pass
@@ -472,13 +519,18 @@ def mainLoop(hWaitStop):
                     time.sleep(jsonObj['length'])
                 except KeyError:
                     raise HelloSerialException("delay requires length number value", jsonObj)
+            elif state['action'] == "clear_restart":
+                """clear the flag letting you know a unit has restarted
+                will also trigger on initial boot
+                """
+                state['restarted'] = False
+                logger.debug(_(state, message="restarted flag cleared"))
             else:
-                """Add your own fun here!"""
+                """Choose your own adventure!"""
                 raise HelloSerialException("Unknown action", state['action'])
 
             state['status'] = "pass"
             logger.debug(_(state, message="action passed"))
-
         except socket.timeout as e:
             pass#a real pass!
         except HelloSerialException as e:
@@ -490,16 +542,34 @@ def mainLoop(hWaitStop):
             response = sys.exc_info()[1].message
             logger.error(_(state, message="UNKNOWN error thrown", errorMessage=str(sys.exc_info()[1])))
 
+        for key, ser in serialPorts.iteritems():#do this before reply to check for restart
+            if ser.isRecording or ser.detectRestart:
+                dataToWrite = ""
+                if ser.otherData:
+                    dataToWrite = ser.otherData#stuff captured waiting for regular expression
+                    ser.otherData = ""
+                dataToWrite += ser.clearReadBuffer()
+                if ser.detectRestart and dataToWrite:
+                    rebootObj = re.search(r'Top\sBoard\sVersion\sis', dataToWrite)
+                    if rebootObj:
+                        state['restarted'] = True
+                if dataToWrite:
+                    ser.recRef.write(dataToWrite)
+                if ser.isRecording and ser.timestampEnabled and \
+                    (datetime.datetime.now() - ser.lastTimestamp >= datetime.timedelta(seconds=ser.timestampDelay)):
+                    writeRecordingTag(ser.recRef,"AUTO TIMESTAMP")
+                    ser.lastTimestamp = datetime.datetime.now()
+
         if not state['action'] == "idle":#if you got a message, reply
             reply = {'action': state['action'],
                     'status': state['status'],
+                    'restarted': state['restarted'],
                     'response': response}
             try:
                 connection.sendall(json.dumps(reply) + "\0")
                 logger.info(_(state, message="reply sent", reply=json.dumps(reply)))
             except:
                 logger.error(_(state, message="Error sending reply", reply=json.dumps(reply)))
-
         if connection:
             try:
                 connection.close()
@@ -508,13 +578,6 @@ def mainLoop(hWaitStop):
                 logger.error(_(state, message="error closing connection",
                     errorMessage=e.message))
 
-        for key, ser in serialPorts.iteritems():
-            if ser.isRecording:
-                if ser.otherData:
-                    ser.recRef.write(ser.otherData)#stuff captured waiting for regular expression
-                moreData = ser.clearReadBuffer()
-                if moreData:
-                    ser.recRef.write(moreData)
 
     for key, ser in serialPorts.iteritems():
         try:
