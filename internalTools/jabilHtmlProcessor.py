@@ -97,9 +97,9 @@ def setupParser(args=None):
             action="store_true")
     parser.add_argument("-v","--verbose",   help="Wall of text crits you for 1000. You die.",
             action="store_true")
-    parser.add_argument("-o","--organize",  help="target directory to organize files by product and date, no arg defaults to ~/proddata",
+    parser.add_argument("-o","--organize",  help="target directory to organize files by product and date",
             const="~/proddata", nargs="?")
-    parser.add_argument("-s","--s3_out",    help="root directory to output in the s3 storage format (folder paths and manifest files), no arg defaults to ~/s3SyncDir",
+    parser.add_argument("-s","--s3_out",    help="root directory to output in the s3 storage format (folder paths and manifest files)",
             const="~/s3SyncDir", nargs="?")
     parser.add_argument("directory",        help="directory of files to process")
 
