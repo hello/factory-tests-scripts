@@ -1,3 +1,11 @@
+#Readme
+#Primary dev: Brandon Clarke
+#How to use: python localMessageSender -m "Json message to serialserver" -l "output logfile" -w "optional wait time for long commands in sec, default 3 sec"
+#Note: this is made to send messages to serial server, then output a result into
+#a text file that can be processed by jabilTest (or anything that can open) a
+#file. It could be easily modified to work remotely, just by using the right IP
+#this hasn't had as much testing as I'd like, but it should probably be fine
+
 import socket
 import datetime
 import argparse
