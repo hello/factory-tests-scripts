@@ -114,7 +114,7 @@ def main():
             runIDFilter = F("term", Test_Run_ID=result["Test_Run_ID"])
             subSearch = subSearch.filter(runIDFilter)
 
-            topIdFilter =  F("term", Test_Name="top_id_format_check")
+            topIdFilter =  F("term", Test_Name=idName)
             subSearch = subSearch.filter(topIdFilter)
 
             idResults = subSearch.execute()
