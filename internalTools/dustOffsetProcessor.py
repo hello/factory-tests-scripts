@@ -193,7 +193,7 @@ def main():
                     print "Added denied: %s" % str(result.meta.id)
                 logger.info(_(message="Result denied", response=responseStr, result=str(result)))
         elif "500" in responseStr:
-            time.sleep(5*fiveHundredCounter/100)
+            time.sleep(max(5*fiveHundredCounter/100,1))
             fiveHundredCounter += 1
         else:
             if arguments.verbose:
