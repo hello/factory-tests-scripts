@@ -40,6 +40,13 @@ def main():
         print "Must provide processed_file"
         sys.exit(-1)
 
+    try:#the instance this was originally installed on required sudo to access the data drive
+        with tempfile.TemporaryFile(dir=os.path.dirname(arguments.processed_file)) as f:
+            pass
+    except:
+        print "\nMust have permissions on folder for processed_file. Try running as sudo as data folder has restricted permissions\n"
+        raise
+
 
     rootLogDir = os.path.join('/','ubuntu','data','logs')#ubuntu server
     if not os.path.exists(rootLogDir):#debugging
