@@ -48,7 +48,7 @@ def main():
         raise
 
 
-    rootLogDir = os.path.join('/','ubuntu','data','logs')#ubuntu server
+    rootLogDir = os.path.join('/','ubuntu','home','data','logs')#ubuntu server
     if not os.path.exists(rootLogDir):#debugging
         rootLogDir = os.path.join(os.path.expanduser("~"),"tmp","helloLogs")
         try:
@@ -67,7 +67,7 @@ def main():
     formatter = logging.Formatter('{"%(levelname)s": %(message)s}')
     fileHandler.setFormatter(formatter)
     logger = logging.getLogger('logger')
-    logger.setLevel(logging.INFO)#suggest info for regular usage, debug for ...
+    logger.setLevel(logging.DEBUG)#suggest info for regular usage, debug for ...
     logger.addHandler(fileHandler)
     logger.propagate = False
 
