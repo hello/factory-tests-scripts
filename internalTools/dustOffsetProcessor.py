@@ -1,3 +1,9 @@
+#Readme
+#Primary dev: Brandon Clarke
+#Notes: the purpose of this file is to pull dust calibration data from the elasticsearch
+#database that has all the production data, and upload it to suripu so it can be used
+#in calculating offsets for production units
+
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search, F
 from datetime import datetime
@@ -22,6 +28,7 @@ def setupParser():
     return parser.parse_args()
 
 def writeIDToFile(filePath, idValue):
+    """Just because I use it in multiple places"""
     with open(filePath, 'a') as f:
         f.write(idValue+'\n')
 
@@ -43,12 +50,12 @@ def main():
 
     if not arguments.suripu_prod:
         try:
-            arguments.suripu_prod = os.environ['SURIPU_PROD']
+            arguments.suripu_prod = os.environ['SURIPU_PROD']#was going to use this always, but it's annoying for crontab
         except KeyError:
             print "\nMust specify environment variable SURIPU_PROD if not supplied on command line\n"
             raise
 
-    if not arguments.processed_file:
+    if not arguments.processed_file:#at least for output, is ok if it doesn't exist
         print "Must provide processed_file"
         sys.exit(-1)
 
@@ -74,6 +81,7 @@ def main():
     except:
         print "\nMust have permissions on folder. Try running as sudo as data folder has restricted permissions\n"
         raise
+
     fileHandler = RotatingFileHandler(rootLogPath, mode='a', maxBytes=100000000, backupCount=20)#avoids super giant log files
     formatter = logging.Formatter('{"%(levelname)s": %(message)s}')
     fileHandler.setFormatter(formatter)
@@ -101,7 +109,7 @@ def main():
     passFilter = F("term", Test_Result="PASS")
     search = search.filter(passFilter)
 
-    upperLimitFilter = ~F("term", Upper_Limit=300)
+    upperLimitFilter = ~F("term", Upper_Limit=300)#before a proper dust test was implemented, 300 was the upper limit. so ignore results with that UL
     search = search.filter(upperLimitFilter)
     try:
         with open(arguments.processed_file, 'r') as f:
@@ -110,17 +118,18 @@ def main():
         ids = []
 
     if ids:
-        idFilter = ~F("ids", values=ids)
+        idFilter = ~F("ids", values=ids)#ignore results already processed
         search = search.filter(idFilter)
 
-    search = search[0:100000]
+    search = search[0:100000]#should be a low value returned anyway
     results = search.execute()
 
-    fiveHundredCounter = 0
+    fiveHundredCounter = 0#counter to avoid slamming the webserver. will slow down PUTs as more fail
     idCheckNames = ["top_id_format_check", "ID_check"]#new name and old name for getting top board ID
     for result in results:
         idValue = ""
         for idName in idCheckNames:
+            """Need to get the top board ID for the given test run"""
             subSearch = Search(using=es, index='sensedata-*')
 
             runIDFilter = F("term", Test_Run_ID=result["Test_Run_ID"])
@@ -152,6 +161,7 @@ def main():
 
         idCheckObj = re.search(r'^[A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9]$',idValue)
         if not idCheckObj:
+            """Check to make sure the format is correct"""
             message = "idValue isn't properly formatted"
             logger.error(_(message=message, result=str(result)))
             if arguments.verbose:
@@ -171,7 +181,7 @@ def main():
         timeTestedInt = 1000*int((timeTestedObj-datetime(1970,1,1)).total_seconds())#miliseconds from epoch
 
         payload = str('{"tested_at": %d, "sense_id": "%s", "dust_offset": %d}' % (timeTestedInt,
-            idValue, int(result['Measurement_num'])))#str is needed because it was getting saved as unicode and causing bullshit errors
+            idValue, int(result['Measurement_num'])))#str is needed because it was getting saved as unicode and causing bullshit errors on ubuntu
 
         headers = {
             'authorization': "Bearer %s" % arguments.suripu_prod,
@@ -182,7 +192,7 @@ def main():
         url = "https://admin-api.hello.is/v1/calibration"
         response = requests.request("PUT", url, data=payload, headers=headers)
         responseStr = str(response)
-        if "204" in responseStr or "400" in responseStr:
+        if "204" in responseStr or "400" in responseStr:#400 is returned if it's already entered or a newer value exists
             writeIDToFile(arguments.processed_file, str(result.meta.id))
             if "204" in responseStr:
                 logger.info(_(message="Result added successfully", response=responseStr, result=str(result)))
@@ -192,17 +202,17 @@ def main():
                 if arguments.verbose:
                     print "Added denied: %s" % str(result.meta.id)
                 logger.info(_(message="Result denied", response=responseStr, result=str(result)))
-        elif "500" in responseStr:
+        elif "500" in responseStr:#if you slam the server, it gets sad and returns this
             fiveHundredCounter += 1
             if arguments.verbose:
                 print "Got 500, increasing sleep"
-        else:
+        else:#I don't know what else can be returned, but I'm sure there are other things
             if arguments.verbose:
                 print "%s Generated unknown response: %s" % (str(result.meta.id), responseStr)
             logger.error(_(message="Unknown response", response=responseStr, result=str(result)))
 
-        time.sleep(fiveHundredCounter/50)
-        if fiveHundredCounter > 100:
+        time.sleep(fiveHundredCounter/50)#could get more fancy with this, but it's fine for ongoing processing
+        if fiveHundredCounter > 100:#if shit's broke, try tomorrow
             break
 
 if __name__ == '__main__':
