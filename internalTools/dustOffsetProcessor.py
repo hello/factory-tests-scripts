@@ -116,6 +116,7 @@ def main():
     search = search[0:100000]
     results = search.execute()
 
+    fiveHundredCounter = 0
     idCheckNames = ["top_id_format_check", "ID_check"]#new name and old name for getting top board ID
     for result in results:
         idValue = ""
@@ -193,10 +194,14 @@ def main():
                 logger.info(_(message="Result denied", response=responseStr, result=str(result)))
         elif "500" in responseStr:
             time.sleep(1)
+            fiveHundredCounter += 1
         else:
             if arguments.verbose:
                 print "%s Generated unknown response: %s" % (str(result.meta.id), responseStr)
             logger.error(_(message="Unknown response", response=responseStr, result=str(result)))
+
+        if fiveHundredCounter > 100:
+            break
 
 if __name__ == '__main__':
     main()
