@@ -191,6 +191,8 @@ def main():
                 if arguments.verbose:
                     print "Added denied: %s" % str(result.meta.id)
                 logger.info(_(message="Result denied", response=responseStr, result=str(result)))
+        elif "500" in responseStr:
+            time.sleep(1)
         else:
             if arguments.verbose:
                 print "%s Generated unknown response: %s" % (str(result.meta.id), responseStr)
