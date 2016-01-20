@@ -9,6 +9,7 @@ import re
 import requests
 import os
 import logging
+import tempfile
 from logging.handlers import RotatingFileHandler
 
 def setupParser():
@@ -39,6 +40,7 @@ def main():
         print "Must provide processed_file"
         sys.exit(-1)
 
+
     rootLogDir = os.path.join('/','ubuntu','data','logs')#ubuntu server
     if not os.path.exists(rootLogDir):#debugging
         rootLogDir = os.path.join(os.path.expanduser("~"),"tmp","helloLogs")
@@ -47,6 +49,13 @@ def main():
         except:
             pass
     rootLogPath = os.path.join(rootLogDir, "dustOffsetProcessor.txt")
+
+    try:#the instance this was originally installed on required sudo to access the data drive
+        with tempfile.TemporaryFile(dir=rootLogDir) as f:
+            pass
+    except:
+        print "\nMust have permissions on folder. Try running as sudo as data folder has restricted permissions\n"
+        raise
     fileHandler = RotatingFileHandler(rootLogPath, mode='a', maxBytes=100000000, backupCount=20)#avoids super giant log files
     formatter = logging.Formatter('{"%(levelname)s": %(message)s}')
     fileHandler.setFormatter(formatter)
