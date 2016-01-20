@@ -20,6 +20,10 @@ def setupParser():
 
     return parser.parse_args()
 
+def writeIDToFile(filePath, idValue):
+    with open(filePath, 'a') as f:
+        f.write(idValue+'\n')
+
 class StructuredMessage(object):
     """Class to make logging look pretty"""
     def __init__(self, **kwargs):
@@ -135,6 +139,16 @@ def main():
             logger.error(_(message=message, result=str(result)))
             if arguments.verbose:
                 print message
+            writeIDToFile(arguments.processed_file, str(result.meta.id))
+            continue
+
+        idCheckObj = re.search(r'^[A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9]$',idValue)
+        if not idCheckObj:
+            message = "idValue isn't properly formatted"
+            logger.error(_(message=message, result=str(result)))
+            if arguments.verbose:
+                print message
+            writeIDToFile(arguments.processed_file, str(result.meta.id))
             continue
 
         if not isinstance(result['Measurement_num'], float):
@@ -142,6 +156,7 @@ def main():
             logger.error(_(message=message, result=str(result)))
             if arguments.verbose:
                 print message
+            writeIDToFile(arguments.processed_file, str(result.meta.id))
             continue
 
         timeTestedObj = datetime.strptime(result["Start_Time"],"%Y-%m-%dT%H:%M:%S")
@@ -160,8 +175,7 @@ def main():
         response = requests.request("PUT", url, data=payload, headers=headers)
         responseStr = str(response)
         if "204" in responseStr or "400" in responseStr:
-            with open(arguments.processed_file, 'a') as f:
-                f.write(str(result.meta.id)+'\n')
+            writeIDToFile(arguments.processed_file, str(result.meta.id))
             if "204" in responseStr:
                 logger.info(_(message="Result added successfully", response=responseStr, result=str(result)))
                 if arguments.verbose:
