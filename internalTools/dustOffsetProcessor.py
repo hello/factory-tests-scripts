@@ -147,8 +147,8 @@ def main():
         timeTestedObj = datetime.strptime(result["Start_Time"],"%Y-%m-%dT%H:%M:%S")
         timeTestedInt = 1000*int((timeTestedObj-datetime(1970,1,1)).total_seconds())#miliseconds from epoch
 
-        payload = '{"tested_at": %d, "sense_id": "%s", "dust_offset": %d}' % (timeTestedInt,
-            idValue, int(result['Measurement_num']))
+        payload = str('{"tested_at": %d, "sense_id": "%s", "dust_offset": %d}' % (timeTestedInt,
+            idValue, int(result['Measurement_num'])))#str is needed because it was getting saved as unicode and causing bullshit errors
 
         headers = {
             'authorization': "Bearer %s" % os.environ['SURIPU_PROD'],
