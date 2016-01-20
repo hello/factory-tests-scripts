@@ -193,15 +193,15 @@ def main():
                     print "Added denied: %s" % str(result.meta.id)
                 logger.info(_(message="Result denied", response=responseStr, result=str(result)))
         elif "500" in responseStr:
-            time.sleep(max(5*fiveHundredCounter/100,1))
             fiveHundredCounter += 1
             if arguments.verbose:
-                print "Got 500, sleeping"
+                print "Got 500, increasing sleep"
         else:
             if arguments.verbose:
                 print "%s Generated unknown response: %s" % (str(result.meta.id), responseStr)
             logger.error(_(message="Unknown response", response=responseStr, result=str(result)))
 
+        time.sleep(fiveHundredCounter/100)
         if fiveHundredCounter > 100:
             break
 
