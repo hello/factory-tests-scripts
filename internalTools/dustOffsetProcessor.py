@@ -201,7 +201,7 @@ def main():
                 print "%s Generated unknown response: %s" % (str(result.meta.id), responseStr)
             logger.error(_(message="Unknown response", response=responseStr, result=str(result)))
 
-        time.sleep(fiveHundredCounter/100)
+        time.sleep(fiveHundredCounter/50)
         if fiveHundredCounter > 100:
             break
 
