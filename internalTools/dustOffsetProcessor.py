@@ -142,7 +142,7 @@ def main():
             writeIDToFile(arguments.processed_file, str(result.meta.id))
             continue
 
-        idCheckObj = re.search(r'^[A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9]$',idValue)
+        idCheckObj = re.search(r'^[A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9][A-F0-9]$',idValue)
         if not idCheckObj:
             message = "idValue isn't properly formatted"
             logger.error(_(message=message, result=str(result)))
