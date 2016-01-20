@@ -48,7 +48,7 @@ def main():
         raise
 
 
-    rootLogDir = os.path.join('/','ubuntu','home','data','logs')#ubuntu server
+    rootLogDir = os.path.join('/','home','ubuntu','data','logs')#ubuntu server
     if not os.path.exists(rootLogDir):#debugging
         rootLogDir = os.path.join(os.path.expanduser("~"),"tmp","helloLogs")
         try:
