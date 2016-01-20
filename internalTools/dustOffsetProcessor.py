@@ -195,6 +195,8 @@ def main():
         elif "500" in responseStr:
             time.sleep(max(5*fiveHundredCounter/100,1))
             fiveHundredCounter += 1
+            if arguments.verbose:
+                print "Got 500, sleeping"
         else:
             if arguments.verbose:
                 print "%s Generated unknown response: %s" % (str(result.meta.id), responseStr)
