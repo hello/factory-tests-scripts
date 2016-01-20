@@ -15,8 +15,8 @@ from logging.handlers import RotatingFileHandler
 def setupParser():
     """Setup the command line arguments"""
     parser = argparse.ArgumentParser()
-    parser.add_argument("-p", "--processed_file",   help="File that lists records that have already been processed, so things are repeated every time")
-    parser.add_argument("-v", "--verbose",          help="Print words")
+    parser.add_argument("-p", "--processed_file",               help="File that lists records that have already been processed, so things are repeated every time")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Print words")
 
     return parser.parse_args()
 
