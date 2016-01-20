@@ -17,6 +17,7 @@ def setupParser():
     parser = argparse.ArgumentParser()
     parser.add_argument("-p", "--processed_file",               help="File that lists records that have already been processed, so things are repeated every time")
     parser.add_argument("-v", "--verbose", action="store_true", help="Print words")
+    parser.add_argument("-s", "--suripu_prod",                  help="Auth token for suripu_prod")
 
     return parser.parse_args()
 
@@ -40,6 +41,13 @@ def main():
     """Main things"""
     arguments = setupParser()
 
+    if not arguments.suripu_prod:
+        try:
+            arguments.suripu_prod = os.environ['SURIPU_PROD']
+        except KeyError:
+            print "\nMust specify environment variable SURIPU_PROD if not supplied on command line\n"
+            raise
+
     if not arguments.processed_file:
         print "Must provide processed_file"
         sys.exit(-1)
@@ -50,7 +58,6 @@ def main():
     except:
         print "\nMust have permissions on folder for processed_file. Try running as sudo as data folder has restricted permissions\n"
         raise
-
 
     rootLogDir = os.path.join('/','home','ubuntu','data','logs')#ubuntu server
     if not os.path.exists(rootLogDir):#debugging
@@ -125,7 +132,7 @@ def main():
 
             try:
                 if ":" in idResults[0]["Measurement"]:
-                    idValue = re.sub(r'(^|:)(?![A-Z0-9][A-Z0-9])([A-Z0-9])',r'\g<1>0\g<2>',
+                    idValue = re.sub(r'(^|:)(?![A-F0-9][A-F0-9])([A-F0-9])',r'\g<1>0\g<2>',
                         idResults[0]["Measurement"].upper()).replace(":","")
                     #makes capital, fills in missing zeroes and removes semicolons, trust me
                 else:
@@ -166,7 +173,7 @@ def main():
             idValue, int(result['Measurement_num'])))#str is needed because it was getting saved as unicode and causing bullshit errors
 
         headers = {
-            'authorization': "Bearer %s" % os.environ['SURIPU_PROD'],
+            'authorization': "Bearer %s" % arguments.suripu_prod,
             'content-type': "application/json",
             'x-hello-admin': "postman@sayhello.com"
             }
