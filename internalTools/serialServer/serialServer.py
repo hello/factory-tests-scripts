@@ -290,21 +290,35 @@ def mainLoop(hWaitStop):
     else:
         isDone = False
 
+    delayedActions = []
     while isDone != returnDone():
         connection = None
         state['caller'] = None
         state['action'] = "idle"
         state['status'] = "none"
+        state['runDelayedAction'] = False
         if runningAsService:
             isDone = win32event.WaitForSingleObject(hWaitStop, 5)#without this you can't stop the service without restarting, which is bad
         try:
             """Capture all exceptions so the service doesn't crash"""
-            connection, clientAddr = sock.accept()
-            state['caller'] = clientAddr
             totalData = 0
             dataList = []
             totalErrs = 0
-            while True:
+
+            for action in delayedActions:
+                if action['goTime'] < datetime.datetime.now():
+                    dataList = action['dataList']
+                    state['runDelayedAction'] = True
+                    delayedActions.remove(action)
+                    break
+
+            if not state['runDelayedAction']:
+                connection, clientAddr = sock.accept()
+                state['caller'] = clientAddr
+            else:
+                state['caller'] = "delayed"
+
+            while not state['runDelayedAction']:
                 """Get Socket data"""
                 try:
                     data = connection.recv(packetSize)
@@ -340,6 +354,19 @@ def mainLoop(hWaitStop):
                 state['action'] = jsonObj['action']
             except KeyError:
                 raise HelloSerialException("Message must have 'action'", jsonObj)
+
+            try:
+                if jsonObj['delay'] > 0 and not state['runDelayedAction']:
+                    """Add delayed action"""
+                    delayedActions.append({"dataList":dataList,
+                        "goTime":datetime.datetime.now() +
+                        datetime.timedelta(seconds=jsonObj['delay'])})
+                    state['action'] = "return_pass"#don't do the action yet
+                else:
+                    """A delayed action is being run! yay!"""
+                    pass
+            except KeyError:
+                pass
 
             response = ""
             if state['action'] == "connect_serial":
@@ -380,10 +407,10 @@ def mainLoop(hWaitStop):
                 """send a message and get the response"""
                 try:
                     try:
-                        delay = jsonObj['delay']
+                        wait_time = jsonObj['wait_time']
                     except KeyError as e:
-                        delay = SerialPort.defaultReceiveTimeSec
-                    response = serialPorts[jsonObj['purpose']].sendAndReceiveRE(jsonObj['message'], jsonObj['regular_expression'], delay)[0]
+                        wait_time = SerialPort.defaultReceiveTimeSec
+                    response = serialPorts[jsonObj['purpose']].sendAndReceiveRE(jsonObj['message'], jsonObj['regular_expression'], wait_time)[0]
                 except KeyError as e:
                     raise HelloSerialException("serial_message_re must have purpose, message, and regular_expression fields", jsonObj)
                 logger.debug(_(state, message="sent serial message and received re",
@@ -519,12 +546,20 @@ def mainLoop(hWaitStop):
                     time.sleep(jsonObj['length'])
                 except KeyError:
                     raise HelloSerialException("delay requires length number value", jsonObj)
+                logger.debug(_(state, message="I just had a nap for %d seconds" % jsonObj['length']))
             elif state['action'] == "clear_restart":
                 """clear the flag letting you know a unit has restarted
                 will also trigger on initial boot
                 """
                 state['restarted'] = False
                 logger.debug(_(state, message="restarted flag cleared"))
+            elif state['action'] == "return_pass":
+                """This is more for internal use,
+                but I suppose you could use it to get a pass with no info? yay?
+                Also, keep this case at the end, or you could get action fall through
+                """
+                state['action'] = jsonObj['action']
+                logger.debug(_(state, message="Returning pass on receipt of delayed action"))
             else:
                 """Choose your own adventure!"""
                 raise HelloSerialException("Unknown action", state['action'])
@@ -532,7 +567,7 @@ def mainLoop(hWaitStop):
             state['status'] = "pass"
             logger.debug(_(state, message="action passed"))
         except socket.timeout as e:
-            pass#a real pass!
+            pass
         except HelloSerialException as e:
             state['status'] = "error"
             response = str(e)
@@ -560,7 +595,7 @@ def mainLoop(hWaitStop):
                     writeRecordingTag(ser.recRef,"AUTO TIMESTAMP")
                     ser.lastTimestamp = datetime.datetime.now()
 
-        if not state['action'] == "idle":#if you got a message, reply
+        if state['action'] != "idle" and not state['runDelayedAction']:#if you got a message, reply
             reply = {'action': state['action'],
                     'status': state['status'],
                     'restarted': state['restarted'],
@@ -570,6 +605,7 @@ def mainLoop(hWaitStop):
                 logger.info(_(state, message="reply sent", reply=json.dumps(reply)))
             except:
                 logger.error(_(state, message="Error sending reply", reply=json.dumps(reply)))
+
         if connection:
             try:
                 connection.close()
@@ -577,7 +613,6 @@ def mainLoop(hWaitStop):
             except Exception as e:
                 logger.error(_(state, message="error closing connection",
                     errorMessage=e.message))
-
 
     for key, ser in serialPorts.iteritems():
         try:
