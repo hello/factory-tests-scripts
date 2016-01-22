@@ -13,7 +13,7 @@ messages.append({"action":"disconnect_serial","purpose":"power_supply"})
 messages.append({"action":"disconnect_serial","purpose":"uut"})
 messages.append({"action":"disconnect_serial","purpose":"golden"})
 messages.append({"action":"disconnect_serial","purpose":"control_board"})
-message
+#message
 
 messages.append({"action":"connect_serial","port":0,"purpose":"control_board", "baudrate":19200, "parity":'N', "stopbits":1,"bytesize":8})
 #messages.append({"action":"enable_recording","purpose":"control_board"})
@@ -53,7 +53,8 @@ messages.append({"action":"serial_message","purpose":"control_board","message":"
 messages.append({"action":"serial_message","purpose":"control_board","message":"#SK1$\r\n"})
 
 #messages.append({"action":"serial_message","message":"loglevel 40","purpose":"uut"})
-messages.append({"action":"serial_message","message":"boot","purpose":"uut"})
+messages.append({"action":"delay","length":4})
+messages.append({"action":"serial_message","message":"boot\r\n","purpose":"uut"})
 messages.append({"action":"serial_status","verbose": False})
 
 #messages.append({"action":"serial_message","purpose":"power_supply","message":"OUTP 0\n"})
