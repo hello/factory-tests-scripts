@@ -80,7 +80,7 @@ def buildCommonSearch(arguments, search=None, size=0):
 
         begin = arguments.begin_date
         if arguments.begin_date == None:
-            begin = date(2015,12,22)#start of testing "epoch"
+            begin = date(2014,12,22)#start of testing "epoch"
         else:
             begin = begin.date()#strip time if present
         end = arguments.end_date
@@ -90,9 +90,10 @@ def buildCommonSearch(arguments, search=None, size=0):
             end = end.date()
 
         indexList = []
-        while begin <= end:
-            indexList.append("sensedata-%s" % begin.strftime("%Y"))
+        indexList.append("sensedata-%s" % begin.strftime("%Y"))
+        while begin <= end and begin.strftime("%Y") != end.strftime("%Y"):
             begin += datetime.timedelta(days=366)
+            indexList.append("sensedata-%s" % begin.strftime("%Y"))
 
         if toFilter:
             newBool = F("bool", must=toFilter)
@@ -272,7 +273,7 @@ def getStuff(arguments,es):
                         headerHash[nameNum+"CalcT"] = True
                 except KeyError:
                     pass
-        except KeyError as e:
+        except KeyError:
             print "Expected field missing in %s" % (result.meta['id'])
 
     csvw = csv.DictWriter(arguments.output_file, headers)
