@@ -86,18 +86,18 @@ function Program_Unit()
   //SerialSendMilliseconds($IT6322_Handle, "OUTP 0\n");
   Sleep(1);
   SerialClose($uutHandle);
-  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  //PROGRAM PIN ON
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  //turn off power
   Sleep(1);
-  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50);  //PROGRAM PIN ON
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK0$\r\n", "", 50);  //id line on
   Sleep(1);
-  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK0$\r\n", "", 50);  //PROGRAM PIN ON
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50);  //turn on power
   //SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
   //SerialSendMilliseconds($IT6322_Handle, "OUTP 1\n");
   Sleep(3);
   
   $workingDir = "C:\\Users\\windows\\repo\\doraemon\\";
   $batPath = "C:\\Users\\windows\\repo\\doraemon\\moveAndBurn.bat";
-  $fwDir = "C:\\Users\\windows\\repo\\fwFiles\\0.9.22_rc7\\";
+  $fwDir = "C:\\Users\\windows\\repo\\fwFiles\\0.9.22_rc7";
   $verString = "sense_pvt";
   $serialString = "7";
   
@@ -110,13 +110,19 @@ function Program_Unit()
   
   SystemCall($workingDir,$batPath,$argumentString,"TRUE","TRUE");
   
-  SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
-  SerialSendMilliseconds($IT6322_Handle, "OUTP 0\n");
-  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50);  //PROGRAM PIN OFF
+ // SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
+ // SerialSendMilliseconds($IT6322_Handle, "OUTP 0\n");
+ 
+ 
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  //turn off power
+  Sleep(1);
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50);  //PROGRAM PIN OFF
+  Sleep(1);
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50);  //turn on power
   Sleep(1);
   $uutHandle = SerialOpen($UUT_Serial,115200,8,"N",1);
-  SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
-  SerialSendMilliseconds($IT6322_Handle, "OUTP 1\n");
+//  SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
+ // SerialSendMilliseconds($IT6322_Handle, "OUTP 1\n");
   return;
 }
 
