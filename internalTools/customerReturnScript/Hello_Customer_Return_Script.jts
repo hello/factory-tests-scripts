@@ -23,7 +23,8 @@
 
 SetFinalizeFunction("Cleanup");
 SetFailFunction("FailConfig");
-SetAbortFunction("FailConfig");
+SetAbortFunction("Cleanup");
+//SetAbortFunction("FailConfig");
 
 $PassHtmlLocation1 = "E:\\html\\";
 $PassHtmlLocation2 = "E:\\html\\";
