@@ -30,11 +30,10 @@ $PassHtmlLocation1 = "E:\\html\\";
 $PassHtmlLocation2 = "E:\\html\\";
 //$PassHtmlLocation2 = "\\\\huafile01\\Hello_data\\test log\\Morpheus\\";
 ConfigurableHtmlReportWriter_ConfigureLocations($PassHtmlLocation2,$PassHtmlLocation1);
+call Gb_Instrument_Init();
 call Initial_Tests();
 //call TIS_Check();
-
 call Program_Unit();
-call Gb_Instrument_Init();
 call BootCheckEnhanced();
 
 call Program_Top();
@@ -96,7 +95,7 @@ function Initial_Tests()
   $newFW = false;
   SetTestName("Initial_Tests")
   //call Barcode_Check();
-  call Gb_Instrument_Init();
+  //call Gb_Instrument_Init();
   call Lock_Door();
   return;
 }
@@ -289,7 +288,6 @@ function Gb_Instrument_Init()
   $goldenUnitHandle = SerialOpen($Sample_Serial,115200,8,"N",1);
   $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50); //set to normal pin
   $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50);  //
-
 
   SerialSendMilliseconds($IT6322_Handle, "INST THI\n", "", 50);
   $CH3_return = SerialSendMilliseconds($IT6322_Handle,"MEAS:CURR?\n", "", 200);
