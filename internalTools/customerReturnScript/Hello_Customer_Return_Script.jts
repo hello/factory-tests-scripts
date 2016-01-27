@@ -32,7 +32,6 @@ $PassHtmlLocation2 = "E:\\html\\";
 ConfigurableHtmlReportWriter_ConfigureLocations($PassHtmlLocation2,$PassHtmlLocation1);
 call Gb_Instrument_Init();
 call Initial_Tests();
-//call TIS_Check();
 call Program_Unit();
 call BootCheckEnhanced();
 
@@ -1722,94 +1721,6 @@ function Dust_Sensor_Final()
   call serialSendAndReceivePattern_number_error();
   RecordMeasurementWithLimits($Next_Test, $Result_Value,"ADC Counts",true,$lowerLimit,$upperLimit,true);
 
-  return;
-}
-
-function TIS_Check()
-{
-  $TestName = "TIS_Check";
-  UpdateStatus($TestName);
-  UpdateStatus("**************************** TIS_Check() *********************************");
-  $TIS_Flag =false;
-  // parameter setting to fit different model
-  $TIS_trys = 0;		// max trys times
-  $TIS_ExeFilePath = "D:\\TIS";	// Folder path
-  $TIS_Config_File_PathName = "D:\\TIS\\morpheus.ini";	// Model TIS information config ini file
-  $TIS_SectionName = "Information";
-  
-  Label lab_TISCheckLoop1:
-  $TIS_Customer = ReadIniFile($TIS_Config_File_PathName,$TIS_SectionName,"Customer");
-  $TIS_Division = ReadIniFile($TIS_Config_File_PathName,$TIS_SectionName,"Division");
-  $TIS_Number = ReadIniFile($TIS_Config_File_PathName,$TIS_SectionName,"Number");
-  $TIS_TesterName = ReadIniFile($TIS_Config_File_PathName,$TIS_SectionName,"TesterName");
-  $TIS_Process = ReadIniFile($TIS_Config_File_PathName,$TIS_SectionName,"Process");
-  $TIS_RandomSeq = ReadIniFile($TIS_Config_File_PathName,$TIS_SectionName,"RandomSeq");
-  
-  $TIS_CmdLine = $TIS_Customer + " ";
-  $TIS_CmdLine = $TIS_CmdLine + $TIS_Division;
-  $TIS_CmdLine = $TIS_CmdLine + " ";
-  $TIS_CmdLine = $TIS_CmdLine + $SerialNumber;
-  $TIS_CmdLine = $TIS_CmdLine + " ";
-  $TIS_CmdLine = $TIS_CmdLine + "\"";
-  $TIS_CmdLine = $TIS_CmdLine + $TIS_Number;
-  $TIS_CmdLine = $TIS_CmdLine + "\"";
-  $TIS_CmdLine = $TIS_CmdLine + " ";
-  $TIS_CmdLine = $TIS_CmdLine + "\"";
-  $TIS_CmdLine = $TIS_CmdLine + $TIS_TesterName;
-  $TIS_CmdLine = $TIS_CmdLine + "\"";
-  $TIS_CmdLine = $TIS_CmdLine + " ";
-  $TIS_CmdLine = $TIS_CmdLine + "\"";
-  $TIS_CmdLine = $TIS_CmdLine + $TIS_Process;
-  $TIS_CmdLine = $TIS_CmdLine + "\"";
-  $TIS_CmdLine = $TIS_CmdLine + " ";
-  $TIS_CmdLine = $TIS_CmdLine + $TIS_RandomSeq;
-  UpdateStatus($TIS_CmdLine);
-  
-  $TIS_ResultFilePathName = $TIS_ExeFilePath + "\\Result.txt";
-  $fileExists = CheckFileExists($TIS_ResultFilePathName,"RETURNONLY");
-  if ($fileExists)
-  {
-    FileDelete($TIS_ResultFilePathName);
-    SleepMilliseconds(100);
-  }
-  
-  SystemCall($TIS_ExeFilePath,"TISExe.exe",$TIS_CmdLine,"TRUE","FALSE");
-  SleepMilliseconds(50);
-    
-  $FileContents = FileReadAllText($TIS_ResultFilePathName);
-  UpdateStatus($FileContents);
-  
-  $txtCh = StringSub($FileContents,0,1);
-  UpdateStatus($txtCh);
-  $TIS_Flag = false;
-  // Pass "0" PASS, 1 FAIL,2 NETWORK CONNECTION ISSUE
-  if ($txtCh == "0")
-  {
-    $TIS_Flag = true;
-    UpdateStatus($TIS_Flag);
-    //~ ConfigureReporting("TarsReportWriter.dll",true);
-    return;
-  }
-  // Net error "2"
-  if ($txtCh == "2")
-  {
-    $TIS_trys = $TIS_trys + 1;
-    if ($TIS_trys < 5)
-    {
-      goto lab_TISCheckLoop1;
-    }
-  }
-      if(!$TIS_Flag)
-  {
-    //~ ConfigureReporting("TarsReportWriter.dll",false);
-    $FailureString = "UUT" + $CellNumber + " TIS issue!";
-    $Mes_Handle = OperatorPromptNonBlocking($FailureString,200,400);
-    SleepMilliseconds(100);
-    CloseForm($Mes_Handle);
-    RecordMeasurementPassFail("TIS issue","TIS issue","String",true,false); 
-    //~ Abort("TIS issue");
-      //~ return ;
-  }
   return;
 }
 
