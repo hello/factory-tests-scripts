@@ -33,9 +33,15 @@ call Initial_Tests();
 //call TIS_Check();
 
 call Program_Unit();
+call Gb_Instrument_Init();
 call BootCheckEnhanced();
+
+call Program_Top();
+call Check_Top_VER();
+
 call Wifi_Disconnect_Initial();//If retested, make sure no leftover connections
 call BootTopBoard();
+
 call Prox_Values_Split();
 call Dust_Sensor_Initial();
 //call Top_Board_Version_Check(); //remove at ver 1.2
@@ -56,8 +62,29 @@ call Wifi_Disconnection_Check_Final();
 call Temp_Humid();
 call No_Gesture_Check();
 call Dammy_Test();
+
 End ;
 ////////////////////////////////////////main Script///////////////////////////////////////////////////////
+function Power_Off()
+{
+   $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  //turn off power
+  
+  return;
+}
+function Power_On()
+{
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50);  //turn on power
+  return;
+}
+function Program_On()
+{
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#SK0$\r\n", "", 50);  //id line on
+  return;
+}
+function Program_Off()
+{
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50);  //PROGRAM PIN OFF
+}
 
 function Initial_Tests()
 {
@@ -67,7 +94,7 @@ function Initial_Tests()
   $inFailTestSection = false;
   $newFW = false;
   SetTestName("Initial_Tests")
-  call Barcode_Check();
+  //call Barcode_Check();
   call Gb_Instrument_Init();
   call Lock_Door();
   return;
@@ -75,56 +102,100 @@ function Initial_Tests()
 
 function Program_Unit()
 {
-  
-  ///////THIS PART DOESN'T FUCKING WORK AND I DON'T KNOW WHY
-  ///THE PROGRAMMING BAT DOESN'T SEE THE UNIT  AS RESTARTED,SO CHANCES ARE SOMETHING IS FUCKED ON THE CONTROL BOARD OR WIRING AND IT'S MY LAST DAY AND I DON'T HAVE ENOUGH TIME TO FIX IT
-  //////SO BAIIIIIIII
-  //Love,
-  //Brandon
-  Sleep(3);
-  //SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
-  //SerialSendMilliseconds($IT6322_Handle, "OUTP 0\n");
   Sleep(1);
   SerialClose($uutHandle);
-  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  //turn off power
+  call Power_Off();
   Sleep(1);
-  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK0$\r\n", "", 50);  //id line on
+  call Program_On();
   Sleep(1);
-  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50);  //turn on power
-  //SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
-  //SerialSendMilliseconds($IT6322_Handle, "OUTP 1\n");
+  call Power_On();
   Sleep(3);
   
   $workingDir = "C:\\Users\\windows\\repo\\doraemon\\";
-  $batPath = "C:\\Users\\windows\\repo\\doraemon\\moveAndBurn.bat";
-  $fwDir = "C:\\Users\\windows\\repo\\fwFiles\\0.9.22_rc7";
+  $batPath = "C:\\Users\\windows\\repo\\doraemon\\mid.bat";
   $verString = "sense_pvt";
   $serialString = "7";
   
   $argumentString = StringCat($verString," ");
   $argumentString = StringCat($argumentString,$serialString);
-  $argumentString = StringCat($argumentString," ");
-  $argumentString = StringCat($argumentString,$fwDir);
   
   UpdateStatus($argumentString);
   
   SystemCall($workingDir,$batPath,$argumentString,"TRUE","TRUE");
+ 
+ 
+ call Program_Off();
+  Sleep(1);
   
- // SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
- // SerialSendMilliseconds($IT6322_Handle, "OUTP 0\n");
- 
- 
-  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  //turn off power
-  Sleep(1);
-  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50);  //PROGRAM PIN OFF
-  Sleep(1);
-  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50);  //turn on power
-  Sleep(1);
+  
+  $Sample_Serial = 8;
+  //~ $UUT_Serial = 10;
+  $UUT_Serial = 7;
   $uutHandle = SerialOpen($UUT_Serial,115200,8,"N",1);
-//  SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
- // SerialSendMilliseconds($IT6322_Handle, "OUTP 1\n");
+  $serialHandle = CopyVariable($uutHandle);
+  call Power_On();
+  Sleep(1);
   return;
 }
+
+function Program_Top()
+{
+   UpdateStatus("****************************Program_Top*********************************"); 
+   //~ OperatorPrompt("Restart  Sense"," OK ");
+   $TestName = "Program_Top";
+  SetTestName($TestName);
+   $cont =0;
+  SerialSendMilliseconds($uutHandle, "led stop\r\n", "", 100);
+  
+  Sleep(5);
+  
+  
+   SerialSendMilliseconds($uutHandle, "^ dfu\r\n", "", 2000);  
+  while( $cont < 150)
+  {
+  $Wait_return = SerialSendMilliseconds($uutHandle, "", "", 100);  
+  UpdateStatus($Wait_return);
+  $Exp_return ="Top Board Version is 0.9.6";
+  $Result = StringContains($Wait_return,$Exp_return);
+  if($Result)
+  {
+    break;
+  }
+  SleepMilliseconds(100);
+  $cont = $cont +1;
+ }
+ 
+ return;
+}
+  
+function Check_Top_VER()
+{
+  $Result = false;
+  $TestName = "Check top FW version";
+  SetTestName($TestName);
+  $cont =0;
+  while( $cont < 10)
+  {
+  $VER_return = SerialSendMilliseconds($uutHandle, "^ ver\r\n", "", 100);  
+  UpdateStatus($VER_return);
+  $Exp_VER ="0.9.6";
+  $Result = StringContains($VER_return,$Exp_VER);
+  if($Result)
+  {
+    break;
+  }
+  SleepMilliseconds(10);
+  $cont = $cont +1;
+ }
+  $VER_Num = StringParse($VER_return,"<data>","</data>");
+  UpdateStatus($VER_Num);
+  $Exp_VER ="0.9.6";
+  //~ $Result = StringContains($VER_Num,$Exp_VER);
+  $Result = StringComparison($VER_Num,$Exp_VER,"==");
+  RecordMeasurementPassFail($TestName,$VER_Num,"Sting",true,$Result);
+  return;
+}
+ 
 
 function Barcode_Check()
 {
@@ -409,12 +480,8 @@ function BootCheckEnhanced()
     $subStringLength = Subtract($subStringLength,9);
     $hashString = StringSub($hashString,$subStringLength,8);
     $hashString = StringTrim($hashString);
-    $goodHash = "7b184085";
-    $oldHash = "5b38a87c";
-    //$otherHash = "63bc421";
+    $goodHash = "2ea40f21";
     $correctHash = StringComparison($goodHash, $hashString,"==");
-    $oldCorrectHash = StringComparison($oldHash, $hashString,"==");
-    $correctHash = $correctHash || $oldCorrectHash;
     RecordMeasurementPassFail("version_hash_check",$hashString,"bool",true,$correctHash);
   }
   if (!$FrameFound)
@@ -454,13 +521,8 @@ function BootCheckEnhanced()
   {
     $topVersionString = StringSub($topVersionString,21,1000);
     $topVersionString = StringTrim($topVersionString);
-    $goodTopVersion = "0.9.3";
-    //$otherGoodTopVersion = "0.9.2";
-    $oldGoodTopVersion = "0.7.6";
+    $goodTopVersion = "0.9.6";
     $correctTopVersion = StringComparison($goodTopVersion, $topVersionString, "==");
-    $oldCorrectTopVersion = StringComparison($oldGoodTopVersion, $topVersionString, "==");
-    $oldCorrectTopVersion = $oldCorrectTopVersion && $oldCorrectHash;//old top version is ok only if old middle version
-    $correctTopVersion = $correctTopVersion || $oldCorrectTopVersion;
     RecordMeasurementPassFail("top_version_check",$topVersionString,"bool",true,$correctTopVersion);
   }
   if (!$FrameFound)
