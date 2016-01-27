@@ -144,27 +144,52 @@ function Program_Top()
 	$TestName = "Program_Top";
 	SetTestName($TestName);
 	$cont =0;
-	SerialSendMilliseconds($uutHandle, "led stop\r\n", "", 100);
+	//SerialSendMilliseconds($uutHandle, "led stop\r\n", "", 100);
 
 	Sleep(5);
 
+	$ota_started = false;
 
 	SerialSendMilliseconds($uutHandle, "^ dfu\r\n", "", 2000);  
 	while( $cont < 150)
 	{
 		$Wait_return = SerialSendMilliseconds($uutHandle, "", "", 100);  
 		UpdateStatus($Wait_return);
-		$Exp_return ="Top Board Version is 0.9.6";
+		//$Exp_return ="Top Board Version is 0.9.6";
+		$Exp_return ="Opened fw for top ota";
 		$Result = StringContains($Wait_return,$Exp_return);
 		if($Result)
 		{
+			$ota_started = true;
 			break;
 		}
 		SleepMilliseconds(100);
 		$cont = $cont +1;
 	}
+	if($ota_started)
+	{
+		$cont = 0;
+		while( $cont < 200)
+		{
+			$Wait_return = SerialSendMilliseconds($uutHandle, "", "", 100);  
+			UpdateStatus($Wait_return);
+			$Exp_return ="Top Board Version";
+			$Result = StringContains($Wait_return,$Exp_return);
+			if($Result)
+			{
+				$Exp_return = "0.9.6";
+				$Result = StringContains($Wait_return,$Exp_return);
+				if($Result)
+				{
+					return;
+				}
+				break;
+			}
+			$cont = $cont +1;
+		}
 
-	return;
+	}
+	Fail("Unable to OTA Top");
 }
   
 function Check_Top_VER()
