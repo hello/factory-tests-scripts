@@ -123,7 +123,7 @@ function Program_Unit()
   SystemCall($workingDir,$batPath,$argumentString,"TRUE","TRUE");
  
  
- call Program_Off();
+  call Program_Off();
   Sleep(1);
   
   
@@ -139,32 +139,32 @@ function Program_Unit()
 
 function Program_Top()
 {
-   UpdateStatus("****************************Program_Top*********************************"); 
-   //~ OperatorPrompt("Restart  Sense"," OK ");
-   $TestName = "Program_Top";
-  SetTestName($TestName);
-   $cont =0;
-  SerialSendMilliseconds($uutHandle, "led stop\r\n", "", 100);
-  
-  Sleep(5);
-  
-  
-   SerialSendMilliseconds($uutHandle, "^ dfu\r\n", "", 2000);  
-  while( $cont < 150)
-  {
-  $Wait_return = SerialSendMilliseconds($uutHandle, "", "", 100);  
-  UpdateStatus($Wait_return);
-  $Exp_return ="Top Board Version is 0.9.6";
-  $Result = StringContains($Wait_return,$Exp_return);
-  if($Result)
-  {
-    break;
-  }
-  SleepMilliseconds(100);
-  $cont = $cont +1;
- }
- 
- return;
+	UpdateStatus("****************************Program_Top*********************************"); 
+	//~ OperatorPrompt("Restart  Sense"," OK ");
+	$TestName = "Program_Top";
+	SetTestName($TestName);
+	$cont =0;
+	SerialSendMilliseconds($uutHandle, "led stop\r\n", "", 100);
+
+	Sleep(5);
+
+
+	SerialSendMilliseconds($uutHandle, "^ dfu\r\n", "", 2000);  
+	while( $cont < 150)
+	{
+		$Wait_return = SerialSendMilliseconds($uutHandle, "", "", 100);  
+		UpdateStatus($Wait_return);
+		$Exp_return ="Top Board Version is 0.9.6";
+		$Result = StringContains($Wait_return,$Exp_return);
+		if($Result)
+		{
+			break;
+		}
+		SleepMilliseconds(100);
+		$cont = $cont +1;
+	}
+
+	return;
 }
   
 function Check_Top_VER()
