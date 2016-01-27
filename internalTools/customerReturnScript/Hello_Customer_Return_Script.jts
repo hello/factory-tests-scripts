@@ -22,7 +22,7 @@
 //********************************Main Function******************************************//
 
 SetFinalizeFunction("Cleanup");
-SetFailFunction("FailConfig");
+SetFailFunction("Cleanup");
 SetAbortFunction("Cleanup");
 //SetAbortFunction("FailConfig");
 
@@ -1815,16 +1815,6 @@ function TIS_Check()
   return;
 }
 
-function FailConfig()
-{
-  if (!$ranFinalGestureCount)
-  {
-    $inFailTestSection = true;
-    call No_Gesture_Check();
-  }
-  //~ ConfigurableHtmlReportWriter_ConfigureLocations($PassHtmlLocation1,$PassHtmlLocation1);
-  End;
-}
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 function Cleanup()
