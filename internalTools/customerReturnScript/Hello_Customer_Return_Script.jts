@@ -34,8 +34,7 @@ call Gb_Instrument_Init();
 call Initial_Tests();
 call Program_Unit();
 call Program_Top();
-//call Provision();
-call BootCheckEnhanced();
+//call BootCheckEnhanced();
 
 call Wifi_Disconnect_Initial();//If retested, make sure no leftover connections
 call BootTopBoard();
