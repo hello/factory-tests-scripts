@@ -137,6 +137,40 @@ function Program_Unit()
   return;
 }
 
+function Provision()
+{
+	//assumes unit is powered in unboot mode
+  $workingDir = "C:\\Users\\windows\\repo\\factory-tests-scripts\\internalTools\\customerReturnScript\\";
+  $scriptPath = "C:\\Users\\windows\\repo\\factory-tests-scripts\\internalTools\\customerReturnScript\\provision.py";
+  $resultPath = "C:\\Users\\windows\\repo\\factory-tests-scripts\\internalTools\\customerReturnScript\\result.txt";
+  $cont =0;
+  //now wait for genkey
+  //SerialPurge($uutHandle);
+  $ret = SerialSendMilliseconds($uutHandle, "genkey\r\n", "", 100);
+  while( $cont < 10 )
+  {
+  	  $exp = "factory key";
+	  $res = StringContains($ret, $exp);
+	  if($res)
+	  {
+		  break;
+	  }
+	  SleepMilliseconds(100);
+	  $cont = $cont + 1;
+	  $ret = SerialSendMilliseconds($uutHandle, "", "", 100);  
+  }
+  if($res)
+  {
+	  SystemCall($workingDir, $scriptPath, $ret, "TRUE", "TRUE");
+	  $fr = FileReadOpen($resultPath);
+	  $result = FileReadLine($fr);
+	  FileReadClose($fr);
+	  return;
+  }
+  Fail("Unable to obtain Key");
+  return;
+}
+
 function Program_Top()
 {
 	UpdateStatus("****************************Program_Top*********************************"); 
