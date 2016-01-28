@@ -33,10 +33,9 @@ ConfigurableHtmlReportWriter_ConfigureLocations($PassHtmlLocation2,$PassHtmlLoca
 call Gb_Instrument_Init();
 call Initial_Tests();
 call Program_Unit();
-call BootCheckEnhanced();
-
 call Program_Top();
-call Check_Top_VER();
+//call Provision();
+call BootCheckEnhanced();
 
 call Wifi_Disconnect_Initial();//If retested, make sure no leftover connections
 call BootTopBoard();
@@ -139,6 +138,7 @@ function Program_Unit()
 
 function Provision()
 {
+//UNFINISHED, talk to Jackson
 	//assumes unit is powered in unboot mode
   $workingDir = "C:\\Users\\windows\\repo\\factory-tests-scripts\\internalTools\\customerReturnScript\\";
   $scriptPath = "C:\\Users\\windows\\repo\\factory-tests-scripts\\internalTools\\customerReturnScript\\provision.py";
@@ -189,7 +189,6 @@ function Program_Top()
 	{
 		$Wait_return = SerialSendMilliseconds($uutHandle, "", "", 100);  
 		UpdateStatus($Wait_return);
-		//$Exp_return ="Top Board Version is 0.9.6";
 		$Exp_return ="Opened fw for top ota";
 		$Result = StringContains($Wait_return,$Exp_return);
 		if($Result)
@@ -211,7 +210,7 @@ function Program_Top()
 			$Result = StringContains($Wait_return,$Exp_return);
 			if($Result)
 			{
-				$Exp_return = "0.9.6";
+				$Exp_return = "0.9.5";
 				$Result = StringContains($Wait_return,$Exp_return);
 				if($Result)
 				{
@@ -226,35 +225,6 @@ function Program_Top()
 	Fail("Unable to OTA Top");
 }
   
-function Check_Top_VER()
-{
-  $Result = false;
-  $TestName = "Check top FW version";
-  SetTestName($TestName);
-  $cont =0;
-  while( $cont < 10)
-  {
-  $VER_return = SerialSendMilliseconds($uutHandle, "^ ver\r\n", "", 100);  
-  UpdateStatus($VER_return);
-  $Exp_VER ="0.9.6";
-  $Result = StringContains($VER_return,$Exp_VER);
-  if($Result)
-  {
-    break;
-  }
-  SleepMilliseconds(10);
-  $cont = $cont +1;
- }
-  $VER_Num = StringParse($VER_return,"<data>","</data>");
-  UpdateStatus($VER_Num);
-  $Exp_VER ="0.9.6";
-  //~ $Result = StringContains($VER_Num,$Exp_VER);
-  $Result = StringComparison($VER_Num,$Exp_VER,"==");
-  RecordMeasurementPassFail($TestName,$VER_Num,"Sting",true,$Result);
-  return;
-}
- 
-
 function Barcode_Check()
 {
   UpdateStatus("**************************** Gb01_BarcodeCheck*********************************");
