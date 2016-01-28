@@ -41,7 +41,6 @@ call BootTopBoard();
 
 call Prox_Values_Split();
 call Dust_Sensor_Initial();
-//call Top_Board_Version_Check(); //remove at ver 1.2
 //call Middle_Board_Version_Check(); //remove at ver 1.2
 //call Top_Board_ID_Value(); //remove at ver 1.2
 call Wifi_Disconnection_Check_Initial();
@@ -844,23 +843,6 @@ function Prox_Values_Split()
   return;
 }
 
-function Top_Board_Version_Check()
-{
-  $TestName="Top_Board_Version_Check";
-  $TempStr="****************************" & $TestName & "*********************************";
-  UpdateStatus($TempStr);
-  SetTestName($TestName);
-  $Current_Version = "0.7.6";
-
-  $Pattern = "\\d+(\\.\\d+)+";
-  $serialCommand = "^ ver";
-  $Next_Test = "version_matches";
-  call serialSendAndReceivePattern_error();
-
-  $Top_Version_Correct = StringComparison($Result_Value,$Current_Version,"==");
-  RecordMeasurementPassFail($Next_Test,$Result_Value,"bool",true,$Top_Version_Correct);
-  return;
-}
 
 function Top_Board_ID_Value()
 {
