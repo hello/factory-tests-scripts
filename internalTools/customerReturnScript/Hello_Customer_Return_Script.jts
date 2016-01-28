@@ -178,16 +178,17 @@ function Program_Top()
 	$TestName = "Program_Top";
 	SetTestName($TestName);
 	$cont =0;
-	//SerialSendMilliseconds($uutHandle, "led stop\r\n", "", 100);
-
-	Sleep(5);
+	call Power_Off();
+	call Program_Off();
+	Sleep(1);
+	call Power_On();
+	Sleep(10);
 
 	$ota_started = false;
 
-	SerialSendMilliseconds($uutHandle, "^ dfu\r\n", "", 2000);  
-	while( $cont < 150)
+	$Wait_return = SerialSendMilliseconds($uutHandle, "^ dfu\r\n", "", 2000);  
+	while( $cont < 50)
 	{
-		$Wait_return = SerialSendMilliseconds($uutHandle, "", "", 100);  
 		UpdateStatus($Wait_return);
 		$Exp_return ="Opened fw for top ota";
 		$Result = StringContains($Wait_return,$Exp_return);
@@ -197,6 +198,7 @@ function Program_Top()
 			break;
 		}
 		SleepMilliseconds(100);
+		$Wait_return = SerialSendMilliseconds($uutHandle, "", "", 100);  
 		$cont = $cont +1;
 	}
 	if($ota_started)
