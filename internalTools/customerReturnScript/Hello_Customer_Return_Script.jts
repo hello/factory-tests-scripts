@@ -1085,7 +1085,7 @@ function Antenna_1_rssi()
   UpdateStatus($TempStr);
   SetTestName($TestName);
   $maxTries = 3;
-  $LowerLimit = -50;
+  $LowerLimit = -80;
   $UpperLimit = 0;
   $return= SerialSendMilliseconds($uutHandle, "antsel 1\r\n", "", 200);
   $Next_Test = "antenna1_rssi";
@@ -1100,7 +1100,7 @@ function Antenna_2_rssi()
   UpdateStatus($TempStr);
   SetTestName($TestName);
   $maxTries = 3;
-  $LowerLimit = -50;
+  $LowerLimit = -80;
   $UpperLimit = 0;
   $return= SerialSendMilliseconds($uutHandle, "antsel 2\r\n", "", 200);
   $Next_Test = "antenna2_rssi";
@@ -1112,14 +1112,15 @@ function General_rssi()
 {
   $retryCount = 0;
   $done = false;
-  $Pattern = "TP-LINK_A1A2AC\\s(-?)\\d+";
+  //$Pattern = "TP-LINK_A1A2AC\\s(-?)\\d+";
+  $Pattern = "Hello\\s(-?)\\d+";
   $serialCommand = "rssi";
   //$Next_Test set one level up
   while (!$done && $retryCount < $maxTries)
   {
     $initialWaitTime = 1500;
     call serialSendAndReceivePattern_general();
-    $rssiValue = StringReplace($Result_Value, "TP-LINK_A1A2AC ", "");
+    $rssiValue = StringReplace($Result_Value, "Hello", "");
     if (!$FrameFound)
     {
       $rssiValue = NaN;
