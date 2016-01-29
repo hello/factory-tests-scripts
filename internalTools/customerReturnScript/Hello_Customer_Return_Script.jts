@@ -1085,7 +1085,7 @@ function Antenna_1_rssi()
   UpdateStatus($TempStr);
   SetTestName($TestName);
   $maxTries = 3;
-  $LowerLimit = -80;
+  $LowerLimit = -85;
   $UpperLimit = 0;
   $return= SerialSendMilliseconds($uutHandle, "antsel 1\r\n", "", 200);
   $Next_Test = "antenna1_rssi";
@@ -1100,7 +1100,7 @@ function Antenna_2_rssi()
   UpdateStatus($TempStr);
   SetTestName($TestName);
   $maxTries = 3;
-  $LowerLimit = -80;
+  $LowerLimit = -85;
   $UpperLimit = 0;
   $return= SerialSendMilliseconds($uutHandle, "antsel 2\r\n", "", 200);
   $Next_Test = "antenna2_rssi";
