@@ -29,6 +29,10 @@ SetAbortFunction("Cleanup");
 $PassHtmlLocation1 = "E:\\html\\";
 $PassHtmlLocation2 = "E:\\html\\";
 //$PassHtmlLocation2 = "\\\\huafile01\\Hello_data\\test log\\Morpheus\\";
+
+//********************************GLOBAL******************************************//
+$goodTopVersion = "0.9.5";
+//**************************************************************************//
 ConfigurableHtmlReportWriter_ConfigureLocations($PassHtmlLocation2,$PassHtmlLocation1);
 call Gb_Instrument_Init();
 call Initial_Tests();
@@ -210,8 +214,7 @@ function Program_Top()
 			$Result = StringContains($Wait_return,$Exp_return);
 			if($Result)
 			{
-				$Exp_return = "0.9.5";
-				$Result = StringContains($Wait_return,$Exp_return);
+				$Result = StringContains($Wait_return,$goodTopVersion);
 				if($Result)
 				{
 					return;
@@ -548,7 +551,6 @@ function BootCheckEnhanced()
   {
     $topVersionString = StringSub($topVersionString,21,1000);
     $topVersionString = StringTrim($topVersionString);
-    $goodTopVersion = "0.9.6";
     $correctTopVersion = StringComparison($goodTopVersion, $topVersionString, "==");
     RecordMeasurementPassFail("top_version_check",$topVersionString,"bool",true,$correctTopVersion);
   }
