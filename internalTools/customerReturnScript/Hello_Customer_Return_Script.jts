@@ -45,8 +45,6 @@ call BootTopBoard();
 
 call Prox_Values_Split();
 call Dust_Sensor_Initial();
-//call Middle_Board_Version_Check(); //remove at ver 1.2
-//call Top_Board_ID_Value(); //remove at ver 1.2
 call Wifi_Disconnection_Check_Initial();
 call Check_SD_Card();
 call Speaker_Test();
