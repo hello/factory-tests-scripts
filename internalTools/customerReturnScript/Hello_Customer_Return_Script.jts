@@ -1111,14 +1111,14 @@ function General_rssi()
   $retryCount = 0;
   $done = false;
   //$Pattern = "TP-LINK_A1A2AC\\s(-?)\\d+";
-  $Pattern = "Hello\\s(-?)\\d+";
+  $Pattern = "sense\\s(-?)\\d+";
   $serialCommand = "rssi";
   //$Next_Test set one level up
   while (!$done && $retryCount < $maxTries)
   {
     $initialWaitTime = 1500;
     call serialSendAndReceivePattern_general();
-    $rssiValue = StringReplace($Result_Value, "Hello", "");
+    $rssiValue = StringReplace($Result_Value, "sense", "");
     if (!$FrameFound)
     {
       $rssiValue = NaN;
@@ -1265,7 +1265,7 @@ function Wifi_Connect()
 
 function Wifi_Connect_General()
 {
-  $return= SerialSendMilliseconds($uutHandle, "connect TP-LINK_A1A2AC key 0\r\n", "", 100);
+  $return= SerialSendMilliseconds($uutHandle, "connect sense iloveamazon 2\r\n", "", 100);
   return;
 }
 
