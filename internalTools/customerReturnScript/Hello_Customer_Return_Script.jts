@@ -1315,7 +1315,7 @@ function Wifi_Connection_Check()
   while (!$done && $retryCount < $maxTries)
   {
     call serialSendAndReceivePattern_general();
-    $done = StringContains($Result_Value,"IP=192.168.1.");
+    $done = StringContains($Result_Value,"IP=192.168.");
     if (!$done)
     {
       //call Wifi_Connect_General();
