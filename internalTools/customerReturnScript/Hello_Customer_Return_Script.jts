@@ -36,14 +36,18 @@ $goodTopVersion = "0.9.5";
 ConfigurableHtmlReportWriter_ConfigureLocations($PassHtmlLocation2,$PassHtmlLocation1);
 call Gb_Instrument_Init();
 call Initial_Tests();
+
+
 call Program_Unit();
 call Program_Top();
-//call BootCheckEnhanced();
 
+call BootCheckEnhanced();
 call Wifi_Disconnect_Initial();//If retested, make sure no leftover connections
-call BootTopBoard();
 
+call BootTopBoard();
+call No_Gesture_Check();
 call Prox_Values_Split();
+
 call Dust_Sensor_Initial();
 call Wifi_Disconnection_Check_Initial();
 call Check_SD_Card();
@@ -58,8 +62,7 @@ call Wifi_Disconnect_Final();
 call Light_Check();
 call Wifi_Disconnection_Check_Final();
 call Temp_Humid();
-call No_Gesture_Check();
-call Dammy_Test();
+//call Dammy_Test();
 
 End ;
 ////////////////////////////////////////main Script///////////////////////////////////////////////////////
@@ -182,7 +185,7 @@ function Program_Top()
 	call Program_Off();
 	Sleep(1);
 	call Power_On();
-	Sleep(10);
+	Sleep(5);
 
 	$ota_started = false;
 
@@ -450,6 +453,9 @@ function BootCheck()
 
 function BootCheckEnhanced()
 {
+  call Power_Off();
+  Sleep(1);
+  call Power_On();
   SetTestName("Boot_Check_Enhanced")
   UpdateStatus("****************************BootCheck*********************************");
 
