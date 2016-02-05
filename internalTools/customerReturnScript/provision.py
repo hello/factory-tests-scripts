@@ -44,7 +44,7 @@ def verify_key(k):
 	return None
 
 
-test = True
+test = False
 if len(sys.argv) > 2 or test == True:
 	new_dev = ""
 	if test:
