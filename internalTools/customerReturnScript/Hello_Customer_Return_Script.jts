@@ -42,6 +42,7 @@ call Program_Unit();
 call Program_Top();
 
 call BootCheckEnhanced();
+call Provision();
 call Wifi_Disconnect_Initial();//If retested, make sure no leftover connections
 
 call BootTopBoard();
@@ -141,8 +142,6 @@ function Program_Unit()
 
 function Provision()
 {
-//UNFINISHED, talk to Jackson
-	//assumes unit is powered in unboot mode
   $workingDir = "C:\\Users\\windows\\repo\\factory-tests-scripts\\internalTools\\customerReturnScript\\";
   $scriptPath = "C:\\Users\\windows\\repo\\factory-tests-scripts\\internalTools\\customerReturnScript\\provision.py";
   $resultPath = "C:\\Users\\windows\\repo\\factory-tests-scripts\\internalTools\\customerReturnScript\\result.txt";
@@ -164,10 +163,37 @@ function Provision()
   }
   if($res)
   {
-	  SystemCall($workingDir, $scriptPath, $ret, "TRUE", "TRUE");
+	  //clean up
+	  $ret = StringReplace($ret, "factory key:", "");
+	  $ret = StringReplace($ret, " ", "");
+	  $ret = StringReplace($ret, "\r", "");
+	  $ret = StringReplace($ret, "\n", "");
+  	  $topId = StringReplace($topID, " ", "");
+  	  $topId = StringReplace($topID, "\r", "");
+  	  $topId = StringReplace($topID, "\n", "");
+
+  	  $args = StringReplace($topID, ":", "");
+	  $args = StringCat($args, " ");
+	  $args = StringCat($args, $ret);
+	  $args = StringToUpper($args);
+
+	  SystemCall($workingDir, $scriptPath, $args, "TRUE", "TRUE");
 	  $fr = FileReadOpen($resultPath);
 	  $result = FileReadLine($fr);
+	  $keycheck = FileReadLine($fr);
+	  $keycheck = FileReadLine($fr);//actual key
 	  FileReadClose($fr);
+	  $r = StringContains($result, "PASS");
+	  if( $r )
+	  {
+	  	$r = StringCompare($keycheck, $ret );
+	  	if( $r )
+		{
+			return;
+		}
+		Fail("Key Mismatch");
+	  }
+	  Fail("Unable to provision, please see results.txt");
 	  return;
   }
   Fail("Unable to obtain Key");
@@ -185,7 +211,7 @@ function Program_Top()
 	call Program_Off();
 	Sleep(1);
 	call Power_On();
-	Sleep(5);
+	Sleep(10);
 
 	$ota_started = false;
 

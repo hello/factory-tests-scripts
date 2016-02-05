@@ -10,7 +10,7 @@ auth = "20.d36a0205969b462ca8872b06c29d915a"
 
 def write_result(devid, sn, key, result = "FAIL"):
 	with open("result.txt", "w+") as fw:
-		fw.write( "%s\n%s\n%s\n"%(result, sn, key) )
+		fw.write( "%s\n%s\n%s"%(result, sn, key) )
 	print result
 
 def provision(sn, key):
@@ -52,13 +52,13 @@ if len(sys.argv) > 2 or test == True:
 		new_sn = get_new_sn(new_dev)
 		new_key = verify_key(testkey)
 	else:
-		new_dev = sys.argv[1]
-		new_sn = get_new_sn(new_dev)
+		new_dev = sys.argv[1].strip()
+		new_sn = get_new_sn(new_dev).strip()
 		new_key = verify_key(sys.argv[2])
 	if new_sn and new_key and provision(new_sn, new_key):
 		write_result(new_dev, new_sn, new_key, "PASS")
 		exit(0)
 
-write_result(new_dev, "", "", result ="FAIL")
+write_result(new_dev, sys.argv, "", result ="FAIL")
 exit(1)
 	
