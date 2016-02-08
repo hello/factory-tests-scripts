@@ -1,0 +1,1884 @@
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//File Name:      Hello_Morpheus_MP_Script_Rev1.1.jts
+//Customer:       Hello
+//Project:        Hello_Morpheus
+//Creator:        Ping Wei
+//Revision:     Rev1.1
+//Released:     2015/8/3
+//Description:
+/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+//Revision History:
+//Rev1.0: update file name from Hello_Morpheus_DVT_Product_Rev3.3_brandon.jts to Hello_Morpheus_MP_Script_Rev1.0.jts 2015/7/31 Dave Huang
+//Rev1.1: update humidity offset ($oh) from 1.76 to 2.87
+//Rev2.1: new ver transfer from proposal 7 script of customer. 2015/11/4 Dave Huang
+//Rev2.2: update top and middle board FW rev and add dammy test. 2015/11/18 Dave huang
+//Rev2.3: update top FW to 0.9.3 and middle board FW to 7b184085. 2015/12/8 Dave huang
+//
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+//********************************Main Function******************************************//
+
+SetFinalizeFunction("Cleanup");
+SetFailFunction("Cleanup");
+SetAbortFunction("Cleanup");
+//SetAbortFunction("FailConfig");
+
+$PassHtmlLocation1 = "E:\\html\\";
+$PassHtmlLocation2 = "E:\\html\\";
+//$PassHtmlLocation2 = "\\\\huafile01\\Hello_data\\test log\\Morpheus\\";
+
+//********************************GLOBAL******************************************//
+$goodTopVersion = "0.9.5";
+//**************************************************************************//
+ConfigurableHtmlReportWriter_ConfigureLocations($PassHtmlLocation2,$PassHtmlLocation1);
+call Gb_Instrument_Init();
+call Initial_Tests();
+
+
+call Program_Unit();
+call Program_Top();
+
+call BootCheckEnhanced();
+call Provision();
+call Wifi_Disconnect_Initial();//If retested, make sure no leftover connections
+
+call BootTopBoard();
+call No_Gesture_Check();
+call Prox_Values_Split();
+
+call Dust_Sensor_Initial();
+call Wifi_Disconnection_Check_Initial();
+call Check_SD_Card();
+call Speaker_Test();
+call Antenna_1_rssi();
+call Antenna_2_rssi();
+call Mic_Test();
+call Wifi_Connect();
+call Dust_Sensor_Final();
+call Wifi_Connection_Check();
+call Wifi_Disconnect_Final();
+call Light_Check();
+call Wifi_Disconnection_Check_Final();
+call Temp_Humid();
+//call Dammy_Test();
+
+End ;
+////////////////////////////////////////main Script///////////////////////////////////////////////////////
+function Power_Off()
+{
+   $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  //turn off power
+  
+  return;
+}
+function Power_On()
+{
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50);  //turn on power
+  return;
+}
+function Program_On()
+{
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#SK0$\r\n", "", 50);  //id line on
+  return;
+}
+function Program_Off()
+{
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50);  //PROGRAM PIN OFF
+}
+
+function Initial_Tests()
+{
+  SerialSendMilliseconds($Userinterface_Handle, "#SK6$\r\n", "", 150);//turn on fan
+  $initialWaitTime = 200;
+  $ranFinalGestureCount = false;
+  $inFailTestSection = false;
+  $newFW = false;
+  SetTestName("Initial_Tests")
+  //call Barcode_Check();
+  //call Gb_Instrument_Init();
+  call Lock_Door();
+  return;
+}
+
+function Program_Unit()
+{
+  Sleep(1);
+  SerialClose($uutHandle);
+  call Power_Off();
+  Sleep(1);
+  call Program_On();
+  Sleep(1);
+  call Power_On();
+  Sleep(3);
+  
+  $workingDir = "C:\\Users\\windows\\repo\\doraemon\\";
+  $batPath = "C:\\Users\\windows\\repo\\doraemon\\mid.bat";
+  $verString = "sense_pvt";
+  $serialString = "7";
+  
+  $argumentString = StringCat($verString," ");
+  $argumentString = StringCat($argumentString,$serialString);
+  
+  UpdateStatus($argumentString);
+  
+  SystemCall($workingDir,$batPath,$argumentString,"TRUE","TRUE");
+ 
+ 
+  call Program_Off();
+  Sleep(1);
+  
+  
+  $Sample_Serial = 8;
+  //~ $UUT_Serial = 10;
+  $UUT_Serial = 7;
+  $uutHandle = SerialOpen($UUT_Serial,115200,8,"N",1);
+  $serialHandle = CopyVariable($uutHandle);
+  call Power_On();
+  Sleep(1);
+  return;
+}
+
+function Provision()
+{
+  $workingDir = "C:\\Users\\windows\\repo\\factory-tests-scripts\\internalTools\\customerReturnScript\\";
+  $scriptPath = "C:\\Users\\windows\\repo\\factory-tests-scripts\\internalTools\\customerReturnScript\\provision.py";
+  $resultPath = "C:\\Users\\windows\\repo\\factory-tests-scripts\\internalTools\\customerReturnScript\\result.txt";
+  $cont =0;
+  //now wait for genkey
+  //SerialPurge($uutHandle);
+  $ret = SerialSendMilliseconds($uutHandle, "genkey\r\n", "", 100);
+  while( $cont < 10 )
+  {
+  	  $exp = "factory key";
+	  $res = StringContains($ret, $exp);
+	  if($res)
+	  {
+		  break;
+	  }
+	  SleepMilliseconds(100);
+	  $cont = $cont + 1;
+	  $ret = SerialSendMilliseconds($uutHandle, "", "", 100);  
+  }
+  if($res)
+  {
+	  //clean up
+	  $ret = StringReplace($ret, "factory key:", "");
+	  $ret = StringReplace($ret, " ", "");
+	  $ret = StringReplace($ret, "\r", "");
+	  $ret = StringReplace($ret, "\n", "");
+  	  $topId = StringReplace($topID, " ", "");
+  	  $topId = StringReplace($topID, "\r", "");
+  	  $topId = StringReplace($topID, "\n", "");
+
+  	  $args = StringReplace($topID, ":", "");
+	  $args = StringCat($args, " ");
+	  $args = StringCat($args, $ret);
+	  $args = StringToUpper($args);
+  	  $args = StringReplace($args, "\r", "");
+
+	  SystemCall($workingDir, $scriptPath, $args, "TRUE", "TRUE");
+	  $fr = FileReadOpen($resultPath);
+	  $result = FileReadLine($fr);
+	  $keycheck = FileReadLine($fr);
+	  $keycheck = FileReadLine($fr);//actual key
+	  FileReadClose($fr);
+	  $r = StringContains($result, "PASS");
+	  if( $r )
+	  {
+	  	$r = StringCompare($keycheck, $ret );
+	  	if( $r )
+		{
+			return;
+		}
+		Fail("Key Mismatch");
+	  }
+	  Fail("Unable to provision, please see results.txt");
+	  return;
+  }
+  Fail("Unable to obtain Key");
+  return;
+}
+
+function Program_Top()
+{
+	UpdateStatus("****************************Program_Top*********************************"); 
+	//~ OperatorPrompt("Restart  Sense"," OK ");
+	$TestName = "Program_Top";
+	SetTestName($TestName);
+	$cont =0;
+	call Power_Off();
+	call Program_Off();
+	Sleep(1);
+	call Power_On();
+	Sleep(10);
+
+	$ota_started = false;
+
+	$Wait_return = SerialSendMilliseconds($uutHandle, "^ dfu\r\n", "", 2000);  
+	while( $cont < 50)
+	{
+		UpdateStatus($Wait_return);
+		$Exp_return ="Opened fw for top ota";
+		$Result = StringContains($Wait_return,$Exp_return);
+		if($Result)
+		{
+			$ota_started = true;
+			break;
+		}
+		SleepMilliseconds(100);
+		$Wait_return = SerialSendMilliseconds($uutHandle, "", "", 100);  
+		$cont = $cont +1;
+	}
+	if($ota_started)
+	{
+		$cont = 0;
+		while( $cont < 200)
+		{
+			$Wait_return = SerialSendMilliseconds($uutHandle, "", "", 100);  
+			UpdateStatus($Wait_return);
+			$Exp_return ="Top Board Version";
+			$Result = StringContains($Wait_return,$Exp_return);
+			if($Result)
+			{
+				$Result = StringContains($Wait_return,$goodTopVersion);
+				if($Result)
+				{
+					return;
+				}
+				break;
+			}
+			$cont = $cont +1;
+		}
+
+	}
+	Fail("Unable to OTA Top");
+}
+  
+function Barcode_Check()
+{
+  UpdateStatus("**************************** Gb01_BarcodeCheck*********************************");
+  $nTry = 0;
+  $Max_Tries = 3;
+  $Good_Barcode = true;
+  $value = StringLength($SerialNumber);         //M0401144900062
+  if ($value != 21&&$value != 20)
+  {
+    $Good_Barcode = false;
+  }
+  $white = StringStartsWith($SerialNumber,"91000008WA","TRUE");
+  $black = StringStartsWith($SerialNumber,"91000008BA","TRUE");
+  if (!$black&&!$white)
+  {
+    $Good_Barcode = false;
+  }
+
+  while ($nTry < $Max_Tries && !$Good_Barcode)
+  {
+    $SerialNumber = OperatorInputPrompt("Please Input the Serial number,\n Then Press OK continute");
+    $Good_Barcode = true;
+    $value = StringLength($SerialNumber);         //M0401144900062
+    if ($value != 21&&$value != 20)
+    {
+      $Good_Barcode = false;
+    }
+    $white = StringStartsWith($SerialNumber,"91000008WA","TRUE");
+    $black = StringStartsWith($SerialNumber,"91000008BA","TRUE");
+    if (!$black&&!$white)
+    {
+      $Good_Barcode = false;
+    }
+    $nTry = $nTry + 1;
+  }
+
+  if ($Good_Barcode)
+  {
+    SetSerialNumberField($SerialNumber);
+    UpdateStatus($SerialNumber);
+    UpdateStatus("=============== Barcode Check PASS =============");
+    UpdateStatus("================================================");
+    RecordMeasurementPassFail("barcode_check","passed","passed",true,true);
+    return;
+  }
+  UpdateStatus("=============== Barcode Check Fail =============");
+  $Failed_Tests = "Barcode Check Fail";
+  Fail("Error Serial Number!");
+  return;
+}
+
+function Gb_Instrument_Init()
+{
+  UpdateStatus("**************************** Instrument_Init*********************************");
+  //OperatorPrompt("Connect USB cable","OK");
+  // power on
+  SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);       //IT6322B Initialize
+  SerialSendMilliseconds($IT6322_Handle, "OUTP 1\n");
+
+  Sleep(1);
+  //~ SerialSendMilliseconds($Userinterface_Handle, "#SK4$\r\n", "", 50);
+  // Open the form.
+  $LoadWin = OperatorPromptNonBlocking("Place in UUT, plug in power", 200, 400);
+
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#IN1$\r\n", "OK", 1000);
+
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#IN1$\r\n", "OK", 1000);
+  UpdateStatus($return);
+  $Plugged = StringContains($return,"1");
+  Label UUT_CheckIn:
+  $Max_Retry=1000;
+  $Cont_Retry=0;
+  while (($Plugged==false) && ($Cont_Retry < $Max_Retry))
+  {
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#IN1$\r\n", "OK", 1000); //waveon
+    UpdateStatus($return);
+    $Plugged = StringContains($return,"1");
+    SleepMilliseconds(100);
+    $Cont_Retry = $Cont_Retry + 1;
+  }
+
+  OperatorPromptNonBlockingUpdateMessage($LoadWin, "Powerup UUT");
+
+  $Sample_Serial = 8;
+  //~ $UUT_Serial = 10;
+  $UUT_Serial = 7;
+  $uutHandle = SerialOpen($UUT_Serial,115200,8,"N",1);
+  $serialHandle = CopyVariable($uutHandle);
+  $goldenUnitHandle = SerialOpen($Sample_Serial,115200,8,"N",1);
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50); //set to normal pin
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK1$\r\n", "", 50);  //
+
+  SerialSendMilliseconds($IT6322_Handle, "INST THI\n", "", 50);
+  $CH3_return = SerialSendMilliseconds($IT6322_Handle,"MEAS:CURR?\n", "", 200);
+  UpdateStatus($CH3_return);
+  $CH3_return=$CH3_return*1000;
+  UpdateStatus($CH3_return);
+
+  $tmpMsg="Current draw: " + $CH3_return ;
+  OperatorPromptNonBlockingUpdateMessage($LoadWin, $tmpMsg);
+
+  $Max_Retry=1000;
+  $Cont_Retry=0;
+  while (($CH3_return < 150) && ($Cont_Retry < $Max_Retry))
+  {
+    $CH3_return = SerialSendMilliseconds($IT6322_Handle,"MEAS:CURR?\n", "", 200);
+    UpdateStatus($CH3_return);
+    $CH3_return=$CH3_return*1000;
+    UpdateStatus($CH3_return);
+
+    $tmpMsg="Please plug in UUT, Current draw < 0.1A : " + $CH3_return ;
+    OperatorPromptNonBlockingUpdateMessage($LoadWin, $tmpMsg);
+
+    SleepMilliseconds(100);
+    $Cont_Retry = $Cont_Retry + 1;
+  }
+
+  if ($CH3_return < 0.1)
+  {
+    CloseForm($LoadWin);
+    RecordMeasurementPassFail("instrument init","failed","failed",true,false);
+  }
+
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK2$\r\n", "", 50); //indicator to operator to test
+
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#IN1$\r\n", "OK", 1000); //waveon
+  UpdateStatus($return);
+  $Plugged = StringContains($return,"1");
+  SleepMilliseconds(100);
+  if(!$Plugged)
+  {
+    OperatorPromptNonBlockingUpdateMessage($LoadWin, "USB 没插接好请重新接好!");
+    goto UUT_CheckIn;
+  }
+  OperatorPromptNonBlockingUpdateMessage($LoadWin, "Push in the door");
+
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#IN4$\r\n", "OK", 1000); //door close
+  UpdateStatus($return);
+  $frontDoor = StringContains($return,"1");
+
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#IN5$\r\n", "OK", 1000); //door close
+  UpdateStatus($return);
+  $RightDoor = StringContains($return,"1");
+
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#IN6$\r\n", "OK", 1000); //door close
+  UpdateStatus($return);
+  $LeftDoor = StringContains($return,"1");
+
+  $Max_Retry=1000;
+  $Cont_Retry=0;
+  while ((($RightDoor==false) ||($LeftDoor==false) || ($frontDoor==false) )&& ($Cont_Retry < $Max_Retry))
+  {
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#IN4$\r\n", "OK", 1000); //door close
+    UpdateStatus($return);
+    $frontDoor = StringContains($return,"1");
+
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#IN5$\r\n", "OK", 1000); //door close
+    UpdateStatus($return);
+    $RightDoor = StringContains($return,"1");
+
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#IN6$\r\n", "OK", 1000); //door close
+    UpdateStatus($return);
+    $LeftDoor = StringContains($return,"1");
+
+    SleepMilliseconds(100);
+    $Cont_Retry = $Cont_Retry + 1;
+  }
+  CloseForm($LoadWin);
+
+
+  RecordMeasurementPassFail("instrument_init","passed","passed",true,true);
+
+  return;
+}
+
+function Lock_Door()
+{
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#SK3$\r\n", "", 50);  //lock door
+  return;
+}
+
+function BootCheck()
+{
+  SetTestName("Boot_Check")
+  UpdateStatus("****************************BootCheck*********************************");
+
+  $return1="";
+  $count=0;
+  while($count < 20)
+  {
+    $return= SerialSendMilliseconds($uutHandle, "", "", 100);
+    UpdateStatus($return);
+    $return = StringCat($return1, $return);
+    $return1=$return;
+    UpdateStatus("****************return************\n");
+    UpdateStatus($return);
+    UpdateStatus("****************************\n");
+    UpdateStatus("**************return1**************\n");
+    UpdateStatus($return1);
+    UpdateStatus("****************************\n");
+    //~ $Result = StringContains($return,"FreeRTOS");
+    $Result = StringContains($return,"RTOS");9.3
+
+    if($Result)
+    {
+      break;
+    }
+    SleepMilliseconds(500);
+    $count=$count+1;
+  }
+  SerialSendMilliseconds($uutHandle, "loglevel 40\r\n", "", 100);
+  SerialSendMilliseconds($uutHandle, "led stop\r\n", "", 100);
+
+  //sample board
+  SerialSendMilliseconds($goldenUnitHandle, "loglevel 40\r\n", "", 100);
+  SerialSendMilliseconds($goldenUnitHandle, "led\r\n", "", 100);//needed, probably because of golden firmware
+  SerialSendMilliseconds($goldenUnitHandle, "led stop\r\n", "", 100);
+
+  RecordMeasurementPassFail("boot_message_found",$return,"bool",true,$Result);//ugly text, but great info
+  return;
+}
+
+function BootCheckEnhanced()
+{
+  call Power_Off();
+  Sleep(1);
+  call Power_On();
+  SetTestName("Boot_Check_Enhanced")
+  UpdateStatus("****************************BootCheck*********************************");
+
+  $wholeMessage="";
+  $count=0;
+  while($count < 20)
+  {
+    $newText= SerialSendMilliseconds($uutHandle, "", "", 100);
+    UpdateStatus($newText);
+    $wholeMessage = StringCat($wholeMessage, $newText);
+    UpdateStatus("****************wholeMessage************\n");
+    UpdateStatus($wholeMessage);
+    UpdateStatus("****************************\n");
+    //~ $Result = StringContains($return,"FreeRTOS");
+    ($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($wholeMessage,"Top Board Version is .*\\r");//need to check for carriage return in case message is cutoff and don't get top board value
+    
+    if($FrameFound)
+    {
+      break;
+    }
+    SleepMilliseconds(500);
+    $count=$count+1;
+  }
+  SerialSendMilliseconds($uutHandle, "loglevel 40\r\n", "", 100);
+  SerialSendMilliseconds($uutHandle, "led stop\r\n", "", 100);
+
+  //sample board
+  SerialSendMilliseconds($goldenUnitHandle, "loglevel 40\r\n", "", 100);
+  SerialSendMilliseconds($goldenUnitHandle, "led\r\n", "", 100);//needed, probably because of golden firmware
+  SerialSendMilliseconds($goldenUnitHandle, "led stop\r\n", "", 100);
+  
+  RecordMeasurementPassFail("boot_message_found",$wholeMessage,"bool",true,$FrameFound);//ugly text, but great info
+  
+  ///Version check
+  ($FrameFound,$ErrMsg,$versionString)=cRE_GeneralSingle($wholeMessage,"FreeRTOS\\s.*?,");
+  if ($FrameFound)
+  {
+    $subStringLength = StringLength($versionString);
+    $subStringLength = Subtract($subStringLength,10);
+    $versionString = StringSub($versionString,9,$subStringLength);
+    $goodVersion = "V8.0.1";
+    $correctVersion = StringComparison($goodVersion, $versionString, "==");
+    RecordMeasurementPassFail("RTOS_version_check",$versionString,"bool",true,$correctVersion);
+  }
+  if (!$FrameFound)
+  {
+    RecordMeasurementPassFail("version_string_not_found",$wholeMessage,"bool",true,false);
+  }
+  
+  ///Version hash
+  ($FrameFound,$ErrMsg,$hashString)=cRE_GeneralSingle($wholeMessage,"FreeRTOS\\s.*?,\\s.*?,");
+  if ($FrameFound)
+  {
+    $subStringLength = StringLength($hashString);
+    $notMacLength = Add($subStringLength,2);
+    $subStringLength = Subtract($subStringLength,9);
+    $hashString = StringSub($hashString,$subStringLength,8);
+    $hashString = StringTrim($hashString);
+    $goodHash = "2ea40f21";
+    $correctHash = StringComparison($goodHash, $hashString,"==");
+    RecordMeasurementPassFail("version_hash_check",$hashString,"bool",true,$correctHash);
+  }
+  if (!$FrameFound)
+  {
+    RecordMeasurementPassFail("hash_string_not_found",$wholeMessage,"bool",true,false);
+  }
+  
+  ///MAC address
+  ($FrameFound,$ErrMsg,$macString)=cRE_GeneralSingle($wholeMessage,"FreeRTOS\\s.*");
+  if ($FrameFound)
+  {
+    $macString = StringSub($macString,$notMacLength,1000);//large number to get to end of line
+    ($FrameFound,$ErrMsg,$temp)=cRE_GeneralSingle($macString,"[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+");
+    RecordMeasurementPassFail("mac_format_check",$macString,"bool",true,$FrameFound);
+  }
+  if (!$FrameFound)
+  {
+    RecordMeasurementPassFail("mac_string_not_found",$wholeMessage,"bool",true,false);
+  }
+  
+  ///Top board ID
+  ($FrameFound,$ErrMsg,$topID)=cRE_GeneralSingle($wholeMessage,"got\\sid\\sfrom\\stop\\s.*");
+  if ($FrameFound)
+  {
+    $topID = StringSub($topID,16,1000);//large number to get to end of line
+    ($FrameFound,$ErrMsg,$temp)=cRE_GeneralSingle($topID,"[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+:[0-9a-fA-F]+");
+    RecordMeasurementPassFail("top_id_format_check",$topID,"bool",true,$FrameFound);
+  }
+  if (!$FrameFound)
+  {
+    RecordMeasurementPassFail("top_id_string_not_found",$wholeMessage,"bool",true,false);
+  }
+  
+  //Top board Version
+  ($FrameFound,$ErrMsg,$topVersionString)=cRE_GeneralSingle($wholeMessage,"Top\\sBoard\\sVersion\\sis\\s.*");
+  if ($FrameFound)
+  {
+    $topVersionString = StringSub($topVersionString,21,1000);
+    $topVersionString = StringTrim($topVersionString);
+    $correctTopVersion = StringComparison($goodTopVersion, $topVersionString, "==");
+    RecordMeasurementPassFail("top_version_check",$topVersionString,"bool",true,$correctTopVersion);
+  }
+  if (!$FrameFound)
+  {
+    RecordMeasurementPassFail("top_version_string_not_found",$wholeMessage,"bool",true,false);
+  }
+  
+  //FW Version
+  ($FrameFound,$ErrMsg,$fwVersionString)=cRE_GeneralSingle($wholeMessage,"FW\\s.*");
+  if ($FrameFound)
+  {
+    $fwVersionString = StringSub($fwVersionString,3,1000);
+    $fwVersionString = StringTrim($fwVersionString);
+    $goodFwVersion = "1.3.0.1.";
+    $correctFwVersion = StringComparison($goodFwVersion, $fwVersionString, "==");
+    RecordMeasurementPassFail("fw_version_check",$fwVersionString,"bool",true,$correctFwVersion);
+    $newFW = true;
+  }
+  if (!$FrameFound)
+  {
+    $newFW = false;
+    //RecordMeasurementPassFail("fw_version_string_not_found",$wholeMessage,"bool",true,false);//disabled unti FW upgraded
+  }
+  
+  //PHY Version
+  ($FrameFound,$ErrMsg,$phyVersionString)=cRE_GeneralSingle($wholeMessage,"PHY\\s.*");
+  if ($FrameFound)
+  {
+    $phyVersionString = StringSub($phyVersionString,4,1000);
+    $phyVersionString = StringTrim($phyVersionString);
+    $goodPhyVersion = "1.0.3.34.";
+    $correctPhyVersion = StringComparison($goodPhyVersion, $phyVersionString, "==");
+    RecordMeasurementPassFail("phy_version_check",$phyVersionString,"bool",true,$correctPhyVersion);
+  }
+  if (!$FrameFound)
+  {
+    //RecordMeasurementPassFail("phy_version_string_not_found",$wholeMessage,"bool",true,false);//disabled unti FW upgraded
+  }
+  
+  //CHIP Version
+  ($FrameFound,$ErrMsg,$chipVersionString)=cRE_GeneralSingle($wholeMessage,"CHIP\\s.*");
+  if ($FrameFound)
+  {
+    $chipVersionString = StringSub($chipVersionString,4,1000);
+    $chipVersionString = StringTrim($chipVersionString);
+    $goodChipVersion = "4000010";
+    $correctChipVersion = StringComparison($goodChipVersion, $chipVersionString, "==");
+    RecordMeasurementPassFail("chip_version_check",$chipVersionString,"bool",true,$correctChipVersion);
+  }
+  if (!$FrameFound)
+  {
+    //RecordMeasurementPassFail("chip_version_string_not_found",$wholeMessage,"bool",true,false);//disabled unti FW upgraded
+  }
+  
+  //NWP Version
+  ($FrameFound,$ErrMsg,$nwpVersionString)=cRE_GeneralSingle($wholeMessage,"NWP\\s.*");
+  if ($FrameFound)
+  {
+    $nwpVersionString = StringSub($nwpVersionString,3,1000);
+    $nwpVersionString = StringTrim($nwpVersionString);
+    $goodNwpVersion = "2.4.0.2.";
+    $correctNwpVersion = StringComparison($goodNwpVersion, $nwpVersionString, "==");
+    RecordMeasurementPassFail("nwp_version_check",$nwpVersionString,"bool",true,$correctNwpVersion);
+  }
+  if (!$FrameFound)
+  {
+    //RecordMeasurementPassFail("nwp_version_string_not_found",$wholeMessage,"bool",true,false);//disabled unti FW upgraded
+  }
+  
+  //ROM Version
+  ($FrameFound,$ErrMsg,$romVersionString)=cRE_GeneralSingle($wholeMessage,"ROM\\s.*");
+  if ($FrameFound)
+  {
+    $romVersionString = StringSub($romVersionString,3,1000);
+    $romVersionString = StringTrim($romVersionString);
+    $goodRomVersion = "3333";
+    $correctRomVersion = StringComparison($goodRomVersion, $romVersionString, "==");
+    RecordMeasurementPassFail("rom_version_check",$romVersionString,"bool",true,$correctRomVersion);
+  }
+  if (!$FrameFound)
+  {
+    //RecordMeasurementPassFail("rom_version_string_not_found",$wholeMessage,"bool",true,false);//disabled unti FW upgraded
+  }
+  
+  return;
+}
+
+function BootTopBoard()
+{
+  SetTestName("Boot_Top_Board")
+  UpdateStatus("****************************Boot_Top_Board*********************************");
+  $return1="";
+  $count=0;
+  call Enable_Info_Logging();
+  SleepMilliseconds(500);
+  $return1= SerialSendMilliseconds($uutHandle, "boot\r\n", "", 10);
+
+  while($count < 20)
+  {
+    $return= SerialSendMilliseconds($uutHandle, "", "", 10);
+    UpdateStatus($return);
+    $return = StringCat($return1, $return);
+    $return1=$return;
+    UpdateStatus("****************return************\n");
+    UpdateStatus($return);
+    UpdateStatus("****************************\n");
+    UpdateStatus("**************return1**************\n");
+    UpdateStatus($return1);
+    UpdateStatus("****************************\n");
+    $Result = StringContains($return,"Start polling");
+
+    if($Result)
+    {
+      break;
+    }
+    SleepMilliseconds(500);
+    $count = $count + 1;
+  }
+  call Enable_Factory_Logging();
+  RecordMeasurementPassFail("boot_top_board",$return,"bool",true,$Result);
+  SleepMilliseconds(2000);
+  return;
+}
+
+function Prox_Values()
+{
+  $TestName="Prox";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $done = false;
+  $maxTries = 3;
+  $retryCount = 0;
+  $LowerLimit = 0;//-1 means doesn't work
+  $UpperLimit = 250000;
+
+  while (!$done && $retryCount < $maxTries)
+  {
+    SerialSendMilliseconds($uutHandle, "gesture_count\r\n", "", 100);//clear count
+    SleepMilliseconds(500);//let the count get cleared before triggering a wave? increased stability hopefully
+    $return = SerialSendMilliseconds($Userinterface_Handle, "#SK4$\r\n", "", 200); //waveon
+    SleepMilliseconds(500);
+    if ($retryCount > 0)
+    {
+      SleepMilliseconds(500);
+    }
+
+    $Pattern = "(-?)\\d\\d\\d+";
+    $serialCommand = "prox";
+    $Next_Test = "prox_paddle_on";
+    call serialSendAndReceivePattern_number_error();
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#RK4$\r\n", "", 200); //waveoff
+    $Paddle_On = $Result_Value;
+
+    $Next_Test = "prox_paddle_off";
+    call serialSendAndReceivePattern_number_error();
+    $Paddle_Off = $Result_Value;
+
+    call Enable_Info_Logging();//gesture_count doesn't log to LOGF yet
+    $Pattern = "(-?)\\d+\\stransition";
+    $serialCommand = "gesture_count";
+    $Next_Test = "one_wave_gesture_count";
+    call serialSendAndReceivePattern_error();
+    call Enable_Factory_Logging();//gesture_count doesn't log to LOGF yet
+    $numGestures = StringReplace($Result_Value, " transition", "");
+    if ($numGestures > 0)
+    {
+      $done = true;
+    }
+    $retryCount = $retryCount + 1;
+  }
+  if ($retryCount > 1)
+  {
+    RecordMeasurement("prox_attempts",$retryCount,"int",true);
+  }
+  RecordMeasurementWithLimits("prox_paddle_on",$Paddle_On,"ADC_counts",true,$LowerLimit,$UpperLimit,true);
+  RecordMeasurementWithLimits("prox_paddle_off",$Paddle_Off,"ADC_counts",true,$LowerLimit,$UpperLimit,true);
+  $Paddle_Delta = $Paddle_Off - $Paddle_On;
+  RecordMeasurementWithLimits("prox_value_delta", $Paddle_Delta ,"ADC_counts",true,-50,100000,true);//get distribution, then set limits
+  RecordMeasurementWithLimits("one_wave_gesture_count", $numGestures,"gestures",true,1,1,true);
+
+  return;
+}
+
+function Prox_Values_Split()
+{
+  $TestName="Prox";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $done = false;
+  $maxTries = 3;
+  $retryCount = 0;
+  $LowerLimit = 0;//-1 means doesn't work
+  $UpperLimit = 250000;
+
+  while (!$done && $retryCount < $maxTries)
+  {
+    $noTotal = false;
+    $paddleOffCount = NaN;
+    $paddleOnCount = NaN;
+    $numGestures = 0;
+    SerialSendMilliseconds($uutHandle, "gesture_count\r\n", "", 100);//clear count
+    SleepMilliseconds(200);//let the count get cleared before triggering a wave? increased stability hopefully
+    $return = SerialSendMilliseconds($Userinterface_Handle, "#SK4$\r\n", "", 200); //waveon
+    SleepMilliseconds(200);
+    if ($retryCount > 0)
+    {
+      SleepMilliseconds(500);
+    }
+
+    $Pattern = "(-?)\\d\\d\\d+";
+    $serialCommand = "prox";
+    $Next_Test = "prox_paddle_on";
+    call serialSendAndReceivePattern_number_error();
+    $Paddle_On = $Result_Value;
+    
+    if (!$newFW)
+    {
+      call Enable_Info_Logging();//gesture_count doesn't log to LOGF yet
+    }
+    $Pattern = "(-?)\\d+\\stransition";
+    $serialCommand = "gesture_count";
+    $Next_Test = "paddle_on_gesture_count";
+    call serialSendAndReceivePattern_error();
+    $noTotal = $noTotal || !$FrameFound;
+    if (!$newFW)
+    {
+      call Enable_Factory_Logging();//gesture_count doesn't log to LOGF yet
+    }
+    if ($FrameFound)
+    {
+      $numGestures = StringReplace($Result_Value, " transition", "");
+      $paddleOnCount = $numGestures;
+    }
+    if ($numGestures > 0)
+    {
+      $done = true;
+    }
+    
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#RK4$\r\n", "", 200); //waveoff
+
+    SleepMilliseconds(200);
+    $Pattern = "(-?)\\d\\d\\d+";
+    $serialCommand = "prox";
+    $Next_Test = "prox_paddle_off";
+    call serialSendAndReceivePattern_number_error();
+    $Paddle_Off = $Result_Value;
+
+    if (!$newFW)
+    {
+      call Enable_Info_Logging();//gesture_count doesn't log to LOGF yet
+    }
+    $Pattern = "(-?)\\d+\\stransition";
+    $serialCommand = "gesture_count";
+    $Next_Test = "one_wave_gesture_count";
+    call serialSendAndReceivePattern_error();
+    $noTotal = $noTotal || !$FrameFound;
+    if (!$newFW)
+    {
+      call Enable_Factory_Logging();//gesture_count doesn't log to LOGF yet
+    }
+    if ($FrameFound)
+    {
+      $numGestures = StringReplace($Result_Value, " transition", "");
+      $paddleOffCount = $numGestures;
+    }
+    $totalGestures = NaN;
+    if (!$noTotal)
+    {
+      $totalGestures = Add($paddleOffCount,$paddleOnCount);
+    }
+    if ($numGestures > 0)
+    {
+      $done = true;
+    }
+    $retryCount = $retryCount + 1;
+  }
+  if ($retryCount > 1)
+  {
+    RecordMeasurement("prox_attempts",$retryCount,"int",true);
+  }
+  RecordMeasurementWithLimits("prox_paddle_on",$Paddle_On,"ADC_counts",true,$LowerLimit,$UpperLimit,true);
+  RecordMeasurementWithLimits("prox_paddle_off",$Paddle_Off,"ADC_counts",true,$LowerLimit,$UpperLimit,true);
+  $Paddle_Delta = $Paddle_Off - $Paddle_On;
+  RecordMeasurementWithLimits("prox_value_delta", $Paddle_Delta ,"ADC_counts",true,-50,100000,true);//get distribution, then set limits
+  RecordMeasurementWithLimits("paddle_on_gesture_count", $paddleOnCount,"gestures",true,0,1,true);
+  RecordMeasurementWithLimits("paddle_off_gesture_count", $paddleOffCount,"gestures",true,0,1,true);
+  RecordMeasurementWithLimits("total_gesture_count", $totalGestures,"gestures",true,1,2,true);
+
+  return;
+}
+
+
+function Top_Board_ID_Value()
+{
+  $TestName="Top_Board_ID_Check";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+
+  $Pattern = "[A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9]</data>";
+  $serialCommand = "^ id";
+  $Next_Test = "id_value";
+  call serialSendAndReceivePattern_error();
+
+  $ID_value = StringReplace($Result_Value,"</data>","");
+  RecordMeasurement($Next_Test,$ID_value,"string",true);
+  return;
+}
+
+function Check_SD_Card()
+{
+  $TestName="Check_SD_Card";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+
+
+  $return2= SerialSendMilliseconds($uutHandle, "cd RINGTONE\r\n" , "", 1000);  //
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  UpdateStatus($return2);
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  SerialPurge($uutHandle);
+  $return1= SerialSendMilliseconds($uutHandle, "ls\r\n", "", 100);  //
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  UpdateStatus($return1);
+  UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+  $return=$return1;
+
+  $count=0;
+  while($count < 50)
+  {
+    $return1= SerialSendMilliseconds($uutHandle, "", "", 300);  //
+
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    UpdateStatus($return1);
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    $return=$return+$return1;
+    $Result = StringContains($return,"File(s)");
+
+    if($Result )
+    {
+      break;
+    }
+    $count=$count+1;
+  }
+  
+  $return = StringToUpper($return);
+
+  $Result1 = StringContains($return,"TONE.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"STAR005.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"STAR004.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"STAR003.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"STAR002.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"STAR001.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"PINK.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"ORG004.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"ORG003.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"ORG002.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"ORG001.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW006.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW005.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW004.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW003.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW002.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"NEW001.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"DIG005.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"DIG004.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"DIG003.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"DIG002.RAW");
+  $Result=$Result1 && $Result;
+  $Result1 = StringContains($return,"DIG001.RAW");
+  $Result=$Result1 && $Result;
+
+
+  RecordMeasurementPassFail("all_files_present",$Result,"bool",true,$Result);
+  return;
+}
+
+function Speaker_Test()
+{
+  SerialSendMilliseconds($Userinterface_Handle, "#RK6$\r\n", "", 50);//turn off fan
+  $TestName="Speaker";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $UpperLimit=15500;
+  $LowerLimit=1000;
+  call Start_Tone_UUT();
+  SleepMilliseconds(2000);
+  call Start_OCT_Golden();
+  SleepMilliseconds(12000);
+  call Get_OCT_Golden();
+  call Stop_Tone_UUT();
+  SerialSendMilliseconds($Userinterface_Handle, "#SK6$\r\n", "", 150);//turn on fan
+
+  return;
+}
+
+function Mic_Test()
+{
+  SerialSendMilliseconds($Userinterface_Handle, "#RK6$\r\n", "", 50);//turn off fan
+  $TestName="Mic";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $UpperLimit=15500;
+  $LowerLimit=1000;
+  call Start_Tone_Golden();
+  SleepMilliseconds(2000);
+  call Start_OCT_UUT();
+  SleepMilliseconds(10000);
+  call Get_OCT_UUT();
+  call Stop_Tone_Golden();
+  SerialSendMilliseconds($Userinterface_Handle, "#SK6$\r\n", "", 150);//turn on fan
+
+  return;
+}
+function Start_Tone_UUT()
+{
+  $toneHandle = CopyVariable($uutHandle);
+  call General_Start_Tone();
+  return;
+}
+
+function Start_Tone_Golden()
+{
+  $toneHandle = CopyVariable($goldenUnitHandle);
+  call General_Start_Tone();
+  return;
+}
+
+function General_Start_Tone()
+{
+  $return= SerialSendMilliseconds($toneHandle, "p 55 48000  RINGTONE/tone.raw\r\n" , "", 100);
+  return;
+}
+
+function Stop_Tone_UUT()
+{
+  $toneHandle = CopyVariable($uutHandle);
+  call General_Stop_Tone();
+  return;
+}
+
+function Stop_Tone_Golden()
+{
+  $toneHandle = CopyVariable($goldenUnitHandle);
+  call General_Stop_Tone();
+  return;
+}
+
+function General_Stop_Tone()
+{
+  $return= SerialSendMilliseconds($toneHandle, "s\r\n" , "", 100);
+  return;
+}
+
+function Start_OCT_UUT()
+{
+  $octHandle = CopyVariable($uutHandle);
+  call General_Start_OCT();
+  return;
+}
+
+function Start_OCT_Golden()
+{
+  $octHandle = CopyVariable($goldenUnitHandle);
+  call General_Start_OCT();
+  return;
+}
+
+function General_Start_OCT()
+{
+  $return= SerialSendMilliseconds($octHandle, "oct\r\n", "", 100);
+  return;
+}
+
+function Get_OCT_UUT()
+{
+  $octGetHandle = CopyVariable($uutHandle);
+  $Next_Test = "get_oct_from_uut";
+  call General_Get_OCT();
+  return;
+}
+
+function Get_OCT_Golden()
+{
+  $octGetHandle = CopyVariable($goldenUnitHandle);
+  $Next_Test = "get_oct_from_golden";
+  call General_Get_OCT();
+  return;
+}
+
+function General_Get_OCT()
+{
+  $Pattern = "(-?)\\d+";
+  $serialCommand = "getoct";
+  //$Next_Test set one level up
+  $serialHandle = CopyVariable($octGetHandle);//gets reset to uut in serialSendAndReceivePattern
+  call serialSendAndReceivePattern_number();
+  RecordMeasurementWithLimits($Next_Test,$Result_Value,"",true,$LowerLimit,$UpperLimit,true);
+  return;
+}
+
+function Antenna_1_rssi()
+{
+  $TestName="Wifi";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $maxTries = 3;
+  $LowerLimit = -85;
+  $UpperLimit = 0;
+  $return= SerialSendMilliseconds($uutHandle, "antsel 1\r\n", "", 200);
+  $Next_Test = "antenna1_rssi";
+  call General_rssi();
+  return;
+}
+
+function Antenna_2_rssi()
+{
+  $TestName="Wifi";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $maxTries = 3;
+  $LowerLimit = -85;
+  $UpperLimit = 0;
+  $return= SerialSendMilliseconds($uutHandle, "antsel 2\r\n", "", 200);
+  $Next_Test = "antenna2_rssi";
+  call General_rssi();
+  return;
+}
+
+function General_rssi()
+{
+  $retryCount = 0;
+  $done = false;
+  //$Pattern = "TP-LINK_A1A2AC\\s(-?)\\d+";
+  $Pattern = "sense\\s(-?)\\d+";
+  $serialCommand = "rssi";
+  //$Next_Test set one level up
+  while (!$done && $retryCount < $maxTries)
+  {
+    $initialWaitTime = 1500;
+    call serialSendAndReceivePattern_general();
+    $rssiValue = StringReplace($Result_Value, "sense", "");
+    if (!$FrameFound)
+    {
+      $rssiValue = NaN;
+      SleepMilliseconds(1000);
+    }
+    if ($FrameFound)
+    {
+      $done = true;
+    }
+    $retryCount = $retryCount + 1;
+  }
+  if ($retryCount > 1)
+  {
+    $tryName = StringCat($Next_Test,"_attempts");
+    RecordMeasurement($tryName,$retryCount,"int",true);
+  }
+  RecordMeasurementWithLimits($Next_Test, $rssiValue, "dB", true, $LowerLimit, $UpperLimit, true);
+  return;
+}
+
+function Middle_Board_Version_Check()
+{
+  $TestName="Middle_Board_Version_Check";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $Current_Version = "5b38a87c";
+
+  $Pattern = ":\\s[A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9][A-Fa-f0-9]";
+  $serialCommand = "ver";
+  $Next_Test = "mid_board_version";
+  call serialSendAndReceivePattern_error();
+  $Result_Value = StringReplace($Result_Value,": ","");
+  $Top_Version_Correct = StringComparison($Result_Value,$Current_Version,"==");
+  RecordMeasurementPassFail($Next_Test,$Result_Value,"string",true,$Top_Version_Correct);
+  return;
+}
+
+function Light_Check()
+{
+  $TestName="Light";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $done = false;
+  $maxTries = 3;
+  $retryCount = 0;
+  $upperLimitOff = 2000;
+  $lowerLimitOff = 0;
+  $upperLimitOn = 70000;
+  $lowerLimitOn = 5000;
+  $white = StringStartsWith($SerialNumber,"91000008W","TRUE");
+  if ($white)
+  {
+    $lowerLimitOn = 17000;
+  }
+
+  while(!$done && $retryCount < $maxTries)
+  {
+    $done = true;
+    $UpperLimit = $upperLimitOff;
+    $LowerLimit = $lowerLimitOff;
+    $Next_Test = "light_off_1";
+    call General_Light_Test();
+    call Compare_Result_To_Limits();
+    $done = $done && $inLimits;
+    $lightOff1 = $Result_Value;
+
+    call LED_On_UUT();
+    SleepMilliseconds(1500);
+    if ($retryCount > 0)
+    {
+      SleepMilliseconds(1500);
+    }
+
+    $UpperLimit = $upperLimitOn;
+    $LowerLimit = $lowerLimitOn;
+
+    $Next_Test = "light_on_1";
+    call General_Light_Test();
+    call Compare_Result_To_Limits();
+    $done = $done && $inLimits;
+    $lightOn1 = $Result_Value;
+
+    call LED_Off_UUT();
+    SleepMilliseconds(1500);
+    if ($retryCount > 0)
+    {
+      SleepMilliseconds(1500);
+    }
+
+    $UpperLimit = $upperLimitOff;
+    $LowerLimit = $lowerLimitOff;
+    $Next_Test = "light_off_2";
+    call General_Light_Test();
+    call Compare_Result_To_Limits();
+    $done = $done && $inLimits;
+    $lightOff2 = $Result_Value;
+
+    $retryCount = $retryCount + 1;
+  }
+  if ($retryCount > 1)
+  {
+    RecordMeasurement("light_test_attempts",$retryCount,"int",true);
+  }
+  RecordMeasurementWithLimits("light_off_1", $lightOff1, "int", true, $lowerLimitOff, $upperLimitOff, true);
+  RecordMeasurementWithLimits("light_on_1", $lightOn1, "int", true, $lowerLimitOn, $upperLimitOn, true);
+  RecordMeasurementWithLimits("light_off_2", $lightOff2, "int", true, $lowerLimitOff, $upperLimitOff, true);
+  return;
+}
+
+function Compare_Result_To_Limits()
+{
+  $inLimits = false;
+  if ($Result_Value >= $LowerLimit && $Result_Value <= $UpperLimit)
+  {
+    $inLimits = true;
+  }
+  return;
+}
+
+function General_Light_Test()
+{
+  $Pattern = "(-?)\\d+";
+  $serialCommand = "light";
+  //$Next_Test set one level up
+  call serialSendAndReceivePattern_number();
+  return;
+
+  return;
+}
+
+function Wifi_Connect()
+{
+  $TestName="Wifi";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+
+  call Wifi_Connect_General();
+  RecordMeasurement("wifi_connect",$return,"string",true);
+  return;
+}
+
+function Wifi_Connect_General()
+{
+  $return= SerialSendMilliseconds($uutHandle, "connect sense iloveamazon 2\r\n", "", 100);
+  return;
+}
+
+function Wifi_Disconnect_Initial()
+{
+  $TestName="Wifi";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $Next_Test = "wifi_disconnect_initial";
+  call Wifi_Disconnect_General();
+  RecordMeasurement($Next_Test,$return,"string",true);
+  return;
+}
+
+function Wifi_Disconnect_Final()
+{
+  $TestName="Wifi";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $Next_Test = "wifi_disconnect_final";
+  call Wifi_Disconnect_General();
+  RecordMeasurement($Next_Test,$return,"string",true);
+  return;
+}
+
+function Wifi_Disconnect_General()
+{
+  $return= SerialSendMilliseconds($uutHandle, "disconnect\r\n", "", 100);
+  return;
+}
+
+function Wifi_Connection_Check()
+{
+  $TestName="Wifi";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $maxTries = 3;
+  $retryCount = 0;
+  $done = false;
+
+  $Pattern = "IP=\\d+\\.\\d+\\.\\d+\\.\\d+";
+  $serialCommand = "status";
+  $Next_Test = "wifi_connection_status";
+  while (!$done && $retryCount < $maxTries)
+  {
+    call serialSendAndReceivePattern_general();
+    $done = StringContains($Result_Value,"IP=192.168.");
+    if (!$done)
+    {
+      //call Wifi_Connect_General();
+      SleepMilliseconds(2000);
+    }
+    $retryCount = $retryCount + 1;
+  }
+  if ($retryCount > 1)
+  {
+    RecordMeasurement("connection_check_tries",$retryCount,"",true);
+  }
+  RecordMeasurementPassFail($Next_Test,$Result_Value,"IP",true,$done);
+
+  return;
+}
+
+function Wifi_Disconnection_Check_Initial()
+{
+  $TestName="Wifi";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $maxTries = 5;
+  $retryCount = 0;
+  $done = false;
+  $Next_Test = "wifi_disconnection_status_initial";
+  while (!$done && $retryCount < $maxTries)
+  {
+    call Wifi_Disconnection_Check_General();
+    $done = $disconnected;
+    $retryCount = $retryCount + 1;
+    if (!$done)
+    {
+      call Wifi_Disconnect_General();
+      SleepMilliseconds(2000);
+    }
+  }
+  if ($retryCount > 1)
+  {
+    RecordMeasurement("disconnect_initial_tries",$retryCount,"",true);
+  }
+  RecordMeasurementPassFail($Next_Test,$Result_Value,"IP",true,$disconnected);
+  return;
+}
+
+function Wifi_Disconnection_Check_Final()
+{
+  $TestName="Wifi";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $maxTries = 3;
+  $retryCount = 0;
+  $done = false;
+  $Next_Test = "wifi_disconnection_status_final";
+  while (!$done && $retryCount < $maxTries)
+  {
+    call Wifi_Disconnection_Check_General();
+    $done = $disconnected;
+    $retryCount = $retryCount + 1;
+    if (!$done)
+    {
+      call Wifi_Disconnect_General();
+      SleepMilliseconds(2000);
+    }
+  }
+  if ($retryCount > 1)
+  {
+    RecordMeasurement("disconnect_final_tries",$retryCount,"",true);
+  }
+  RecordMeasurementPassFail($Next_Test,$Result_Value,"IP",true,$disconnected);
+  return;
+}
+
+function Wifi_Disconnection_Check_General()
+{
+  $Pattern = "IP=\\d+\\.\\d+\\.\\d+\\.\\d+";
+  $serialCommand = "status";
+  //$Next test set one level up
+  $initialWaitTime = 1500;
+  call serialSendAndReceivePattern_general();
+  $disconnected = StringContains($Result_Value,"IP=0.0.0.0");
+  return;
+}
+
+function LED_On_UUT()
+{
+  $lightHandle = CopyVariable($uutHandle);
+  call General_LED_On();
+  return;
+}
+
+function General_LED_On()
+{
+  $return = SerialSendMilliseconds($lightHandle, "led\r\n", "", 500);
+  return;
+}
+
+function LED_Off_UUT()
+{
+  $lightHandle = CopyVariable($uutHandle);
+  call General_LED_Off();
+  return;
+}
+
+function LED_Off_Golden()
+{
+  $lightHandle = CopyVariable($goldenUnitHandle);
+  call General_LED_Off();
+  return;
+}
+
+function General_LED_Off()
+{
+  $return= SerialSendMilliseconds($lightHandle, "led stop\r\n", "", 500);
+  return;
+}
+
+function ZOGLAB_Measure()
+{
+  //SetTestName("ZOGLAB_Measure")
+  UpdateStatus("****************************ZOGLAB_Measure*********************************");
+  $receiveBuffer = SerialSend($ZOGLAB,"AT*ReadSensor:0\\r\\n","",2); //Read out the Humidity
+  UpdateStatus("receiveBuffer...");
+  UpdateStatus($receiveBuffer);
+  $stationTemp = StringParse($receiveBuffer,"Temperature = ","C");
+  $stationTemp = StringTrim($stationTemp);
+  $stationHumid = StringParse($receiveBuffer,"Humidity = ","%");
+  $stationHumid = StringTrim($stationHumid);
+  UpdateStatus($stationTemp);
+  UpdateStatus($stationHumid);
+  $stationTemp = Add(0,$stationTemp);
+  $stationHumid = Add(0,$stationHumid);
+  UpdateStatus("****************************ZOGLAB_Measure*********************************");
+  return;
+}
+
+function Temp_Humid()
+{
+  $TestName="Temp_Humid";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $maxRetry = 5;
+  $Cont_Retry = 0;
+  $Oh = 1.2;//based on 80 NPI units Dave tested (exp9.0, first runs ONLY)
+  $a = 17.625;//DO NOT CHANGE
+  $b = 243.04;//DO NOT CHANGE
+  $maxTempDelta = 5;
+  $maxCalcHumidDelta = 5;
+  ///////////////////////////////////////
+  $expandedReworkHumidityDelta = 8;//To be reset once reworked units are processed
+  ///////////////////////////////////////
+  $deltaL = 0 - $maxCalcHumidDelta;
+  //$deltaH = $maxCalcHumidDelta;//To be reset once reworked units are processed
+  $deltaH = $expandedReworkHumidityDelta;
+  $done = false;
+  $count = 0;
+  while($count <= $maxRetry && !$done)
+  {
+    $count = $count + 1;
+
+    //Get station temp and humidity
+    call ZOGLAB_Measure();
+
+    //Get station temp
+    $Pattern = "(-?)\\d{3,5}";
+    $serialCommand = "temp";
+    $Next_Test = "get_morpheus_temp";//even though no test, used in case pattern not found
+    call serialSendAndReceivePattern_number();
+    $morpheusTemp = $Result_Value / 100;
+
+    //Get station humidity
+    $Pattern = "(-?)\\d{3,5}";
+    $serialCommand = "humid";
+    $Next_Test = "get_morpheus_humid";//even though no test, used in case pattern not found
+    call serialSendAndReceivePattern_number();
+    $morpheusHumid = $Result_Value / 100;
+
+    //Check temperature accuracy
+    $tempL = $stationTemp - $maxTempDelta;
+    $tempH = $stationTemp + $maxTempDelta;
+    if($morpheusTemp < $tempL || $morpheusTemp > $tempH)
+    {
+      //retry if temp out of spec
+      continue;
+    }
+
+    $Td_a = $stationHumid/100;
+    $Td_a = LogSpecifyBase($Td_a, 2.718281828);
+    $Td_a = $Td_a + ($a * $stationTemp) / ($b + $stationTemp);
+    $Td_a =  $b * $Td_a;
+    UpdateStatus($Td_a);
+    $Td_b = $stationHumid/100;
+    $Td_b = LogSpecifyBase($Td_b, 2.718281828);
+    $Td_b = $Td_b+(($a * $stationTemp) / ($b + $stationTemp));
+    $Td_b =  $a - $Td_b;
+    UpdateStatus($Td_b);
+    $Td  = $Td_a / $Td_b;
+    UpdateStatus("*************Td************");
+    UpdateStatus($Td);//dewpoint of station
+    UpdateStatus("***************************");
+
+    $Hc_a = ($a * $Td) / ($b + $Td);
+    $Hc_a = Power(2.718281828,$Hc_a);
+    $Hc_a = 100 * $Hc_a;
+    UpdateStatus($Hc_a);
+    $Hc_b = ($a * $morpheusTemp) / ($b + $morpheusTemp);
+    $Hc_b = Power(2.718281828,$Hc_b);
+    UpdateStatus($Hc_b);
+    $Hc =  $Hc_a / $Hc_b;
+    UpdateStatus("*************Hc************");
+    UpdateStatus($Hc);//calculation of humidity based on sense temp and station dewpoint
+    UpdateStatus("***************************");
+
+    $delta = $Hc - ($stationHumid - $Oh);//compare the values, with a delta offset, measured over large amount of units
+    UpdateStatus("*************delta************");
+    UpdateStatus($delta);
+    UpdateStatus("****************************");
+
+    if(($delta>=$deltaL) && ($delta<=$deltaH))
+    {
+      $done = true;
+    }
+  }
+  if ($count > 1)
+  {
+    RecordMeasurement("temp_tries",$count,"",true);
+  }
+  RecordMeasurement("temp_station",$stationTemp,"C",true);
+  RecordMeasurement("humid_station",$stationHumid,"%",true);
+  RecordMeasurementWithLimits("temp_morpheus",$morpheusTemp,"C",true,$tempL,$tempH,true);
+  RecordMeasurement("humid_morpheus",$morpheusHumid,"%",true);
+  RecordMeasurement("humid_calc",$Hc,"%",true);
+  RecordMeasurement("oh_offset",$Oh,"C",true);
+  RecordMeasurementWithLimits("humidity_delta",$delta,"%",true,$deltaL,$deltaH,true);
+  return;
+}
+
+function serialSendAndReceivePattern_general()
+{
+  $checkEnding = StringEndsWith($serialCommand, "\r\n", true);
+  if (!$checkEnding)
+  {
+    $serialCommand = StringCat($serialCommand,"\r\n");
+    UpdateStatus("Added line return");
+  }
+  $strippedCommand = StringReplace($serialCommand,"\r\n","");
+  $currentAttempt = 0;
+  $emptyTimeOut = 100;
+  $Serial_Retry = 30;
+  $currentReturn = SerialSendMilliseconds($serialHandle, $serialCommand, "", $initialWaitTime);
+  $initialWaitTime = 200;
+  $totalReturn = "";
+  while($currentAttempt < $Serial_Retry)
+  {
+    $currentAttempt = $currentAttempt + 1;
+    $currentReturn = StringReplace($currentReturn, $strippedCommand,"");
+    $totalReturn=$totalReturn + $currentReturn;
+    $attemptTitle = $strippedCommand + $currentAttempt;
+    $header = StringCat("^^^^^^^^^^^",$attemptTitle);
+    $header = StringCat($header,"^^^^^^^^^^^");
+    UpdateStatus($header);
+    UpdateStatus($totalReturn);
+    UpdateStatus("^^^^^^^^^^^^^^^^^^^^^^^^");
+    ($FrameFound,$ErrMsg,$Result_Value)=cRE_GeneralSingle($totalReturn,$Pattern);
+    if($FrameFound)
+    {
+      UpdateStatus("Frame found");
+      UpdateStatus($Result_Value);
+      UpdateStatus("Thatwastheframe");
+      $Result_Value = StringTrim($Result_Value);
+      $serialHandle = CopyVariable($uutHandle);
+      break;
+    }
+    UpdateStatus($Pattern);
+    UpdateStatus("Frame not found");
+    SleepMilliseconds(100);
+    $currentReturn= SerialSendMilliseconds($serialHandle,"", "", $emptyTimeOut);
+  }
+  if (!$FrameFound)
+  {
+    $unitRestarted = StringContains($totalReturn,"Boot","==");
+    if ($unitRestarted)
+    {
+      RecordMeasurementPassFail("unit_restarted",$totalReturn,"string",true,false);
+    }
+  }
+  return;
+}
+
+function serialSendAndReceivePattern_number()
+{
+  call serialSendAndReceivePattern_general();
+  if ($FrameFound)
+  {
+    $Result_Value = Add(0,$Result_Value);
+  }
+  if (!$FrameFound)
+  {
+    $Result_Value = NaN;
+  }
+  return;
+}
+
+function serialSendAndReceivePattern_number_error()
+{
+  call serialSendAndReceivePattern_general();
+  if ($FrameFound)
+  {
+    $Result_Value = Add(0,$Result_Value);
+  }
+  if (!$FrameFound)
+  {
+    $Result_Value = NaN;
+    $Test_Fail_Name = StringCat($Next_Test, "_pattern_not_found")
+    RecordMeasurementPassFail($Test_Fail_Name,$Pattern,"bool",true,false);
+  }
+  return;
+}
+
+function serialSendAndReceivePattern_error()
+{
+  call serialSendAndReceivePattern_general();
+  if (!$FrameFound)
+  {
+    $Test_Fail_Name = StringCat($Next_Test, "_pattern_not_found")
+    RecordMeasurementPassFail($Test_Fail_Name,$Pattern,"bool",true,false);
+  }
+  return;
+}
+
+function Enable_Factory_Logging()
+{
+  SerialSendMilliseconds($uutHandle, "loglevel 40\r\n", "", 10);
+  return;
+}
+
+function Enable_Info_Logging()
+{
+  SerialSendMilliseconds($uutHandle, "loglevel 1\r\n", "", 10);
+  return;
+}
+
+function No_Gesture_Check()
+{
+  $TestName="Prox";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  if (!$inFailTestSection)
+  {
+    SetTestName($TestName);
+  }
+  $ranFinalGestureCount = true;
+
+  if (!$newFW)
+  {
+    call Enable_Info_Logging();//gesture_count doesn't log to LOGF yet
+  }
+  $Pattern = "(-?)\\d+\\stransition";
+  $serialCommand = "gesture_count";
+  $Next_Test = "zero_wave_gesture_count";
+  if ($inFailTestSection)
+  {
+    call serialSendAndReceivePattern_general();//something could be catastrophically wrong, no reason to fuss
+  }
+  if (!$inFailTestSection)
+  {
+    call serialSendAndReceivePattern_error();
+  }
+  if (!$newFW)
+  {
+    call Enable_Factory_Logging();//gesture_count doesn't log to LOGF yet
+  }
+
+  $numGestures = StringReplace($Result_Value, " transition", "");
+  if (!$FrameFound)
+  {
+    $numGestures = NaN;
+  }
+  RecordMeasurementWithLimits($Next_Test, $numGestures,"",true,0,0,true);
+
+  return;
+}
+
+function Dust_Sensor_Initial()
+{
+  call LED_Off_UUT();//required for dust reading
+  $TestName="Dust";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $serialCommand = "dust 100";
+  $Next_Test = "initial_dust";
+  $Pattern = "(-?)\\d+";
+  $initialWaitTime = 1000;
+  call serialSendAndReceivePattern_number();
+
+  RecordMeasurement($Next_Test, $Result_Value,"ADC_counts",true);
+  return;
+}
+
+function Dust_Sensor_Final()
+{
+  call LED_Off_UUT();//required for dust reading
+  $TestName="Dust";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  $lowerLimit = 250;
+  $upperLimit = 1500;
+  $Pattern = "(-?)\\d+";
+  $serialCommand = "dust 400";
+  $Next_Test = "dust_calibration_value";
+  $initialWaitTime = 5000;//dust sensor takes 4 secs with dust 400 command
+  call serialSendAndReceivePattern_number_error();
+  RecordMeasurementWithLimits($Next_Test, $Result_Value,"ADC Counts",true,$lowerLimit,$upperLimit,true);
+
+  return;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function Cleanup()
+{
+  UpdateStatus("****************************Cleanup*********************************");
+  SerialSendMilliseconds($Userinterface_Handle, "#RK5$\r\n", "", 50);  //
+  SerialSendMilliseconds($Userinterface_Handle, "#RK6$\r\n", "", 50);//turn off fan
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK2$\r\n", "", 50); //indicator reset
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);  //sample switch on
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50); //uut switch on
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK3$\r\n", "", 50);  //unlock
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK4$\r\n", "", 200); //waveoff
+  SerialPurge($goldenUnitHandle);
+  SleepMilliseconds(100);
+  SerialClose($goldenUnitHandle);
+  SleepMilliseconds(100);
+  SerialPurge($uutHandle);
+  SleepMilliseconds(100);
+  SerialClose($uutHandle);
+  CloseForm($LoadWin);
+  End;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+function GlobalCleanup()
+{
+  UpdateStatus("****************************GlobalCleanup*********************************");
+
+
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK1$\r\n", "", 50);
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK0$\r\n", "", 50);
+    //~ $return= SerialSendMilliseconds($Userinterface_Handle, "#RK2$\r\n", "", 50);
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RK9$\r\n", "", 50);
+  SerialSendMilliseconds($Userinterface_Handle, "#RK6$\r\n", "", 50);//turn off fan
+  SerialClose($Userinterface_Handle);
+  SerialClose($ZOGLAB);
+
+  $Userinterface_Serial = 2;
+  $Userinterface_Handle = SerialOpen($Userinterface_Serial,19200,8,"N",1);
+  $return= SerialSendMilliseconds($Userinterface_Handle, "#RKA$\r\n", "", 250);
+    //~ SerialSendMilliseconds($Userinterface_Handle, "#SK4$\r\n", "", 50);
+  SerialClose($Userinterface_Handle);
+
+  SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);
+  SerialSendMilliseconds($IT6322_Handle, "OUTP 0\n", "", 50);
+  SerialClose($IT6322_Handle);
+  End ;
+}
+
+function Dammy_Test()
+{
+  $TestName="Dammy_Test";
+  $TempStr="****************************" & $TestName & "*********************************";
+  UpdateStatus($TempStr);
+  SetTestName($TestName);
+  RecordMeasurement("DUST_SENSOR", "NA","",true);
+  RecordMeasurement("HUMID_TEST", "NA","",true);
+  RecordMeasurement("HUMIDITY IN FIXTURE IS", "NA","",true);
+  RecordMeasurement("MID BOARD FW VERSION", "NA","",true);
+  RecordMeasurement("TEMP_TEST", "NA","",true);
+  RecordMeasurement("TEMPERATURE IN FIXTURE IS", "NA","",true);
+  RecordMeasurement("TOP BOARD FW VERSION", "NA","",true);
+  return;
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+function Initialize()
+{
+    UpdateStatus("****************************GlobalCleanup*********************************"); 
+    $IT6322_Handle = SerialOpen("3",19200,8,"N",1);
+    SerialSendMilliseconds($IT6322_Handle, "SYST:REM\n", "", 50);       //IT6322B Initialize
+    SerialSendMilliseconds($IT6322_Handle, "INST FIR\n", "", 50);  
+    SerialSendMilliseconds($IT6322_Handle, "VOLT 24.0V\n", "", 50);
+    SerialSendMilliseconds($IT6322_Handle, "CURR 0.5A\n", "", 50);  
+    SerialSendMilliseconds($IT6322_Handle, "VOLT:PROT 10V\n", "", 50);   
+    SerialSendMilliseconds($IT6322_Handle, "INST SECO\n", "", 50);  
+    SerialSendMilliseconds($IT6322_Handle, "VOLT 12.0V\n", "", 50);
+    SerialSendMilliseconds($IT6322_Handle, "CURR 0.5A\n", "", 50);  
+    SerialSendMilliseconds($IT6322_Handle, "VOLT:PROT 10V\n", "", 50);    
+    SerialSendMilliseconds($IT6322_Handle, "INST THI\n", "", 50);  
+    SerialSendMilliseconds($IT6322_Handle, "VOLT 5.25V\n", "", 50);
+    SerialSendMilliseconds($IT6322_Handle, "CURR 2A\n", "", 50);  
+    SerialSendMilliseconds($IT6322_Handle, "VOLT:PROT 5V\n", "", 50);   
+    SerialSendMilliseconds($IT6322_Handle,"OUTP 1\n", "", 50);
+    Sleep(2);
+    $Userinterface_Serial = 1;    
+    $Userinterface_Handle = SerialOpen($Userinterface_Serial,19200,8,"N",1);  
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#RKA$\r\n", "", 50);  
+    $return= SerialSendMilliseconds($Userinterface_Handle, "#HELP$\r\n", "", 500);  
+    UpdateStatus($return);
+    $Result = StringContains($return,"Ver:2.0");
+    if(!$Result)
+    {
+      $output = OperatorPrompt("Please Cleck User Interface Board,\n Then Press OK continute", "OK");
+      Fail("Please Cleck User Interface Board");
+    }
+    Sleep(2);
+
+    $ZOGLAB = SerialOpen(2,9600,8,"N",1);
+    SleepMilliseconds(100);
+    SerialHandshakingManualSet($ZOGLAB, "RTS","FALSE");
+    $receiveBuffer = SerialSend($ZOGLAB,"AT*TakeInfo\\r\\n","",3);
+    UpdateStatus("receiveBuffer...");
+    UpdateStatus($receiveBuffer);
+    SleepMilliseconds(100);
+    $receiveBuffer = SerialSend($ZOGLAB,"AT*TakeSysState\\r\\n","",3);
+    UpdateStatus("receiveBuffer...");
+    UpdateStatus($receiveBuffer);
+    End ;
+}
