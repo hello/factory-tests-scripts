@@ -54,7 +54,7 @@ if len(sys.argv) > 2 or test == True:
 	else:
 		new_dev = sys.argv[1].strip()
 		new_sn = get_new_sn(new_dev).strip()
-		new_key = verify_key(sys.argv[2])
+		new_key = verify_key(sys.argv[2].strip())
 	if new_sn and new_key and provision(new_sn, new_key):
 		write_result(new_dev, new_sn, new_key, "PASS")
 		exit(0)

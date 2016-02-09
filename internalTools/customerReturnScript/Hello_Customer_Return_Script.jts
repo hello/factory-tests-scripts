@@ -176,6 +176,7 @@ function Provision()
 	  $args = StringCat($args, " ");
 	  $args = StringCat($args, $ret);
 	  $args = StringToUpper($args);
+  	  $args = StringReplace($args, "\r", "");
 
 	  SystemCall($workingDir, $scriptPath, $args, "TRUE", "TRUE");
 	  $fr = FileReadOpen($resultPath);
