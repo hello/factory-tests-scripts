@@ -55,7 +55,7 @@ def main(logPath,adbArgs):
 
                 done = False
                 fail = False
-                linePattern = "([IDE])\/TestOutput\(\s*\d+\)\:\s+(\{.*\})\s*$"
+                linePattern = "([IDE])\s+TestOutput\:\s+(\{.*\})\s*$"
                 while not stdout_reader.eof() and not done:
                     while not stdout_queue.empty():
                         time.sleep(.1)
